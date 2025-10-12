@@ -1,0 +1,102 @@
+name: createPR
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository_url:
+        description: 'URL of the GitHub repository'
+        required: true
+        type: string
+      template:
+        description: 'Name of the template'
+        required: true
+        type: string
+
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout this repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Extract repository info
+        id: repo_info
+        run: |
+          # Extract owner and repo name from URL
+          REPO_URL="${{ inputs.repository_url }}"
+          # Remove trailing .git if present
+          REPO_URL="${REPO_URL%.git}"
+          # Extract owner/repo from URL (handles both https and git@ formats)
+          if [[ $REPO_URL =~ github.com[:/]([^/]+)/([^/]+)$ ]]; then
+            OWNER="${BASH_REMATCH[1]}"
+            REPO="${BASH_REMATCH[2]}"
+            echo "owner=$OWNER" >> $GITHUB_OUTPUT
+            echo "repo=$REPO" >> $GITHUB_OUTPUT
+            echo "full_name=$OWNER/$REPO" >> $GITHUB_OUTPUT
+          else
+            echo "Error: Could not parse repository URL"
+            exit 1
+          fi
+
+      - name: Fork repository
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Check if fork already exists
+          if gh repo view ${{ steps.repo_info.outputs.full_name }} --json isFork -q .isFork 2>/dev/null; then
+            echo "Fork already exists or this is the original repo"
+          else
+            # Fork the repository
+            gh repo fork ${{ steps.repo_info.outputs.full_name }} --clone=false || echo "Fork may already exist"
+          fi
+
+      - name: Clone target repository
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Clone the repository
+          git clone https://github.com/${{ steps.repo_info.outputs.full_name }}.git target-repo
+          cd target-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create branch
+        run: |
+          cd target-repo
+          BRANCH_NAME="update-from-template-${{ inputs.template }}-$(date +%s)"
+          git checkout -b $BRANCH_NAME
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
+
+      - name: Run createPR.js script
+        run: |
+          cd target-repo
+          node ../createPR.js "${{ steps.repo_info.outputs.full_name }}" "${{ inputs.template }}"
+
+      - name: Commit and push changes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd target-repo
+          git add .
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update from template: ${{ inputs.template }}"
+            git push origin ${{ env.branch_name }}
+          fi
+
+      - name: Create Pull Request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd target-repo
+          gh pr create \
+            --title "Update from template: ${{ inputs.template }}" \
+            --body "This PR applies changes from template: ${{ inputs.template }}" \
+            --base main \
+            --head ${{ env.branch_name }} || echo "PR may already exist or no changes needed"
