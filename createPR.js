@@ -73,23 +73,34 @@ function checkRepositoryExists(repoName) {
 }
 
 /**
- * Check if template directory exists
+ * Check if template files exists
  * @param {string} templateName - Name of the template
- * @returns {boolean} - True if template directory exists
+ * @returns {boolean} - True if template files exist
  */
-function checkTemplateExists(templateName) {
-  // The script might be run from the manage-prs repo or from the target repo
-  // When run from target repo (as in the workflow), the template path is relative to manage-prs
+function checkTemplateExists(templateName) {0
   const scriptDir = path.dirname(__filename);
-  const templatePath = path.join(scriptDir, 'templates', templateName);
+  const templatePath = path.join(scriptDir, 'templates');
   
   if (!fs.existsSync(templatePath)) {
+    console.error(`Error: Template directory ${templatePath} missing`);
     return false;
   }
   
   // Check if it's a directory
-  const stats = fs.statSync(templatePath);
-  return stats.isDirectory();
+  if (!fs.statSync(templatePath).isDirectory) {
+    console.error(`Error: Template directory ${templatePath} is no directory`);
+    return false;
+  }
+
+  // Check if requires files exist
+  for (let fileExtension of ['md', 'js']){
+    const fileName = `${templatePath}/${fileExtension}`;
+    if (!fs.existsSync(fileName)) {
+      console.error(`Error: ${fileName} does not exist`);
+      return false;
+  }
+
+  return true;
 }
 
 // Main function
@@ -99,10 +110,9 @@ async function main() {
     console.log(`Validating template: ${templateName}...`);
     const templateExists = checkTemplateExists(templateName);
     if (!templateExists) {
-      console.error(`Error: Template directory "./templates/${templateName}" does not exist`);
       process.exit(1);
     }
-    console.log(`✓ Template ${templateName} exists`);
+    console.log(`✓ Template files exist`);
     
     // Validate repository exists
     console.log(`Validating repository: ${repositoryName}...`);
@@ -122,11 +132,8 @@ async function main() {
         throw error;
       }
     }
-    
-    // TODO: Implement template application logic
-    // This is a placeholder that can be extended based on specific template needs
-    
-    console.log('Creating/updating files based on template...');
+        
+    console.log('Processing ...');
     
     // Example: Create a marker file to show the script ran
     const markerFile = path.join(process.cwd(), '.template-applied');
