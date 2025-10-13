@@ -26,33 +26,19 @@ jobs:
           echo "==================================================================="
 
       - name: Checkout this repository
-        run: |
-          echo ">>> Starting: Checkout this repository"
-
       - uses: actions/checkout@v4
 
-      - name: Log checkout completion
-        run: |
-          echo ">>> Completed: Checkout this repository"
-
       - name: Setup Node.js
-        run: |
-          echo ">>> Starting: Setup Node.js"
-
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      - name: Log Node.js setup completion
-        run: |
-          echo ">>> Completed: Setup Node.js"
+      - run: |
           echo "Node version: $(node --version)"
           echo "NPM version: $(npm --version)"
 
       - name: Extract repository info
         id: repo_info
         run: |
-          echo ">>> Starting: Extract repository info"
           # Extract owner and repo name from URL
           REPO_URL="${{ inputs.repository_url }}"
           # Remove trailing .git if present
@@ -68,7 +54,6 @@ jobs:
             echo "    Owner: $OWNER"
             echo "    Repo: $REPO"
             echo "    Full name: $OWNER/$REPO"
-            echo ">>> Completed: Extract repository info"
           else
             echo "Error: Could not parse repository URL"
             exit 1
