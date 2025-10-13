@@ -42,8 +42,8 @@ function checkRepositoryExists(repoName) {
     };
     
     // Use GITHUB_TOKEN if available for authentication
-    if (process.env.GITHUB_TOKEN || process.env.GH_TOKEN) {
-      const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
+    if (process.env.GH_TOKEN) {
+      const token = process.env.GH_TOKEN;
       headers['Authorization'] = `token ${token}`;
     }
     
@@ -127,10 +127,10 @@ async function main() {
     } catch (e) {
       // If repository check fails due to API issues, log warning but continue
       if (e.message.includes('403')) {
-        console.warn(`Error: Could not verify repository existence (API rate limit). Proceeding anyway...`);
+        console.warn(`Error: Could not verify repository existence (API rate limit).`);
         process.exit(1);
       } else {
-        throw error;
+        throw e;
       }
     }
         
