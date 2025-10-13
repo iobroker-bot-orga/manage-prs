@@ -134,11 +134,18 @@ jobs:
         run: |
           echo ">>> Starting: Create branch"
           cd target-repo
+          
+          # Detect the default branch
+          DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
+          echo "    Detected default branch: $DEFAULT_BRANCH"
+          echo "default_branch=$DEFAULT_BRANCH" >> $GITHUB_ENV
+          
           BRANCH_NAME="update-from-template-${{ inputs.template }}-$(date +%s)"
           echo "    Creating branch: $BRANCH_NAME"
           git checkout -b $BRANCH_NAME
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
           echo "==================================================================="
+          echo "Default Branch: $DEFAULT_BRANCH"
           echo "Branch Name: $BRANCH_NAME"
           echo "==================================================================="
           echo ">>> Completed: Create branch"
@@ -162,12 +169,14 @@ jobs:
           echo "    Checking for staged changes..."
           if git diff --staged --quiet; then
             echo "    No changes to commit"
+            echo "has_changes=false" >> $GITHUB_ENV
           else
             echo "    Changes detected, committing..."
             git commit -m "Update from template: ${{ inputs.template }}"
             echo "    Pushing to fork remote, branch: ${{ env.branch_name }}"
             git push fork ${{ env.branch_name }}
             echo "    Changes pushed successfully"
+            echo "has_changes=true" >> $GITHUB_ENV
           fi
           echo ">>> Completed: Commit and push changes"
 
@@ -176,21 +185,43 @@ jobs:
           GH_TOKEN: ${{ secrets.IOBBOT_GITHUB_TOKEN }}
         run: |
           echo ">>> Starting: Create Pull Request"
+          
+          # Skip PR creation if there are no changes
+          if [ "${{ env.has_changes }}" = "false" ]; then
+            echo "    Skipping PR creation - no changes were made"
+            echo ">>> Completed: Create Pull Request"
+            echo "==================================================================="
+            echo "Workflow completed successfully (no changes)"
+            echo "==================================================================="
+            exit 0
+          fi
+          
           cd target-repo
           # Get the authenticated user for fork reference
           CURRENT_USER=$(gh api user -q .login)
           echo "    Creating PR with:"
           echo "      Title: Update from template: ${{ inputs.template }}"
-          echo "      Base: main"
+          echo "      Base: ${{ env.default_branch }}"
           echo "      Head: ${CURRENT_USER}:${{ env.branch_name }}"
           echo "      Repository: ${{ steps.repo_info.outputs.full_name }}"
-          gh pr create \
+          
+          # Create PR and capture the exit code
+          if gh pr create \
             --repo ${{ steps.repo_info.outputs.full_name }} \
             --title "Update from template: ${{ inputs.template }}" \
             --body "This PR applies changes from template: ${{ inputs.template }}" \
-            --base main \
-            --head "${CURRENT_USER}:${{ env.branch_name }}" || echo "    PR may already exist or no changes needed"
-          echo ">>> Completed: Create Pull Request"
-          echo "==================================================================="
-          echo "Workflow completed successfully"
-          echo "==================================================================="
+            --base ${{ env.default_branch }} \
+            --head "${CURRENT_USER}:${{ env.branch_name }}"; then
+            echo "    Pull request created successfully"
+            echo ">>> Completed: Create Pull Request"
+            echo "==================================================================="
+            echo "Workflow completed successfully"
+            echo "==================================================================="
+          else
+            echo "    ERROR: Failed to create pull request"
+            echo ">>> Failed: Create Pull Request"
+            echo "==================================================================="
+            echo "Workflow failed"
+            echo "==================================================================="
+            exit 1
+          fi
