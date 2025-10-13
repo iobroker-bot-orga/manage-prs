@@ -145,7 +145,9 @@ function execTemplateScript(templateName) {
   const scriptDir = path.dirname(__filename);
   const templateScript = path.join(scriptDir, "templates", `${templateName}.js`);
 
-  execSync( templateScript)
+  const cmd = `node ${templateScript}`;
+  console.log(`executing ${cmd}`);
+  execSync(cmd);
   return;
 }
 
