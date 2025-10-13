@@ -171,7 +171,7 @@ jobs:
           echo ">>> Starting: Commit and push changes"
           cd target-repo
           echo "    Staging all changes..."
-          git add .
+          git add -v . :!./.pr-body :!./.pr-title
           echo "    Checking for staged changes..."
           if git diff --staged --quiet; then
             echo "    No changes to commit"
