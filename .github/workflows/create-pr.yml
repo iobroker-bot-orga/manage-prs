@@ -171,9 +171,10 @@ jobs:
           echo ">>> Starting: Commit and push changes"
           cd target-repo
           echo "    Staging all changes..."
+          git add -n . :!./.pr-body :!./.pr-title
           git add -v . :!./.pr-body :!./.pr-title
           echo "    Checking for staged changes..."
-          if git diff --staged; then
+          if git diff --staged --quiet; then
             echo "    No changes to commit"
             echo "has_changes=false" >> $GITHUB_ENV
           else
