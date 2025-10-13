@@ -136,7 +136,8 @@ jobs:
           cd target-repo
           
           # Detect the default branch
-          DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
+          # First, get the current branch we're on (which is the default branch after clone)
+          DEFAULT_BRANCH=$(git branch --show-current)
           echo "    Detected default branch: $DEFAULT_BRANCH"
           echo "default_branch=$DEFAULT_BRANCH" >> $GITHUB_ENV
           
