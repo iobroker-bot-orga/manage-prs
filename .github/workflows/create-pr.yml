@@ -159,13 +159,8 @@ jobs:
         run: |
           echo ">>> Starting: Run createPR.js script"
           cd target-repo
-          if [ -n "${{ inputs.parameter_data }}" ]; then
-            echo "    Executing: node ../createPR.js \"${{ steps.repo_info.outputs.full_name }}\" \"${{ inputs.template }}\" \"${{ inputs.parameter_data }}\""
-            node ../createPR.js "${{ steps.repo_info.outputs.full_name }}" "${{ inputs.template }}" "${{ inputs.parameter_data }}"
-          else
-            echo "    Executing: node ../createPR.js \"${{ steps.repo_info.outputs.full_name }}\" \"${{ inputs.template }}\""
-            node ../createPR.js "${{ steps.repo_info.outputs.full_name }}" "${{ inputs.template }}"
-          fi
+          echo "    Executing: node ../createPR.js \"${{ steps.repo_info.outputs.full_name }}\" \"${{ inputs.template }}\" \"${{ inputs.parameter_data }}\""
+          node ../createPR.js "${{ steps.repo_info.outputs.full_name }}" "${{ inputs.template }}" "${{ inputs.parameter_data }}"
           echo ">>> Completed: Run createPR.js script"
 
       - name: Commit and push changes

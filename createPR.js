@@ -12,7 +12,8 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const https = require("node:https");
-//const { execSync } = require('child_process');
+const { execSync } = require('child_process');
+const { exec } = require("node:child_process");
 
 // Get command line arguments
 const args = process.argv.slice(2);
@@ -134,6 +135,20 @@ function parseTemplateMarkdown(templateName) {
   return { title, body };
 }
 
+/**
+ * Execute template script
+ *
+ * @param {string} templateName - Name of the template
+ * @returns {none}
+ */
+function execTemplateScript(templateName) {
+  const scriptDir = path.dirname(__filename);
+  const templateScript = path.join(scriptDir, "templates", `${templateName}.js`);
+
+  execSync( templateScript)
+  return;
+}
+
 // Main function
 async function main() {
   try {
@@ -168,6 +183,9 @@ async function main() {
     }
 
     console.log("Processing ...");
+
+    // Execute template script
+    execTemplateScript(templateName);
 
     // Parse template markdown file for PR title and body
     console.log("Reading template markdown file...");
