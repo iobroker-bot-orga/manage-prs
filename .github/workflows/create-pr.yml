@@ -1,5 +1,5 @@
 name: createPR
-run-name: create PR (${{ inputs.template }} for ${{repository_url}})
+run-name: create PR (${{ inputs.template }} for ${{ inputs.repository_url }})
 
 on:
   workflow_dispatch:
