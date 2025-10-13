@@ -239,7 +239,7 @@ jobs:
             echo "    Pull request created successfully"
             echo ">>> Completed: Create Pull Request"
             echo "==================================================================="
-            echo "Workflow completed successfully"
+            echo "Workflow completed successfully (PR has been created)"
             echo "==================================================================="
           else
             echo "    ERROR: Failed to create pull request"
