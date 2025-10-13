@@ -16,17 +16,43 @@ jobs:
   create-pr:
     runs-on: ubuntu-latest
     steps:
+      - name: Log workflow parameters
+        run: |
+          echo "==================================================================="
+          echo "Workflow Parameters:"
+          echo "==================================================================="
+          echo "Repository URL: ${{ inputs.repository_url }}"
+          echo "Template: ${{ inputs.template }}"
+          echo "==================================================================="
+
       - name: Checkout this repository
-        uses: actions/checkout@v4
+        run: |
+          echo ">>> Starting: Checkout this repository"
+
+      - uses: actions/checkout@v4
+
+      - name: Log checkout completion
+        run: |
+          echo ">>> Completed: Checkout this repository"
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        run: |
+          echo ">>> Starting: Setup Node.js"
+
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      - name: Log Node.js setup completion
+        run: |
+          echo ">>> Completed: Setup Node.js"
+          echo "Node version: $(node --version)"
+          echo "NPM version: $(npm --version)"
 
       - name: Extract repository info
         id: repo_info
         run: |
+          echo ">>> Starting: Extract repository info"
           # Extract owner and repo name from URL
           REPO_URL="${{ inputs.repository_url }}"
           # Remove trailing .git if present
@@ -38,6 +64,11 @@ jobs:
             echo "owner=$OWNER" >> $GITHUB_OUTPUT
             echo "repo=$REPO" >> $GITHUB_OUTPUT
             echo "full_name=$OWNER/$REPO" >> $GITHUB_OUTPUT
+            echo ">>> Extracted repository info:"
+            echo "    Owner: $OWNER"
+            echo "    Repo: $REPO"
+            echo "    Full name: $OWNER/$REPO"
+            echo ">>> Completed: Extract repository info"
           else
             echo "Error: Could not parse repository URL"
             exit 1
@@ -47,56 +78,113 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          echo ">>> Starting: Fork repository"
+          # Get the authenticated user
+          CURRENT_USER=$(gh api user -q .login)
+          echo "    Current user: $CURRENT_USER"
+
           # Check if fork already exists
-          if gh repo view ${{ steps.repo_info.outputs.full_name }} --json isFork -q .isFork 2>/dev/null; then
-            echo "Fork already exists or this is the original repo"
+          echo "    Checking if fork exists at $CURRENT_USER/${{ steps.repo_info.outputs.repo }}"
+          if gh repo view "$CURRENT_USER/${{ steps.repo_info.outputs.repo }}" >/dev/null 2>&1; then
+            echo "    Fork already exists"
+
+            # Verify that the fork is based on the target repository
+            echo "    Verifying fork parent..."
+            FORK_PARENT=$(gh repo view "$CURRENT_USER/${{ steps.repo_info.outputs.repo }}" --json parent -q '.parent.nameWithOwner')
+            if [ "$FORK_PARENT" != "${{ steps.repo_info.outputs.full_name }}" ]; then
+              echo "    ERROR: Fork exists but is not based on ${{ steps.repo_info.outputs.full_name }}"
+              echo "    Fork parent: $FORK_PARENT"
+              echo "    Expected: ${{ steps.repo_info.outputs.full_name }}"
+              exit 1
+            fi
+            echo "    Fork parent verified: $FORK_PARENT"
+
+            # Sync fork with upstream
+            echo "    Syncing fork with upstream repository..."
+            gh repo sync "$CURRENT_USER/${{ steps.repo_info.outputs.repo }}" --source "${{ steps.repo_info.outputs.full_name }}" || echo "    Fork sync completed or already up to date"
+            echo "    Fork is up to date with upstream"
           else
             # Fork the repository
-            gh repo fork ${{ steps.repo_info.outputs.full_name }} --clone=false || echo "Fork may already exist"
+            echo "    Creating new fork..."
+            gh repo fork ${{ steps.repo_info.outputs.full_name }} --clone=false || echo "    Fork creation may have encountered an issue"
+            echo "    Fork created successfully"
           fi
+          echo ">>> Completed: Fork repository"
 
       - name: Clone target repository
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          echo ">>> Starting: Clone target repository"
           # Clone the repository
+          echo "    Cloning from: https://github.com/${{ steps.repo_info.outputs.full_name }}.git"
           git clone https://github.com/${{ steps.repo_info.outputs.full_name }}.git target-repo
           cd target-repo
+          echo "    Configuring git user..."
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          echo "    Current directory: $(pwd)"
+          echo "    Git status:"
+          git status
+          echo ">>> Completed: Clone target repository"
 
       - name: Create branch
         run: |
+          echo ">>> Starting: Create branch"
           cd target-repo
           BRANCH_NAME="update-from-template-${{ inputs.template }}-$(date +%s)"
+          echo "    Creating branch: $BRANCH_NAME"
           git checkout -b $BRANCH_NAME
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
+          echo "==================================================================="
+          echo "Branch Name: $BRANCH_NAME"
+          echo "==================================================================="
+          echo ">>> Completed: Create branch"
 
       - name: Run createPR.js script
         run: |
+          echo ">>> Starting: Run createPR.js script"
           cd target-repo
+          echo "    Executing: node ../createPR.js \"${{ steps.repo_info.outputs.full_name }}\" \"${{ inputs.template }}\""
           node ../createPR.js "${{ steps.repo_info.outputs.full_name }}" "${{ inputs.template }}"
+          echo ">>> Completed: Run createPR.js script"
 
       - name: Commit and push changes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          echo ">>> Starting: Commit and push changes"
           cd target-repo
+          echo "    Staging all changes..."
           git add .
+          echo "    Checking for staged changes..."
           if git diff --staged --quiet; then
-            echo "No changes to commit"
+            echo "    No changes to commit"
           else
+            echo "    Changes detected, committing..."
             git commit -m "Update from template: ${{ inputs.template }}"
+            echo "    Pushing to branch: ${{ env.branch_name }}"
             git push origin ${{ env.branch_name }}
+            echo "    Changes pushed successfully"
           fi
+          echo ">>> Completed: Commit and push changes"
 
       - name: Create Pull Request
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          echo ">>> Starting: Create Pull Request"
           cd target-repo
+          echo "    Creating PR with:"
+          echo "      Title: Update from template: ${{ inputs.template }}"
+          echo "      Base: main"
+          echo "      Head: ${{ env.branch_name }}"
           gh pr create \
             --title "Update from template: ${{ inputs.template }}" \
             --body "This PR applies changes from template: ${{ inputs.template }}" \
             --base main \
-            --head ${{ env.branch_name }} || echo "PR may already exist or no changes needed"
+            --head ${{ env.branch_name }} || echo "    PR may already exist or no changes needed"
+          echo ">>> Completed: Create Pull Request"
+          echo "==================================================================="
+          echo "Workflow completed successfully"
+          echo "==================================================================="
