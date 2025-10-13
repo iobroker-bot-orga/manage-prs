@@ -12,7 +12,7 @@
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
-const { execSync } = require('child_process');
+//const { execSync } = require('child_process');
 
 // Get command line arguments
 const args = process.argv.slice(2);
@@ -28,21 +28,6 @@ const templateName = args[1];
 
 console.log(`Processing repository: ${repositoryName}`);
 console.log(`Using template: ${templateName}`);
-
-/**
- * Check if a GitHub repository exists using gh CLI
- * @param {string} repoName - Repository name in format "owner/repo"
- * @returns {boolean} - True if repository exists, false otherwise
- */
-function checkRepositoryExistsWithCLI(repoName) {
-  try {
-    // Use gh CLI to check if repository exists
-    execSync(`gh repo view ${repoName} --json name`, { stdio: 'pipe' });
-    return true;
-  } catch (error) {
-    return false;
-  }
-}
 
 /**
  * Check if a GitHub repository exists
@@ -122,24 +107,17 @@ async function main() {
     // Validate repository exists
     console.log(`Validating repository: ${repositoryName}...`);
     try {
-      // Try gh CLI first (works better in GitHub Actions)
-      let repoExists;
-      try {
-        repoExists = checkRepositoryExistsWithCLI(repositoryName);
-      } catch (cliError) {
-        // Fallback to API if CLI fails
-        repoExists = await checkRepositoryExists(repositoryName);
-      }
-      
+      repoExists = await checkRepositoryExists(repositoryName);     
       if (!repoExists) {
         console.error(`Error: Repository "${repositoryName}" does not exist or is not accessible`);
         process.exit(1);
       }
       console.log(`✓ Repository ${repositoryName} exists`);
-    } catch (error) {
+    } catch (e) {
       // If repository check fails due to API issues, log warning but continue
-      if (error.message.includes('403')) {
-        console.warn(`Warning: Could not verify repository existence (API rate limit). Proceeding anyway...`);
+      if (e.message.includes('403')) {
+        console.warn(`Error: Could not verify repository existence (API rate limit). Proceeding anyway...`);
+        process.exit(1);
       } else {
         throw error;
       }
