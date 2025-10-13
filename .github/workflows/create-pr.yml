@@ -75,7 +75,12 @@ jobs:
 
             # Verify that the fork is based on the target repository
             echo "    Verifying fork parent..."
-            FORK_PARENT=$(gh repo view "$CURRENT_USER/${{ steps.repo_info.outputs.repo }}" --json parent -q '.parent.nameWithOwner')
+            FORK_PARENT=$(gh repo view "$CURRENT_USER/${{ steps.repo_info.outputs.repo }}" --json parent -q 'if .parent then "\(.parent.owner.login)/\(.parent.name)" else "" end')
+            if [ -z "$FORK_PARENT" ]; then
+              echo "    ERROR: Repository exists but is not a fork"
+              echo "    Repository: $CURRENT_USER/${{ steps.repo_info.outputs.repo }}"
+              exit 1
+            fi
             if [ "$FORK_PARENT" != "${{ steps.repo_info.outputs.full_name }}" ]; then
               echo "    ERROR: Fork exists but is not based on ${{ steps.repo_info.outputs.full_name }}"
               echo "    Fork parent: $FORK_PARENT"
