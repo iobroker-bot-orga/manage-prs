@@ -22,11 +22,16 @@ Use the `create-pr` workflow to apply template changes to a target repository:
 2. Click **Run workflow**
 3. Enter the target repository URL (e.g., `https://github.com/owner/repo`)
 4. Enter the template name
-5. Click **Run workflow**
+5. (Optional) Enter parameter data to pass to the template
+6. Click **Run workflow**
 
 The workflow will:
 - Clone the target repository
 - Apply the template using `createPR.js`
+- Read PR title and body from the template markdown file (`templates/<template-name>.md`)
+- Create PR with title prefixed with `[iobroker-bot] ` from the first line of the template
+- Use remaining content as PR body description
+- Append template name and parameter data to PR body
 - Commit changes
 - Create a pull request
 
@@ -54,8 +59,12 @@ A weekly GitHub Action (`check-copilot-template.yml`) automatically:
 ### Scripts
 
 - **createPR.js**: Node.js script that applies template changes to repositories
-  - Usage: `node createPR.js <repository-name> <template-name>`
-  - Creates marker files to track template application
+  - Usage: `node createPR.js <repository-name> <template-name> [parameter-data]`
+  - Reads template markdown file (`templates/<template-name>.md`) to generate PR title and body
+  - First line of markdown file becomes PR title (with `[iobroker-bot] ` prefix)
+  - Remaining content becomes PR body description
+  - Appends template name and optional parameter data to PR body
+  - Creates `.pr-title` and `.pr-body` files for the workflow to use
   - Extensible for custom template logic
 
 ### Workflows
