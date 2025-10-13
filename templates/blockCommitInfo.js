@@ -3,7 +3,7 @@ const path = require("node:path");
 
 console.log( `executing ...`);
 
-const fileName = './.commitinfo';
+const fileName = './.gitignore';
 
 if (!fs.existsSync(fileName)) {
     console.log(`❌ ${fileName} does not exist, cannot create PR.`);
