@@ -106,6 +106,10 @@ jobs:
           GH_TOKEN: ${{ secrets.IOBBOT_GITHUB_TOKEN }}
         run: |
           echo ">>> Starting: Clone target repository"
+          # Get the authenticated user for fork remote
+          CURRENT_USER=$(gh api user -q .login)
+          echo "    Current user: $CURRENT_USER"
+
           # Clone the repository
           echo "    Cloning from: https://github.com/${{ steps.repo_info.outputs.full_name }}.git"
           git clone https://github.com/${{ steps.repo_info.outputs.full_name }}.git target-repo
@@ -113,7 +117,15 @@ jobs:
           echo "    Configuring git user..."
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Add fork as a remote with authentication
+          echo "    Adding fork remote..."
+          git remote add fork https://x-access-token:${GH_TOKEN}@github.com/${CURRENT_USER}/${{ steps.repo_info.outputs.repo }}.git
+          echo "    Fork remote added: ${CURRENT_USER}/${{ steps.repo_info.outputs.repo }}"
+
           echo "    Current directory: $(pwd)"
+          echo "    Git remotes:"
+          git remote -v
           echo "    Git status:"
           git status
           echo ">>> Completed: Clone target repository"
@@ -153,8 +165,8 @@ jobs:
           else
             echo "    Changes detected, committing..."
             git commit -m "Update from template: ${{ inputs.template }}"
-            echo "    Pushing to branch: ${{ env.branch_name }}"
-            git push origin ${{ env.branch_name }}
+            echo "    Pushing to fork remote, branch: ${{ env.branch_name }}"
+            git push fork ${{ env.branch_name }}
             echo "    Changes pushed successfully"
           fi
           echo ">>> Completed: Commit and push changes"
@@ -165,15 +177,19 @@ jobs:
         run: |
           echo ">>> Starting: Create Pull Request"
           cd target-repo
+          # Get the authenticated user for fork reference
+          CURRENT_USER=$(gh api user -q .login)
           echo "    Creating PR with:"
           echo "      Title: Update from template: ${{ inputs.template }}"
           echo "      Base: main"
-          echo "      Head: ${{ env.branch_name }}"
+          echo "      Head: ${CURRENT_USER}:${{ env.branch_name }}"
+          echo "      Repository: ${{ steps.repo_info.outputs.full_name }}"
           gh pr create \
+            --repo ${{ steps.repo_info.outputs.full_name }} \
             --title "Update from template: ${{ inputs.template }}" \
             --body "This PR applies changes from template: ${{ inputs.template }}" \
             --base main \
-            --head ${{ env.branch_name }} || echo "    PR may already exist or no changes needed"
+            --head "${CURRENT_USER}:${{ env.branch_name }}" || echo "    PR may already exist or no changes needed"
           echo ">>> Completed: Create Pull Request"
           echo "==================================================================="
           echo "Workflow completed successfully"
