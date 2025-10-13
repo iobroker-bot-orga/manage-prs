@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "@iobroker/eslint-config": "^2.2.0"
+  }
+}

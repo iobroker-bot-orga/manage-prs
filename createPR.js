@@ -9,9 +9,9 @@
  * template changes to a target repository.
  */
 
-const fs = require('fs');
-const path = require('path');
-const https = require('https');
+const fs = require('node:fs');
+const path = require('node:path');
+const https = require('node:https');
 //const { execSync } = require('child_process');
 
 // Get command line arguments
@@ -77,7 +77,7 @@ function checkRepositoryExists(repoName) {
  * @param {string} templateName - Name of the template
  * @returns {boolean} - True if template files exist
  */
-function checkTemplateExists(templateName) {0
+function checkTemplateExists(templateName) {
   const scriptDir = path.dirname(__filename);
   const templatePath = path.join(scriptDir, 'templates');
   
@@ -94,10 +94,11 @@ function checkTemplateExists(templateName) {0
 
   // Check if requires files exist
   for (let fileExtension of ['md', 'js']){
-    const fileName = `${templatePath}/${fileExtension}`;
+    const fileName = `${templatePath}/${templateName}.${fileExtension}`;
     if (!fs.existsSync(fileName)) {
       console.error(`Error: ${fileName} does not exist`);
       return false;
+    }
   }
 
   return true;
@@ -143,8 +144,8 @@ async function main() {
     console.log(`Created marker file: ${markerFile}`);
     
     console.log('Template application completed successfully');
-  } catch (error) {
-    console.error('Error applying template:', error.message);
+  } catch (e) {
+    console.error('Error applying template:', e.message);
     process.exit(1);
   }
 }
