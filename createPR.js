@@ -147,7 +147,7 @@ function execTemplateScript(templateName) {
 
   const cmd = `node ${templateScript}`;
   console.log(`executing ${cmd}`);
-  execSync(cmd);
+  execSync(cmd, {stdio: 'inherit'});
   return;
 }
 
@@ -215,13 +215,6 @@ async function main() {
 
     fs.writeFileSync(prBodyFile, prBody);
     console.log(`Created PR body file: ${prBodyFile}`);
-
-    // Example: Create a marker file to show the script ran
-    const markerFile = path.join(process.cwd(), ".template-applied");
-    const content = `Template: ${templateName}\nRepository: ${repositoryName}\nApplied: ${new Date().toISOString()}\n`;
-
-    fs.writeFileSync(markerFile, content);
-    console.log(`Created marker file: ${markerFile}`);
 
     console.log("Template application completed successfully");
   } catch (e) {
