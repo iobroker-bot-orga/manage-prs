@@ -150,6 +150,46 @@ jobs:
           echo "==================================================================="
           echo ">>> Completed: Create branch"
 
+      - name: Validate template files
+        run: |
+          echo ">>> Starting: Validate template files"
+          TEMPLATE_NAME="${{ inputs.template }}"
+          echo "    Checking for template: $TEMPLATE_NAME"
+          
+          # Check if templates directory exists
+          if [ ! -d "./templates" ]; then
+            echo "    ERROR: templates directory does not exist"
+            exit 1
+          fi
+          
+          # Check for required template files
+          MISSING_FILES=""
+          
+          # Check for .md file
+          if [ ! -f "./templates/${TEMPLATE_NAME}.md" ]; then
+            echo "    ERROR: ./templates/${TEMPLATE_NAME}.md does not exist"
+            MISSING_FILES="${MISSING_FILES} ${TEMPLATE_NAME}.md"
+          else
+            echo "    ✓ Found ./templates/${TEMPLATE_NAME}.md"
+          fi
+          
+          # Check for .js file
+          if [ ! -f "./templates/${TEMPLATE_NAME}.js" ]; then
+            echo "    ERROR: ./templates/${TEMPLATE_NAME}.js does not exist"
+            MISSING_FILES="${MISSING_FILES} ${TEMPLATE_NAME}.js"
+          else
+            echo "    ✓ Found ./templates/${TEMPLATE_NAME}.js"
+          fi
+          
+          # Exit if any files are missing
+          if [ -n "$MISSING_FILES" ]; then
+            echo "    ERROR: Missing required template files:$MISSING_FILES"
+            exit 1
+          fi
+          
+          echo "    All required template files exist"
+          echo ">>> Completed: Validate template files"
+
       - name: Run createPR.js script
         run: |
           echo ">>> Starting: Run createPR.js script"
