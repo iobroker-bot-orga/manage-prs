@@ -1,5 +1,7 @@
 # Template marker files
 .template-applied
+.pr-title
+.pr-body
 
 # Node modules
 node_modules/

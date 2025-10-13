@@ -11,6 +11,10 @@ on:
         description: 'Name of the template'
         required: true
         type: string
+      parameter_data:
+        description: 'Optional parameter data to pass to the template'
+        required: false
+        type: string
 
 jobs:
   create-pr:
@@ -23,6 +27,7 @@ jobs:
           echo "==================================================================="
           echo "Repository URL: ${{ inputs.repository_url }}"
           echo "Template: ${{ inputs.template }}"
+          echo "Parameter Data: ${{ inputs.parameter_data }}"
           echo "==================================================================="
 
       - name: Checkout this repository
@@ -154,8 +159,13 @@ jobs:
         run: |
           echo ">>> Starting: Run createPR.js script"
           cd target-repo
-          echo "    Executing: node ../createPR.js \"${{ steps.repo_info.outputs.full_name }}\" \"${{ inputs.template }}\""
-          node ../createPR.js "${{ steps.repo_info.outputs.full_name }}" "${{ inputs.template }}"
+          if [ -n "${{ inputs.parameter_data }}" ]; then
+            echo "    Executing: node ../createPR.js \"${{ steps.repo_info.outputs.full_name }}\" \"${{ inputs.template }}\" \"${{ inputs.parameter_data }}\""
+            node ../createPR.js "${{ steps.repo_info.outputs.full_name }}" "${{ inputs.template }}" "${{ inputs.parameter_data }}"
+          else
+            echo "    Executing: node ../createPR.js \"${{ steps.repo_info.outputs.full_name }}\" \"${{ inputs.template }}\""
+            node ../createPR.js "${{ steps.repo_info.outputs.full_name }}" "${{ inputs.template }}"
+          fi
           echo ">>> Completed: Run createPR.js script"
 
       - name: Commit and push changes
@@ -199,8 +209,26 @@ jobs:
           cd target-repo
           # Get the authenticated user for fork reference
           CURRENT_USER=$(gh api user -q .login)
+          
+          # Read PR title and body from files created by createPR.js
+          if [ -f .pr-title ]; then
+            PR_TITLE=$(cat .pr-title)
+            echo "    Using PR title from template: $PR_TITLE"
+          else
+            PR_TITLE="Update from template: ${{ inputs.template }}"
+            echo "    Using default PR title: $PR_TITLE"
+          fi
+          
+          if [ -f .pr-body ]; then
+            PR_BODY=$(cat .pr-body)
+            echo "    Using PR body from template"
+          else
+            PR_BODY="This PR applies changes from template: ${{ inputs.template }}"
+            echo "    Using default PR body"
+          fi
+          
           echo "    Creating PR with:"
-          echo "      Title: Update from template: ${{ inputs.template }}"
+          echo "      Title: $PR_TITLE"
           echo "      Base: ${{ env.default_branch }}"
           echo "      Head: ${CURRENT_USER}:${{ env.branch_name }}"
           echo "      Repository: ${{ steps.repo_info.outputs.full_name }}"
@@ -208,8 +236,8 @@ jobs:
           # Create PR and capture the exit code
           if gh pr create \
             --repo ${{ steps.repo_info.outputs.full_name }} \
-            --title "Update from template: ${{ inputs.template }}" \
-            --body "This PR applies changes from template: ${{ inputs.template }}" \
+            --title "$PR_TITLE" \
+            --body "$PR_BODY" \
             --base ${{ env.default_branch }} \
             --head "${CURRENT_USER}:${{ env.branch_name }}"; then
             echo "    Pull request created successfully"
