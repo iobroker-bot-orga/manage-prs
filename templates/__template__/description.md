@@ -4,7 +4,7 @@
 
 This PR has been created by iobroker-bot. Please review the changes carefully and merge the PR if review is ok.
 
-Feel free to contact me (@ioBroker-Bot) if you have any questions or feel that an issue is incorrectly flagged.
+Feel free to contact me (@ioBroker-Bot) if you have any questions or feel that a PR is faulty. Please open a issue at repository https://github.com/ioBroker/ioBroker.repochecker to report a faulty PR.
 
 And **THANKS A LOT** for maintaining this adapter from me and all users.
 *Let's work together for the best user experience.*
