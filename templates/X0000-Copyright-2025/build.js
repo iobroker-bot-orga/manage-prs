@@ -47,10 +47,11 @@ function updateCopyrightYear(content, section = null) {
     // Match copyright lines with year patterns
     // Pattern 1: Copyright (c) YYYY Name
     // Pattern 2: Copyright (c) YYYY - YYYY Name
-    const copyrightRegex = /Copyright\s+\(c\)\s+(\d{4})(?:\s*-\s*(\d{4}))?\s+/gi;
+    // Using word boundaries to ensure years are matched correctly
+    const copyrightRegex = /Copyright\s+\(c\)\s+(\d{4})\b(?:\s*-\s*(\d{4})\b)?(\s+)/gi;
     
     let modified = false;
-    const updatedSection = sectionContent.replace(copyrightRegex, (match, startYear, endYear) => {
+    const updatedSection = sectionContent.replace(copyrightRegex, (match, startYear, endYear, whitespace) => {
         const start = parseInt(startYear, 10);
         const end = endYear ? parseInt(endYear, 10) : null;
         const newestYear = end || start;
@@ -65,11 +66,11 @@ function updateCopyrightYear(content, section = null) {
         if (end) {
             // Already has a range, update end year
             console.log(`✔️ Updating copyright year range from ${start} - ${end} to ${start} - ${TARGET_YEAR}`);
-            return `Copyright (c) ${start} - ${TARGET_YEAR} `;
+            return `Copyright (c) ${start} - ${TARGET_YEAR}${whitespace}`;
         } else {
             // Single year, create range
             console.log(`✔️ Updating copyright year from ${start} to ${start} - ${TARGET_YEAR}`);
-            return `Copyright (c) ${start} - ${TARGET_YEAR} `;
+            return `Copyright (c) ${start} - ${TARGET_YEAR}${whitespace}`;
         }
     });
     
