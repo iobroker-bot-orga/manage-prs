@@ -30,8 +30,8 @@ const repositoryName = args[0];
 const templateName = args[1];
 const parameterData = args[2] || "";
 
-console.log(`Processing repository: ${repositoryName}`);
-console.log(`Using template: ${templateName}`);
+console.log(`ⓘ Processing repository: ${repositoryName}`);
+console.log(`ⓘ Using template: ${templateName}`);
 if (parameterData) {
   console.log(`Parameter data: ${parameterData}`);
 }
