@@ -88,7 +88,7 @@ function checkRepositoryExists(repoName) {
  */
 function checkTemplateExists(templateName) {
   const scriptDir = path.dirname(__filename);
-  const templatePath = path.join(scriptDir, "templates", templatename);
+  const templatePath = path.join(scriptDir, "templates", templateName);
 
   if (!fs.existsSync(templatePath)) {
     console.error(`Error: Template directory ${templatePath} missing`);
