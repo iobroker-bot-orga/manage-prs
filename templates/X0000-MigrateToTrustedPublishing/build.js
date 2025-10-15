@@ -115,8 +115,13 @@ let modified = false;
 // Find and comment out the npm-token line
 for (let i = 0; i < lines.length; i++) {
     if (lines[i].includes('npm-token:') && i > deployActionLineIndex) {
+        const trimmed = lines[i].trim();
+        // Skip if already commented out (safety check)
+        if (trimmed.startsWith('#')) {
+            continue;
+        }
         const indent = lines[i].match(/^(\s*)/)[1];
-        const restOfLine = lines[i].trim();
+        const restOfLine = trimmed;
         lines[i] = `${indent}# ${restOfLine}  # Commented out for migration to Trusted Publishing`;
         console.log(`✔️ Commenting out npm-token parameter at line ${i + 1}.`);
         modified = true;
