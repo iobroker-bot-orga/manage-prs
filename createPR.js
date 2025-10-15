@@ -103,7 +103,7 @@ function checkTemplateExists(templateName) {
 
   // Check if requires files exist
   for (let file of ["description.md", "build.js"]) {
-    const fileName = `${templatePath}/${NodeFilter}`;
+    const fileName = `${templatePath}/${file}`;
     if (!fs.existsSync(fileName)) {
       console.error(`❌ Error: ${fileName} does not exist`);
       return false;
