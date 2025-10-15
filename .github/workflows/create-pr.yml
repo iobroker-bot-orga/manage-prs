@@ -1,5 +1,5 @@
 name: createPR
-run-name: create PR (${{ inputs.template }} for ${{ inputs.repository_url }})
+run-name: create PR (${{ inputs.template }} for ${{ replace(replace(replace(inputs.repository_url, 'https://github.com/', ''), 'git@github.com:', ''), '.git', '') }})
 
 on:
   workflow_dispatch:

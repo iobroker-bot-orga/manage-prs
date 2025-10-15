@@ -105,6 +105,7 @@ try {
 - Add comments for complex logic sections
 - Use template literals for string formatting
 - Prefer `const` over `let` where applicable
+- **Always use single quotes (`'`) for strings, not double quotes (`"`)**
 
 ### YAML Workflows
 - Use consistent indentation (2 spaces)
