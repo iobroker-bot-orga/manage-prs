@@ -33,6 +33,15 @@ if (!workflowContent.includes('npm-token:')) {
     process.exit(0);
 }
 
+// Check if npm-token is already commented out
+// If it's already commented, we consider it as 'not present' and exit
+const npmTokenLines = workflowContent.split('\n').filter(line => line.includes('npm-token:'));
+const allCommented = npmTokenLines.every(line => line.trim().startsWith('#'));
+if (allCommented && npmTokenLines.length > 0) {
+    console.log(`ⓘ Parameter 'npm-token' is already commented out, no changes needed.`);
+    process.exit(0);
+}
+
 // Verify npm-token is actually in the deploy action context
 // Find the line with the deploy action
 let lines = workflowContent.split('\n');
@@ -59,10 +68,13 @@ for (let i = 0; i < lines.length; i++) {
                 continue;
             }
             
-            // If we're in the with block and find npm-token, we're done
+            // If we're in the with block and find npm-token (not commented out), we're done
             if (inWithBlock && line.includes('npm-token:')) {
-                foundNpmToken = true;
-                break;
+                // Check if the line is commented out
+                if (!trimmed.startsWith('#')) {
+                    foundNpmToken = true;
+                    break;
+                }
             }
             
             // If we hit a new step (line starting with '-' at similar indent) or a key at lower indent, stop
@@ -103,8 +115,13 @@ let modified = false;
 // Find and comment out the npm-token line
 for (let i = 0; i < lines.length; i++) {
     if (lines[i].includes('npm-token:') && i > deployActionLineIndex) {
+        const trimmed = lines[i].trim();
+        // Skip if already commented out (safety check)
+        if (trimmed.startsWith('#')) {
+            continue;
+        }
         const indent = lines[i].match(/^(\s*)/)[1];
-        const restOfLine = lines[i].trim();
+        const restOfLine = trimmed;
         lines[i] = `${indent}# ${restOfLine}  # Commented out for migration to Trusted Publishing`;
         console.log(`✔️ Commenting out npm-token parameter at line ${i + 1}.`);
         modified = true;
