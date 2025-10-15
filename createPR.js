@@ -13,7 +13,6 @@ const fs = require('node:fs');
 const path = require('node:path');
 const https = require('node:https');
 const { execSync } = require('child_process');
-const { exec } = require('node:child_process');
 
 // Get command line arguments
 const args = process.argv.slice(2);
@@ -139,7 +138,6 @@ function parseTemplateMarkdown(templateName) {
  * Execute template script
  *
  * @param {string} templateName - Name of the template
- * @returns {none}
  */
 function execTemplateScript(templateName) {
   const scriptDir = path.dirname(__filename);

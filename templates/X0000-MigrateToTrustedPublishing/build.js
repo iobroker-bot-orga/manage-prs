@@ -105,6 +105,93 @@ if (!foundNpmToken) {
 
 console.log(`✔️ Found 'npm-token' parameter in action 'ioBroker/testing-action-deploy@v1'.`);
 
+/**
+ * Detect the base indentation unit used in the file by analyzing the difference between nested levels
+ *
+ * @param {Array<string>} lines - The lines of the file
+ * @param {number} startIndex - Where to start looking
+ * @param {number} endIndex - Where to stop looking
+ * @returns {number} The detected base indent (e.g., 2 or 4)
+ */
+function detectBaseIndent(lines, startIndex, endIndex) {
+    const indents = [];
+    for (let i = startIndex; i < Math.min(endIndex, lines.length); i++) {
+        const line = lines[i];
+        if (line.trim().length === 0) {
+            continue;
+        }
+        const match = line.match(/^(\s+)/);
+        if (match) {
+            indents.push(match[1].length);
+        }
+    }
+
+    // Find the smallest non-zero difference between indentation levels
+    indents.sort((a, b) => a - b);
+    let minDiff = Infinity;
+    for (let i = 1; i < indents.length; i++) {
+        const diff = indents[i] - indents[i - 1];
+        if (diff > 0 && diff < minDiff) {
+            minDiff = diff;
+        }
+    }
+
+    // Default to 4 if we can't detect or if the difference is unusually large
+    // (8 is chosen as threshold because typical indents are 2, 4, or sometimes 8 spaces)
+    const MAX_REASONABLE_INDENT = 8;
+    return minDiff === Infinity || minDiff > MAX_REASONABLE_INDENT ? 4 : minDiff;
+}
+
+/**
+ * Detect the indentation for permission values (nested under permissions:)
+ *
+ * @param {Array<string>} lines - The lines of the file
+ * @param {number} jobLineIndex - Index of the job definition line
+ * @param {number} deployActionLineIndex - Index of the deploy action line
+ * @param {number} jobPropertyIndent - Indentation for job properties
+ * @param {number} permissionsLineIndex - Index of existing permissions line (-1 if none)
+ * @returns {number} The indentation level for permission values
+ */
+function detectPermissionValueIndent(lines, jobLineIndex, deployActionLineIndex, jobPropertyIndent, permissionsLineIndex) {
+    let permissionValueIndent = -1;
+
+    if (permissionsLineIndex >= 0) {
+        // Look at existing permissions values
+        for (let i = permissionsLineIndex + 1; i < deployActionLineIndex; i++) {
+            const line = lines[i];
+            const valueMatch = line.match(/^(\s+)(contents|id-token|issues|pull-requests|packages|deployments|actions|checks|statuses|discussions):/);
+            if (valueMatch) {
+                permissionValueIndent = valueMatch[1].length;
+                break;
+            }
+            // Stop if we hit another key at the same level as permissions
+            const indentMatch = line.match(/^(\s+)\w+:/);
+            if (indentMatch && indentMatch[1] && indentMatch[1].length === jobPropertyIndent) {
+                break;
+            }
+        }
+    } else {
+        // Look for existing nested values (like in strategy.matrix, etc.)
+        for (let i = jobLineIndex + 1; i < deployActionLineIndex; i++) {
+            const line = lines[i];
+            // Check for nested values under job properties
+            const nestedMatch = line.match(/^(\s+)\S/);
+            if (nestedMatch && nestedMatch[1].length > jobPropertyIndent) {
+                permissionValueIndent = nestedMatch[1].length;
+                break;
+            }
+        }
+    }
+
+    // If we couldn't detect, calculate based on base indentation
+    if (permissionValueIndent === -1) {
+        const baseIndent = detectBaseIndent(lines, 0, deployActionLineIndex);
+        permissionValueIndent = jobPropertyIndent + baseIndent;
+    }
+
+    return permissionValueIndent;
+}
+
 // Now we need to:
 // 1. Comment out the npm-token parameter
 // 2. Add/update permissions for the deploy step/job
@@ -219,16 +306,35 @@ if (stepStartIndex === -1) {
         }
     }
     
+    // Detect the indentation used for job-level properties
+    // by looking at existing properties like 'needs:', 'runs-on:', etc.
+    let jobPropertyIndent = -1;
+    for (let i = jobLineIndex + 1; i < deployActionLineIndex; i++) {
+        const line = lines[i];
+        const match = line.match(/^(\s+)(needs|runs-on|if|steps|strategy|environment|timeout-minutes|continue-on-error|container|services):/);
+        if (match) {
+            jobPropertyIndent = match[1].length;
+            console.log(`✔️ Detected job property indentation: ${jobPropertyIndent} spaces.`);
+            break;
+        }
+    }
+    
+    // If we couldn't detect from existing properties, calculate based on the base indent
+    if (jobPropertyIndent === -1) {
+        const baseIndent = detectBaseIndent(lines, 0, deployActionLineIndex);
+        jobPropertyIndent = jobIndent + baseIndent;
+        console.log(`⚠️ Could not detect indentation from existing properties, using calculated: ${jobPropertyIndent} spaces (base indent: ${baseIndent}).`);
+    }
+    
     // Look for existing permissions block within this job
     let permissionsLineIndex = -1;
     let hasPermissions = false;
     
     // Search from job start to deploy action line for permissions
-    // Permissions should be at job indent + 2
     for (let i = jobLineIndex + 1; i < deployActionLineIndex; i++) {
         const line = lines[i];
         const permMatch = line.match(/^(\s+)permissions:/);
-        if (permMatch && permMatch[1].length === jobIndent + 2) {
+        if (permMatch && permMatch[1].length === jobPropertyIndent) {
             permissionsLineIndex = i;
             hasPermissions = true;
             break;
@@ -243,11 +349,15 @@ if (stepStartIndex === -1) {
         let hasContentsWrite = false;
         let contentsLineIndex = -1;
         
+        // Detect indentation for permission values
+        const permissionValueIndent = detectPermissionValueIndent(lines, jobLineIndex, deployActionLineIndex, jobPropertyIndent, permissionsLineIndex);
+        
         // Look at lines after permissions: to find existing settings
         for (let i = permissionsLineIndex + 1; i < deployActionLineIndex; i++) {
             const line = lines[i];
             // Stop if we hit another key at the same level
-            if (line.match(/^(\s+)\w+:/) && line.match(/^(\s+)/)[1].length <= jobIndent + 2) {
+            const indentMatch = line.match(/^(\s+)\w+:/);
+            if (indentMatch && indentMatch[1] && indentMatch[1].length === jobPropertyIndent) {
                 break;
             }
             
@@ -263,13 +373,14 @@ if (stepStartIndex === -1) {
         }
         
         // Add missing permissions or update existing ones
-        const permIndent = ' '.repeat(jobIndent + 4);
+        const permIndent = ' '.repeat(permissionValueIndent);
         let insertIndex = permissionsLineIndex + 1;
         
         // Find where to insert (after last permission or right after permissions:)
         for (let i = permissionsLineIndex + 1; i < lines.length; i++) {
             const line = lines[i];
-            if (line.match(/^(\s+)\w+:/) && line.match(/^(\s+)/)[1].length <= jobIndent + 2) {
+            const indentMatch = line.match(/^(\s+)\w+:/);
+            if (indentMatch && indentMatch[1] && indentMatch[1].length === jobPropertyIndent) {
                 break;
             }
             if (line.trim().length > 0 && line.match(/^\s+\w+:/)) {
@@ -307,12 +418,20 @@ if (stepStartIndex === -1) {
     } else {
         console.log(`✔️ No existing permissions block, adding new one at job level.`);
         
-        // Add permissions block at job level (after job name, before other job keys)
-        const permIndent = ' '.repeat(jobIndent + 2);
-        const valueIndent = ' '.repeat(jobIndent + 4);
+        // Detect indentation for permission values
+        const permissionValueIndent = detectPermissionValueIndent(lines, jobLineIndex, deployActionLineIndex, jobPropertyIndent, -1);
         
-        // Find where to insert - right after the job definition line
+        // Add permissions block at job level
+        const permIndent = ' '.repeat(jobPropertyIndent);
+        const valueIndent = ' '.repeat(permissionValueIndent);
+        
+        // Find where to insert - after the job definition line but before steps
         let insertIndex = jobLineIndex + 1;
+        
+        // Skip any blank lines after the job definition
+        while (insertIndex < lines.length && lines[insertIndex].trim() === '') {
+            insertIndex++;
+        }
         
         const newPermissions = [
             `${permIndent}permissions:`,
