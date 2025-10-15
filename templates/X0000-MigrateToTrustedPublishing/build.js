@@ -33,6 +33,15 @@ if (!workflowContent.includes('npm-token:')) {
     process.exit(0);
 }
 
+// Check if npm-token is already commented out
+// If it's already commented, we consider it as 'not present' and exit
+const npmTokenLines = workflowContent.split('\n').filter(line => line.includes('npm-token:'));
+const allCommented = npmTokenLines.every(line => line.trim().startsWith('#'));
+if (allCommented && npmTokenLines.length > 0) {
+    console.log(`ⓘ Parameter 'npm-token' is already commented out, no changes needed.`);
+    process.exit(0);
+}
+
 // Verify npm-token is actually in the deploy action context
 // Find the line with the deploy action
 let lines = workflowContent.split('\n');
@@ -59,10 +68,13 @@ for (let i = 0; i < lines.length; i++) {
                 continue;
             }
             
-            // If we're in the with block and find npm-token, we're done
+            // If we're in the with block and find npm-token (not commented out), we're done
             if (inWithBlock && line.includes('npm-token:')) {
-                foundNpmToken = true;
-                break;
+                // Check if the line is commented out
+                if (!trimmed.startsWith('#')) {
+                    foundNpmToken = true;
+                    break;
+                }
             }
             
             // If we hit a new step (line starting with '-' at similar indent) or a key at lower indent, stop
