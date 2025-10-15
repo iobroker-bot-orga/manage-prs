@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       repository_url:
-        description: 'URL of the GitHub repository'
+        description: 'GitHub repository (e.g., "owner/repo" or "https://github.com/owner/repo")'
         required: true
         type: string
       template:
@@ -45,25 +45,36 @@ jobs:
       - name: Extract repository info
         id: repo_info
         run: |
-          # Extract owner and repo name from URL
-          REPO_URL="${{ inputs.repository_url }}"
+          # Extract owner and repo name from input (handles both URL and owner/repo formats)
+          REPO_INPUT="${{ inputs.repository_url }}"
           # Remove trailing .git if present
-          REPO_URL="${REPO_URL%.git}"
-          # Extract owner/repo from URL (handles both https and git@ formats)
-          if [[ $REPO_URL =~ github.com[:/]([^/]+)/([^/]+)$ ]]; then
+          REPO_INPUT="${REPO_INPUT%.git}"
+          
+          # Check if input is a full URL or just owner/repo
+          if [[ $REPO_INPUT =~ github.com[:/]([^/]+)/([^/]+)$ ]]; then
+            # Full URL format (https or git@)
             OWNER="${BASH_REMATCH[1]}"
             REPO="${BASH_REMATCH[2]}"
-            echo "owner=$OWNER" >> $GITHUB_OUTPUT
-            echo "repo=$REPO" >> $GITHUB_OUTPUT
-            echo "full_name=$OWNER/$REPO" >> $GITHUB_OUTPUT
-            echo ">>> Extracted repository info:"
-            echo "    Owner: $OWNER"
-            echo "    Repo: $REPO"
-            echo "    Full name: $OWNER/$REPO"
+            FULL_URL="https://github.com/$OWNER/$REPO"
+          elif [[ $REPO_INPUT =~ ^([^/]+)/([^/]+)$ ]]; then
+            # owner/repo format
+            OWNER="${BASH_REMATCH[1]}"
+            REPO="${BASH_REMATCH[2]}"
+            FULL_URL="https://github.com/$OWNER/$REPO"
           else
-            echo "Error: Could not parse repository URL"
+            echo "Error: Invalid repository format. Use either 'owner/repo' or 'https://github.com/owner/repo'"
             exit 1
           fi
+          
+          echo "owner=$OWNER" >> $GITHUB_OUTPUT
+          echo "repo=$REPO" >> $GITHUB_OUTPUT
+          echo "full_name=$OWNER/$REPO" >> $GITHUB_OUTPUT
+          echo "full_url=$FULL_URL" >> $GITHUB_OUTPUT
+          echo ">>> Extracted repository info:"
+          echo "    Owner: $OWNER"
+          echo "    Repo: $REPO"
+          echo "    Full name: $OWNER/$REPO"
+          echo "    Full URL: $FULL_URL"
 
       - name: Fork repository
         env:
@@ -117,8 +128,8 @@ jobs:
           echo "    Current user: $CURRENT_USER"
 
           # Clone the repository
-          echo "    Cloning from: https://github.com/${{ steps.repo_info.outputs.full_name }}.git"
-          git clone https://github.com/${{ steps.repo_info.outputs.full_name }}.git target-repo
+          echo "    Cloning from: ${{ steps.repo_info.outputs.full_url }}.git"
+          git clone ${{ steps.repo_info.outputs.full_url }}.git target-repo
           cd target-repo
           echo "    Configuring git user..."
           git config user.name "github-actions[bot]"

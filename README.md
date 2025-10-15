@@ -20,7 +20,9 @@ Use the `create-pr` workflow to apply template changes to a target repository:
 
 1. Go to **Actions** → **createPR** workflow
 2. Click **Run workflow**
-3. Enter the target repository URL (e.g., `https://github.com/owner/repo`)
+3. Enter the target repository in one of the following formats:
+   - Full URL: `https://github.com/owner/repo`
+   - Owner/Repo: `owner/repo`
 4. Enter the template name
 5. (Optional) Enter parameter data to pass to the template
 6. Click **Run workflow**
