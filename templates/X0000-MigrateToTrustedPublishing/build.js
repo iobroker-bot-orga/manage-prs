@@ -219,16 +219,39 @@ if (stepStartIndex === -1) {
         }
     }
     
+    // Detect the indentation used for job-level properties
+    // by looking at existing properties like 'needs:', 'runs-on:', etc.
+    let jobPropertyIndent = -1;
+    for (let i = jobLineIndex + 1; i < deployActionLineIndex; i++) {
+        const line = lines[i];
+        const match = line.match(/^(\s+)(needs|runs-on|if|steps|strategy|environment|timeout-minutes|continue-on-error|container|services):/);
+        if (match) {
+            jobPropertyIndent = match[1].length;
+            console.log(`✔️ Detected job property indentation: ${jobPropertyIndent} spaces.`);
+            break;
+        }
+    }
+    
+    // If we couldn't detect from existing properties, use a default based on common patterns
+    if (jobPropertyIndent === -1) {
+        // Most GitHub workflows use either 2 or 4 space indentation
+        // Detect by looking at the job indent level
+        // If jobIndent is 4, job properties are typically at 8
+        // If jobIndent is 2, job properties are typically at 4
+        const baseIndent = jobIndent === 2 ? 2 : 4;
+        jobPropertyIndent = jobIndent + baseIndent;
+        console.log(`⚠️ Could not detect indentation from existing properties, using default: ${jobPropertyIndent} spaces.`);
+    }
+    
     // Look for existing permissions block within this job
     let permissionsLineIndex = -1;
     let hasPermissions = false;
     
     // Search from job start to deploy action line for permissions
-    // Permissions should be at job indent + 2
     for (let i = jobLineIndex + 1; i < deployActionLineIndex; i++) {
         const line = lines[i];
         const permMatch = line.match(/^(\s+)permissions:/);
-        if (permMatch && permMatch[1].length === jobIndent + 2) {
+        if (permMatch && permMatch[1].length === jobPropertyIndent) {
             permissionsLineIndex = i;
             hasPermissions = true;
             break;
@@ -243,11 +266,32 @@ if (stepStartIndex === -1) {
         let hasContentsWrite = false;
         let contentsLineIndex = -1;
         
+        // Detect indentation for permission values by looking at existing permissions
+        let permissionValueIndent = -1;
+        for (let i = permissionsLineIndex + 1; i < deployActionLineIndex; i++) {
+            const line = lines[i];
+            const valueMatch = line.match(/^(\s+)(contents|id-token|issues|pull-requests|packages|deployments|actions|checks|statuses|discussions):/);
+            if (valueMatch) {
+                permissionValueIndent = valueMatch[1].length;
+                break;
+            }
+            // Stop if we hit another key at the same level as permissions
+            if (line.match(/^(\s+)\w+:/) && line.match(/^(\s+)/)[1].length === jobPropertyIndent) {
+                break;
+            }
+        }
+        
+        // If we couldn't detect from existing values, calculate based on common patterns
+        if (permissionValueIndent === -1) {
+            const baseIndent = jobIndent === 2 ? 2 : 4;
+            permissionValueIndent = jobPropertyIndent + baseIndent;
+        }
+        
         // Look at lines after permissions: to find existing settings
         for (let i = permissionsLineIndex + 1; i < deployActionLineIndex; i++) {
             const line = lines[i];
             // Stop if we hit another key at the same level
-            if (line.match(/^(\s+)\w+:/) && line.match(/^(\s+)/)[1].length <= jobIndent + 2) {
+            if (line.match(/^(\s+)\w+:/) && line.match(/^(\s+)/)[1].length === jobPropertyIndent) {
                 break;
             }
             
@@ -263,13 +307,13 @@ if (stepStartIndex === -1) {
         }
         
         // Add missing permissions or update existing ones
-        const permIndent = ' '.repeat(jobIndent + 4);
+        const permIndent = ' '.repeat(permissionValueIndent);
         let insertIndex = permissionsLineIndex + 1;
         
         // Find where to insert (after last permission or right after permissions:)
         for (let i = permissionsLineIndex + 1; i < lines.length; i++) {
             const line = lines[i];
-            if (line.match(/^(\s+)\w+:/) && line.match(/^(\s+)/)[1].length <= jobIndent + 2) {
+            if (line.match(/^(\s+)\w+:/) && line.match(/^(\s+)/)[1].length === jobPropertyIndent) {
                 break;
             }
             if (line.trim().length > 0 && line.match(/^\s+\w+:/)) {
@@ -307,12 +351,37 @@ if (stepStartIndex === -1) {
     } else {
         console.log(`✔️ No existing permissions block, adding new one at job level.`);
         
-        // Add permissions block at job level (after job name, before other job keys)
-        const permIndent = ' '.repeat(jobIndent + 2);
-        const valueIndent = ' '.repeat(jobIndent + 4);
+        // Detect indentation for permission values from other job properties
+        let permissionValueIndent = -1;
         
-        // Find where to insert - right after the job definition line
+        // Look for existing nested values (like in strategy.matrix, etc.)
+        for (let i = jobLineIndex + 1; i < deployActionLineIndex; i++) {
+            const line = lines[i];
+            // Check for nested values under job properties
+            const nestedMatch = line.match(/^(\s+)\S/);
+            if (nestedMatch && nestedMatch[1].length > jobPropertyIndent) {
+                permissionValueIndent = nestedMatch[1].length;
+                break;
+            }
+        }
+        
+        // If we couldn't detect, calculate based on indentation pattern
+        if (permissionValueIndent === -1) {
+            const baseIndent = jobIndent === 2 ? 2 : 4;
+            permissionValueIndent = jobPropertyIndent + baseIndent;
+        }
+        
+        // Add permissions block at job level
+        const permIndent = ' '.repeat(jobPropertyIndent);
+        const valueIndent = ' '.repeat(permissionValueIndent);
+        
+        // Find where to insert - after the job definition line but before steps
         let insertIndex = jobLineIndex + 1;
+        
+        // Skip any blank lines after the job definition
+        while (insertIndex < lines.length && lines[insertIndex].trim() === '') {
+            insertIndex++;
+        }
         
         const newPermissions = [
             `${permIndent}permissions:`,
