@@ -9,25 +9,25 @@
  * template changes to a target repository.
  */
 
-const fs = require("node:fs");
-const path = require("node:path");
-const https = require("node:https");
-const { execSync } = require("child_process");
+const fs = require('node:fs');
+const path = require('node:path');
+const https = require('node:https');
+const { execSync } = require('child_process');
 
 // Get command line arguments
 const args = process.argv.slice(2);
 
 if (args.length < 2) {
-  console.error("❌ Error: Missing required arguments");
+  console.error('❌ Error: Missing required arguments');
   console.error(
-    "Usage: node createPR.js <repository-name> <template-name> [parameter-data]",
+    'Usage: node createPR.js <repository-name> <template-name> [parameter-data]',
   );
   process.exit(1);
 }
 
 const repositoryName = args[0];
 const templateName = args[1];
-const parameterData = args[2] || "";
+const parameterData = args[2] || '';
 
 console.log(`ⓘ Processing repository: ${repositoryName}`);
 console.log(`ⓘ Using template: ${templateName}`);
@@ -44,20 +44,20 @@ if (parameterData) {
 function checkRepositoryExists(repoName) {
   return new Promise((resolve, reject) => {
     const headers = {
-      "User-Agent": "manage-prs-script",
-      Accept: "application/vnd.github.v3+json",
+      'User-Agent': 'manage-prs-script',
+      Accept: 'application/vnd.github.v3+json',
     };
 
     // Use GITHUB_TOKEN if available for authentication
     if (process.env.GH_TOKEN) {
       const token = process.env.GH_TOKEN;
-      headers["Authorization"] = `token ${token}`;
+      headers['Authorization'] = `token ${token}`;
     }
 
     const options = {
-      hostname: "api.github.com",
+      hostname: 'api.github.com',
       path: `/repos/${repoName}`,
-      method: "GET",
+      method: 'GET',
       headers: headers,
     };
 
@@ -67,13 +67,11 @@ function checkRepositoryExists(repoName) {
       } else if (res.statusCode === 404) {
         resolve(false);
       } else {
-        reject(
-          new Error(`❌ GitHub API returned status code: ${res.statusCode}`),
-        );
+        reject(new Error(`❌ GitHub API returned status code: ${res.statusCode}`));
       }
     });
 
-    req.on("error", (error) => {
+    req.on('error', (error) => {
       reject(error);
     });
 
@@ -89,7 +87,7 @@ function checkRepositoryExists(repoName) {
  */
 function checkTemplateExists(templateName) {
   const scriptDir = path.dirname(__filename);
-  const templatePath = path.join(scriptDir, "templates", templateName);
+  const templatePath = path.join(scriptDir, 'templates', templateName);
 
   if (!fs.existsSync(templatePath)) {
     console.error(`❌ Error: Template ${templateName} does not exist.`);
@@ -98,14 +96,12 @@ function checkTemplateExists(templateName) {
 
   // Check if it's a directory
   if (!fs.statSync(templatePath).isDirectory) {
-    console.error(
-      `❌ Error: Template directory ${templatePath} is no directory`,
-    );
+    console.error(`❌ Error: Template directory ${templatePath} is no directory`);
     return false;
   }
 
   // Check if requires files exist
-  for (let file of ["description.md", "build.js"]) {
+  for (let file of ['description.md', 'build.js']) {
     const fileName = `${templatePath}/${file}`;
     if (!fs.existsSync(fileName)) {
       console.error(`❌ Error: ${fileName} does not exist`);
@@ -124,21 +120,16 @@ function checkTemplateExists(templateName) {
  */
 function parseTemplateMarkdown(templateName) {
   const scriptDir = path.dirname(__filename);
-  const templatePath = path.join(
-    scriptDir,
-    "templates",
-    templateName,
-    "description.md",
-  );
+  const templatePath = path.join(scriptDir, 'templates', templateName, 'description.md');
 
-  const content = fs.readFileSync(templatePath, "utf-8");
-  const lines = content.split("\n");
+  const content = fs.readFileSync(templatePath, 'utf-8');
+  const lines = content.split('\n');
 
   // First line is the title
   const title = lines[0].trim();
 
   // Remaining lines are the body
-  const body = lines.slice(1).join("\n").trim();
+  const body = lines.slice(1).join('\n').trim();
 
   return { title, body };
 }
@@ -150,16 +141,11 @@ function parseTemplateMarkdown(templateName) {
  */
 function execTemplateScript(templateName) {
   const scriptDir = path.dirname(__filename);
-  const templateScript = path.join(
-    scriptDir,
-    "templates",
-    templateName,
-    "build.js",
-  );
+  const templateScript = path.join(scriptDir, 'templates', templateName, 'build.js');
 
   const cmd = `node ${templateScript}`;
   console.log(`⏳ starting ${cmd}`);
-  execSync(cmd, { stdio: "inherit" });
+  execSync(cmd, {stdio: 'inherit'});
   console.log(`✔️ finished `);
   return;
 }
@@ -186,7 +172,7 @@ async function main() {
       console.log(`✔️ Repository ${repositoryName} exists`);
     } catch (e) {
       // If repository check fails due to API issues, log warning but continue
-      if (e.message.includes("403")) {
+      if (e.message.includes('403')) {
         console.warn(
           `Warning: Could not verify repository existence (API rate limit). Continuing anyway...`,
         );
@@ -195,13 +181,14 @@ async function main() {
       }
     }
 
+
     // Execute template script
-    console.log("⚙️ Processing ...");
+    console.log('⚙️ Processing ...');
     execTemplateScript(templateName);
-    console.log("✔️ All changes applied");
+    console.log('✔️ All changes applied');
 
     // Parse template markdown file for PR title and body
-    console.log("Reading template markdown file...");
+    console.log('Reading template markdown file...');
     const templateData = parseTemplateMarkdown(templateName);
     console.log(`✔️ Template markdown exists, title: ${templateData.title}`);
 
@@ -210,23 +197,24 @@ async function main() {
 
     // Build PR body with template body, template name, and parameter data
     let prBody = templateData.body;
-    prBody += "\n\n---\n\n";
+    prBody += '\n\n---\n\n';
     prBody += `**Template**: ${templateName}\n`;
     if (parameterData) {
       prBody += `**Parameters**: ${parameterData}\n`;
     }
 
     // Write PR metadata to files for the workflow to use
-    const prTitleFile = path.join(process.cwd(), ".pr-title");
-    const prBodyFile = path.join(process.cwd(), ".pr-body");
+    const prTitleFile = path.join(process.cwd(), '.pr-title');
+    const prBodyFile = path.join(process.cwd(), '.pr-body');
 
     fs.writeFileSync(prTitleFile, prTitle);
     console.log(`✔️ Created PR title file: ${prTitleFile}`);
 
     fs.writeFileSync(prBodyFile, prBody);
     console.log(`✔️ Created PR body file: ${prBodyFile}`);
+
   } catch (e) {
-    console.error("❌ Error applying template:", e.message);
+    console.error('❌ Error applying template:', e.message);
     process.exit(1);
   }
 }
