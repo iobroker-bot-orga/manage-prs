@@ -10,6 +10,9 @@ This repository provides GitHub Actions workflows and Node.js scripts to automat
 - **Automated PR Creation**: Create pull requests in target repositories with template updates
 - **Workflow Dispatch**: Manually trigger workflows with configurable inputs
 - **Template Application**: Apply centralized template changes to any repository
+- **Smart PR Management**: Automatically handles existing PRs to avoid duplicates
+  - Closes open PRs with the same title before creating a new one
+  - Prevents PR creation if a previous PR was manually closed (respects user decision)
 - **GitHub Copilot Integration**: Enhanced with AI-powered code assistance through GitHub Copilot instructions
 
 ## Usage
@@ -31,6 +34,9 @@ The workflow will:
 - Clone the target repository
 - Apply the template using `createPR.js`
 - Read PR title and body from the template markdown file (`templates/<template-name>.md`)
+- Check for existing PRs with the same title created by iobroker-bot:
+  - Close any open PRs with the same title and add a comment
+  - Skip PR creation if a PR was previously closed by someone other than iobroker-bot (indicates changes not wanted)
 - Create PR with title prefixed with `[iobroker-bot] ` from the first line of the template
 - Use remaining content as PR body description
 - Append template name and parameter data to PR body
@@ -62,9 +68,12 @@ A weekly GitHub Action (`check-copilot-template.yml`) automatically:
 
 - **createPR.js**: Node.js script that applies template changes to repositories
   - Usage: `node createPR.js <repository-name> <template-name> [parameter-data]`
-  - Reads template markdown file (`templates/<template-name>.md`) to generate PR title and body
+  - Reads template markdown file (`templates/<template-name>/description.md`) to generate PR title and body
   - First line of markdown file becomes PR title (with `[iobroker-bot] ` prefix)
   - Remaining content becomes PR body description
+  - Checks for existing PRs with the same title:
+    - Closes open PRs created by iobroker-bot and adds a comment about the new PR
+    - Prevents PR creation if a PR was previously closed by someone other than iobroker-bot
   - Appends template name and optional parameter data to PR body
   - Creates `.pr-title` and `.pr-body` files for the workflow to use
   - Extensible for custom template logic
