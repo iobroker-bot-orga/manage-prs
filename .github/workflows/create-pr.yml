@@ -120,7 +120,7 @@ jobs:
 
       - name: Clone target repository
         env:
-          GH_TOKEN: ${{ secrets.IOBBOT_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.IOBBOT_GITHUB_TOKEN_WITH_WF }}
         run: |
           echo ">>> Starting: Clone target repository"
           # Get the authenticated user for fork remote
@@ -177,7 +177,7 @@ jobs:
 
       - name: Commit and push changes
         env:
-          GH_TOKEN: ${{ secrets.IOBBOT_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.IOBBOT_GITHUB_TOKEN_WITH_WF }}
         run: |
           echo ">>> Starting: Commit and push changes"
           cd target-repo
@@ -199,7 +199,7 @@ jobs:
 
       - name: Create Pull Request
         env:
-          GH_TOKEN: ${{ secrets.IOBBOT_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.IOBBOT_GITHUB_TOKEN_WITH_WF }}
         run: |
           echo ">>> Starting: Create Pull Request"
           
