@@ -1,23 +1,14 @@
-const fs = require("node:fs");
-const path = require("node:path");
+// This script implements the required changes for a PR 
+// The working directory is set to the root of the repository.
+// The script must exist with status 0 if everything is ok.PR
+// if no change is to be applied for any reason the script must not change any files. This will prohibit creation of an PR. 
 
-const fileName = './.gitignore';
+// @copilot:
+// Please add code to modify things as required.
+// Please add logs stating success like this:
+//   console.log( `✓ ${fileName} exists.`);
 
-if (!fs.existsSync(fileName)) {
-    console.log(`❌ ${fileName} does not exist, cannot create PR.`);
-    process.exit (0);
-}
-
-console.log( `✓ ${fileName} exists.`);
-
-let fileContent = fs.readFileSync(fileName, 'utf8');
-if (fileContent.includes('.commitinfo')) {
-    console.log( `✓ ${fileName} already contains ".commitinfo", no need for a PR.`);
-    process.exit(0);
-}
-
-fs.appendFileSync(fileName, '\n#ignore .commitinfo created by ioBroker release script\n.commitinfo\n');
-console.log( `✓ .commitinfo appended to ${fileName}. PR will be created`);
+console.log( `✓ processing completed`);
 
 process.exit(0);
 
