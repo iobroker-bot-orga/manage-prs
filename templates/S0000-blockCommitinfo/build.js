@@ -1,11 +1,10 @@
 const fs = require("node:fs");
-const path = require("node:path");
 
 const fileName = './.gitignore';
 
 if (!fs.existsSync(fileName)) {
     console.log(`❌ ${fileName} does not exist, cannot create PR.`);
-    process.exit (0);
+    process.exit(0);
 }
 
 console.log( `✓ ${fileName} exists.`);
