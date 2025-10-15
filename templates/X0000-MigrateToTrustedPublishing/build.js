@@ -123,6 +123,101 @@ console.log(
   `✔️ Found 'npm-token' parameter in action 'ioBroker/testing-action-deploy@v1'.`,
 );
 
+/**
+ * Detect the base indentation unit used in the file by analyzing the difference between nested levels
+ *
+ * @param {Array<string>} lines - The lines of the file
+ * @param {number} startIndex - Where to start looking
+ * @param {number} endIndex - Where to stop looking
+ * @returns {number} The detected base indent (e.g., 2 or 4)
+ */
+function detectBaseIndent(lines, startIndex, endIndex) {
+  const indents = [];
+  for (let i = startIndex; i < Math.min(endIndex, lines.length); i++) {
+    const line = lines[i];
+    if (line.trim().length === 0) {
+      continue;
+    }
+    const match = line.match(/^(\s+)/);
+    if (match) {
+      indents.push(match[1].length);
+    }
+  }
+
+  // Find the smallest non-zero difference between indentation levels
+  indents.sort((a, b) => a - b);
+  let minDiff = Infinity;
+  for (let i = 1; i < indents.length; i++) {
+    const diff = indents[i] - indents[i - 1];
+    if (diff > 0 && diff < minDiff) {
+      minDiff = diff;
+    }
+  }
+
+  // Default to 4 if we can't detect
+  return minDiff === Infinity || minDiff > 8 ? 4 : minDiff;
+}
+
+/**
+ * Detect the indentation for permission values (nested under permissions:)
+ *
+ * @param {Array<string>} lines - The lines of the file
+ * @param {number} jobLineIndex - Index of the job definition line
+ * @param {number} deployActionLineIndex - Index of the deploy action line
+ * @param {number} jobPropertyIndent - Indentation for job properties
+ * @param {number} permissionsLineIndex - Index of existing permissions line (-1 if none)
+ * @returns {number} The indentation level for permission values
+ */
+function detectPermissionValueIndent(
+  lines,
+  jobLineIndex,
+  deployActionLineIndex,
+  jobPropertyIndent,
+  permissionsLineIndex,
+) {
+  let permissionValueIndent = -1;
+
+  if (permissionsLineIndex >= 0) {
+    // Look at existing permissions values
+    for (let i = permissionsLineIndex + 1; i < deployActionLineIndex; i++) {
+      const line = lines[i];
+      const valueMatch = line.match(
+        /^(\s+)(contents|id-token|issues|pull-requests|packages|deployments|actions|checks|statuses|discussions):/,
+      );
+      if (valueMatch) {
+        permissionValueIndent = valueMatch[1].length;
+        break;
+      }
+      // Stop if we hit another key at the same level as permissions
+      if (
+        line.match(/^(\s+)\w+:/) &&
+        line.match(/^(\s+)/)[1].length === jobPropertyIndent
+      ) {
+        break;
+      }
+    }
+  } else {
+    // Look for existing nested values (like in strategy.matrix, etc.)
+    for (let i = jobLineIndex + 1; i < deployActionLineIndex; i++) {
+      const line = lines[i];
+      // Check for nested values under job properties
+      const nestedMatch = line.match(/^(\s+)\S/);
+      if (nestedMatch && nestedMatch[1].length > jobPropertyIndent) {
+        permissionValueIndent = nestedMatch[1].length;
+        break;
+      }
+    }
+  }
+
+  // If we couldn't detect, calculate based on base indentation
+  if (permissionValueIndent === -1) {
+    const baseIndent = detectBaseIndent(lines, 0, deployActionLineIndex);
+    permissionValueIndent = jobPropertyIndent + baseIndent;
+  }
+
+  return permissionValueIndent;
+}
+
 // Now we need to:
 // 1. Comment out the npm-token parameter
 // 2. Add/update permissions for the deploy step/job
@@ -260,16 +355,12 @@ if (stepStartIndex === -1) {
     }
   }
 
-  // If we couldn't detect from existing properties, use a default based on common patterns
+  // If we couldn't detect from existing properties, calculate based on the base indent
   if (jobPropertyIndent === -1) {
-    // Most GitHub workflows use either 2 or 4 space indentation
-    // Detect by looking at the job indent level
-    // If jobIndent is 4, job properties are typically at 8
-    // If jobIndent is 2, job properties are typically at 4
-    const baseIndent = jobIndent === 2 ? 2 : 4;
+    const baseIndent = detectBaseIndent(lines, 0, deployActionLineIndex);
     jobPropertyIndent = jobIndent + baseIndent;
     console.log(
-      `⚠️ Could not detect indentation from existing properties, using default: ${jobPropertyIndent} spaces.`,
+      `⚠️ Could not detect indentation from existing properties, using calculated: ${jobPropertyIndent} spaces (base indent: ${baseIndent}).`,
     );
   }
 
@@ -298,31 +389,14 @@ if (stepStartIndex === -1) {
     let hasContentsWrite = false;
     let contentsLineIndex = -1;
 
-    // Detect indentation for permission values by looking at existing permissions
-    let permissionValueIndent = -1;
-    for (let i = permissionsLineIndex + 1; i < deployActionLineIndex; i++) {
-      const line = lines[i];
-      const valueMatch = line.match(
-        /^(\s+)(contents|id-token|issues|pull-requests|packages|deployments|actions|checks|statuses|discussions):/,
-      );
-      if (valueMatch) {
-        permissionValueIndent = valueMatch[1].length;
-        break;
-      }
-      // Stop if we hit another key at the same level as permissions
-      if (
-        line.match(/^(\s+)\w+:/) &&
-        line.match(/^(\s+)/)[1].length === jobPropertyIndent
-      ) {
-        break;
-      }
-    }
-
-    // If we couldn't detect from existing values, calculate based on common patterns
-    if (permissionValueIndent === -1) {
-      const baseIndent = jobIndent === 2 ? 2 : 4;
-      permissionValueIndent = jobPropertyIndent + baseIndent;
-    }
+    // Detect indentation for permission values
+    const permissionValueIndent = detectPermissionValueIndent(
+      lines,
+      jobLineIndex,
+      deployActionLineIndex,
+      jobPropertyIndent,
+      permissionsLineIndex,
+    );
 
     // Look at lines after permissions: to find existing settings
     for (let i = permissionsLineIndex + 1; i < deployActionLineIndex; i++) {
@@ -396,25 +470,14 @@ if (stepStartIndex === -1) {
       `✔️ No existing permissions block, adding new one at job level.`,
     );
 
-    // Detect indentation for permission values from other job properties
-    let permissionValueIndent = -1;
-
-    // Look for existing nested values (like in strategy.matrix, etc.)
-    for (let i = jobLineIndex + 1; i < deployActionLineIndex; i++) {
-      const line = lines[i];
-      // Check for nested values under job properties
-      const nestedMatch = line.match(/^(\s+)\S/);
-      if (nestedMatch && nestedMatch[1].length > jobPropertyIndent) {
-        permissionValueIndent = nestedMatch[1].length;
-        break;
-      }
-    }
-
-    // If we couldn't detect, calculate based on indentation pattern
-    if (permissionValueIndent === -1) {
-      const baseIndent = jobIndent === 2 ? 2 : 4;
-      permissionValueIndent = jobPropertyIndent + baseIndent;
-    }
+    // Detect indentation for permission values
+    const permissionValueIndent = detectPermissionValueIndent(
+      lines,
+      jobLineIndex,
+      deployActionLineIndex,
+      jobPropertyIndent,
+      -1,
+    );
 
     // Add permissions block at job level
     const permIndent = " ".repeat(jobPropertyIndent);
