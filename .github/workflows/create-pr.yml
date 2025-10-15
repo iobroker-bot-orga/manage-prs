@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       repository_url:
-        description: 'GitHub repository (e.g., "owner/repo" or "https://github.com/owner/repo")'
+        description: 'GitHub repository (formats: "owner/repo", "https://github.com/owner/repo", or "git@github.com:owner/repo")'
         required: true
         type: string
       template:
