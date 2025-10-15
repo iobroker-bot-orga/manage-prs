@@ -19,7 +19,7 @@ const { exec } = require("node:child_process");
 const args = process.argv.slice(2);
 
 if (args.length < 2) {
-  console.error("Error: Missing required arguments");
+  console.error("❌ Error: Missing required arguments");
   console.error(
     "Usage: node createPR.js <repository-name> <template-name> [parameter-data]",
   );
@@ -68,7 +68,7 @@ function checkRepositoryExists(repoName) {
       } else if (res.statusCode === 404) {
         resolve(false);
       } else {
-        reject(new Error(`GitHub API returned status code: ${res.statusCode}`));
+        reject(new Error(`❌ GitHub API returned status code: ${res.statusCode}`));
       }
     });
 
@@ -91,13 +91,13 @@ function checkTemplateExists(templateName) {
   const templatePath = path.join(scriptDir, "templates", templateName);
 
   if (!fs.existsSync(templatePath)) {
-    console.error(`Error: Template directory ${templatePath} missing`);
+    console.error(`❌ Error: Template ${templateName} does not exist.`);
     return false;
   }
 
   // Check if it's a directory
   if (!fs.statSync(templatePath).isDirectory) {
-    console.error(`Error: Template directory ${templatePath} is no directory`);
+    console.error(`❌ Error: Template directory ${templatePath} is no directory`);
     return false;
   }
 
@@ -105,7 +105,7 @@ function checkTemplateExists(templateName) {
   for (let file of ["description.md", "build.js"]) {
     const fileName = `${templatePath}/${NodeFilter}`;
     if (!fs.existsSync(fileName)) {
-      console.error(`Error: ${fileName} does not exist`);
+      console.error(`❌ Error: ${fileName} does not exist`);
       return false;
     }
   }
@@ -166,7 +166,7 @@ async function main() {
       const repoExists = await checkRepositoryExists(repositoryName);
       if (!repoExists) {
         console.error(
-          `Error: Repository "${repositoryName}" does not exist or is not accessible`,
+          `❌ Error: Repository "${repositoryName}" does not exist or is not accessible`,
         );
         process.exit(1);
       }
@@ -215,7 +215,7 @@ async function main() {
     console.log(`✔️ Created PR body file: ${prBodyFile}`);
 
   } catch (e) {
-    console.error("Error applying template:", e.message);
+    console.error("❌ Error applying template:", e.message);
     process.exit(1);
   }
 }
