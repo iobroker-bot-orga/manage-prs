@@ -62,7 +62,7 @@ jobs:
             REPO="${BASH_REMATCH[2]}"
             FULL_URL="https://github.com/$OWNER/$REPO"
           else
-            echo "Error: Invalid repository format. Use either 'owner/repo' or 'https://github.com/owner/repo'"
+            echo "Error: Invalid repository format. Use 'owner/repo', 'https://github.com/owner/repo', or 'git@github.com:owner/repo'"
             exit 1
           fi
           
