@@ -78,7 +78,7 @@ jobs:
 
       - name: Fork repository
         env:
-          GH_TOKEN: ${{ secrets.IOBBOT_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.IOBBOT_GITHUB_TOKEN_WITH_WF }}
         run: |
           echo ">>> Starting: Fork repository"
           # Get the authenticated user
