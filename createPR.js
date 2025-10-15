@@ -88,7 +88,7 @@ function checkRepositoryExists(repoName) {
  */
 function checkTemplateExists(templateName) {
   const scriptDir = path.dirname(__filename);
-  const templatePath = path.join(scriptDir, "templates");
+  const templatePath = path.join(scriptDir, "templates", templatename);
 
   if (!fs.existsSync(templatePath)) {
     console.error(`Error: Template directory ${templatePath} missing`);
@@ -102,8 +102,8 @@ function checkTemplateExists(templateName) {
   }
 
   // Check if requires files exist
-  for (let fileExtension of ["md", "js"]) {
-    const fileName = `${templatePath}/${templateName}.${fileExtension}`;
+  for (let file of ["description.md", "build.js"]) {
+    const fileName = `${templatePath}/${NodeFilter}`;
     if (!fs.existsSync(fileName)) {
       console.error(`Error: ${fileName} does not exist`);
       return false;
@@ -155,15 +155,13 @@ function execTemplateScript(templateName) {
 async function main() {
   try {
     // Validate template exists first (doesn't require API call)
-    console.log(`Validating template: ${templateName}...`);
     const templateExists = checkTemplateExists(templateName);
     if (!templateExists) {
       process.exit(1);
     }
-    console.log(`✓ Template files exist`);
+    console.log(`✔️ Template files for template ${templateName} exist`);
 
     // Validate repository exists
-    console.log(`Validating repository: ${repositoryName}...`);
     try {
       const repoExists = await checkRepositoryExists(repositoryName);
       if (!repoExists) {
@@ -172,7 +170,7 @@ async function main() {
         );
         process.exit(1);
       }
-      console.log(`✓ Repository ${repositoryName} exists`);
+      console.log(`✔️ Repository ${repositoryName} exists`);
     } catch (e) {
       // If repository check fails due to API issues, log warning but continue
       if (e.message.includes("403")) {
@@ -184,15 +182,16 @@ async function main() {
       }
     }
 
-    console.log("Processing ...");
 
     // Execute template script
+    console.log("⚙️ Processing ...");
     execTemplateScript(templateName);
+    console.log("✔️ All changes applied");
 
     // Parse template markdown file for PR title and body
     console.log("Reading template markdown file...");
     const templateData = parseTemplateMarkdown(templateName);
-    console.log(`✓ Template title: ${templateData.title}`);
+    console.log(`✔️ Template markdown exists, title: ${templateData.title}`);
 
     // Prepend '[iobroker-bot] ' to the title
     const prTitle = `[iobroker-bot] ${templateData.title}`;
@@ -210,13 +209,11 @@ async function main() {
     const prBodyFile = path.join(process.cwd(), ".pr-body");
 
     fs.writeFileSync(prTitleFile, prTitle);
-    console.log(`Created PR title file: ${prTitleFile}`);
-    console.log(`PR Title: ${prTitle}`);
+    console.log(`✔️ Created PR title file: ${prTitleFile}`);
 
     fs.writeFileSync(prBodyFile, prBody);
-    console.log(`Created PR body file: ${prBodyFile}`);
+    console.log(`✔️ Created PR body file: ${prBodyFile}`);
 
-    console.log("Template application completed successfully");
   } catch (e) {
     console.error("Error applying template:", e.message);
     process.exit(1);

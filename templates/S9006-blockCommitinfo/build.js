@@ -1,8 +1,6 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
-console.log( `executing ...`);
-
 const fileName = './.gitignore';
 
 if (!fs.existsSync(fileName)) {
