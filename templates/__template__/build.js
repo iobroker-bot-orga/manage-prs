@@ -6,9 +6,12 @@
 // @copilot:
 // Please add code to modify things as required.
 // Please add logs stating success like this:
-//   console.log( `✓ ${fileName} exists.`);
+//   console.log( `✔️ ${fileName} exists.`);
+// Please add logs stating error like this:
+//   console.log(`❌ There is a problem.`);
 
-console.log( `✓ processing completed`);
+
+console.log( `✔️ processing completed`);
 
 process.exit(0);
 
