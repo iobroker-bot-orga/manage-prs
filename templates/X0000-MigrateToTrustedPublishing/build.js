@@ -154,8 +154,10 @@ function detectBaseIndent(lines, startIndex, endIndex) {
     }
   }
 
-  // Default to 4 if we can't detect
-  return minDiff === Infinity || minDiff > 8 ? 4 : minDiff;
+  // Default to 4 if we can't detect or if the difference is unusually large
+  // (8 is chosen as threshold because typical indents are 2, 4, or sometimes 8 spaces)
+  const MAX_REASONABLE_INDENT = 8;
+  return minDiff === Infinity || minDiff > MAX_REASONABLE_INDENT ? 4 : minDiff;
 }
 
 /**
@@ -189,9 +191,11 @@ function detectPermissionValueIndent(
         break;
       }
       // Stop if we hit another key at the same level as permissions
+      const indentMatch = line.match(/^(\s+)\w+:/);
       if (
-        line.match(/^(\s+)\w+:/) &&
-        line.match(/^(\s+)/)[1].length === jobPropertyIndent
+        indentMatch &&
+        indentMatch[1] &&
+        indentMatch[1].length === jobPropertyIndent
       ) {
         break;
       }
@@ -402,9 +406,11 @@ if (stepStartIndex === -1) {
     for (let i = permissionsLineIndex + 1; i < deployActionLineIndex; i++) {
       const line = lines[i];
       // Stop if we hit another key at the same level
+      const indentMatch = line.match(/^(\s+)\w+:/);
       if (
-        line.match(/^(\s+)\w+:/) &&
-        line.match(/^(\s+)/)[1].length === jobPropertyIndent
+        indentMatch &&
+        indentMatch[1] &&
+        indentMatch[1].length === jobPropertyIndent
       ) {
         break;
       }
@@ -427,9 +433,11 @@ if (stepStartIndex === -1) {
     // Find where to insert (after last permission or right after permissions:)
     for (let i = permissionsLineIndex + 1; i < lines.length; i++) {
       const line = lines[i];
+      const indentMatch = line.match(/^(\s+)\w+:/);
       if (
-        line.match(/^(\s+)\w+:/) &&
-        line.match(/^(\s+)/)[1].length === jobPropertyIndent
+        indentMatch &&
+        indentMatch[1] &&
+        indentMatch[1].length === jobPropertyIndent
       ) {
         break;
       }
