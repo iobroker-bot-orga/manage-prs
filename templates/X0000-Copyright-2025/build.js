@@ -48,7 +48,8 @@ function updateCopyrightYear(content, section = null) {
     // Pattern 1: Copyright (c) YYYY Name
     // Pattern 2: Copyright (c) YYYY - YYYY Name
     // Using word boundaries to ensure years are matched correctly
-    const copyrightRegex = /Copyright\s+\(c\)\s+(\d{4})\b(?:\s*-\s*(\d{4})\b)?(\s+)/gi;
+    // Whitespace after year is optional to handle end-of-line cases
+    const copyrightRegex = /Copyright\s+\(c\)\s+(\d{4})\b(?:\s*-\s*(\d{4})\b)?(\s*)/gi;
     
     let modified = false;
     const updatedSection = sectionContent.replace(copyrightRegex, (match, startYear, endYear, whitespace) => {
