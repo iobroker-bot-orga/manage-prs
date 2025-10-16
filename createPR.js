@@ -145,7 +145,7 @@ function execTemplateScript (templateName, repositoryName, parameterData) {
   const scriptDir = path.dirname(__filename);
   const templateScript = path.join(scriptDir, 'templates', templateName, 'build.js');
 
-  const cmd = `node ${templateScript} ${templateName}, ${repositoryName}, ${parameterData}`;
+  const cmd = `node ${templateScript} ${templateName} ${repositoryName} ${parameterData}`;
   console.log(`⏳ starting ${cmd}`);
   execSync(cmd, {stdio: 'inherit'});
   console.log(`✔️ finished `);
