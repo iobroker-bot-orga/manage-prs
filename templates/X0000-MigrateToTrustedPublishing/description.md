@@ -53,6 +53,8 @@ To complete the migration to Trusted Publishing, you need to configure it in you
      - **Workflow name**: `test-and-release.yml` (or the name of your release workflow)
      - **Environment**: Leave blank unless you use GitHub Environments in your workflow
 
+     **IMPORTANT: all input is casesensitive!**
+     
 4. **Save the configuration**
 
 5. **Merge this PR** and test the release process
