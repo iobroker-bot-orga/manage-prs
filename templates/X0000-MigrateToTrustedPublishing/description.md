@@ -48,8 +48,8 @@ To complete the migration to Trusted Publishing, you need to configure it in you
    - Scroll down to the "Publishing access" section
    - Click on "Automate publishing with GitHub Actions" or "Add trusted publisher"
    - Fill in the required information:
-     - **Repository owner**: Your GitHub username or organization (e.g., `%OWNER%`)
-     - **Repository name**: Your adapter repository name (e.g., `%REPONAME%`)
+     - **Repository owner**: Your GitHub username or organization (should be `%OWNER%`)
+     - **Repository name**: Your adapter repository name (should be `%REPONAME%`)
      - **Workflow name**: `test-and-release.yml` (or the name of your release workflow)
      - **Environment**: Leave blank unless you use GitHub Environments in your workflow
 
