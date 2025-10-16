@@ -7,6 +7,17 @@ const fs = require('node:fs');
 
 const workflowPath = '.github/workflows/test-and-release.yml';
 
+const args = process.argv.slice(2);
+
+if (args.length < 2) {
+  console.error('❌ Error: Missing required arguments');
+  process.exit(1);
+}
+
+const templateName = args[0];
+const repositoryName = args[1];
+const parameterData = args[2] || '';
+
 // Check if test-and-release.yml exists
 if (!fs.existsSync(workflowPath)) {
     console.log(`ⓘ ${workflowPath} does not exist, no changes needed.`);
@@ -453,6 +464,14 @@ if (modified) {
 } else {
     console.log(`ⓘ No changes were made to ${workflowPath}.`);
 }
+
+// update documentation
+const [owner, repoName] = split( repositoryName, '/');
+const prBodyFile = path.join(process.cwd(), '.pr-body');
+const prBody = fs.readFileSync(prBodyFile, 'utf-8');
+prBody = prBody.replaceAll('%OWNER%', owner).replaceAll('%REPONAME%', repoName);
+fs.writeFileSync(prBodyFile, prBody);
+console.log(`✔️ Updated PR body file: ${prBodyFile}`);
 
 console.log(`✔️ processing completed`);
 

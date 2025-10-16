@@ -138,12 +138,14 @@ function parseTemplateMarkdown(templateName) {
  * Execute template script
  *
  * @param {string} templateName - Name of the template
+ * @param {string} repositoryName - Name of repository (owner/name)
+ * @param {string} paramaterData - parameters
  */
-function execTemplateScript(templateName) {
+function execTemplateScript (templateName, repositoryName, parameterData) {
   const scriptDir = path.dirname(__filename);
   const templateScript = path.join(scriptDir, 'templates', templateName, 'build.js');
 
-  const cmd = `node ${templateScript}`;
+  const cmd = `node ${templateScript} ${templateName}, ${repositoryName}, ${parameterData}`;
   console.log(`⏳ starting ${cmd}`);
   execSync(cmd, {stdio: 'inherit'});
   console.log(`✔️ finished `);
@@ -181,12 +183,6 @@ async function main() {
       }
     }
 
-
-    // Execute template script
-    console.log('⚙️ Processing ...');
-    execTemplateScript(templateName);
-    console.log('✔️ All changes applied');
-
     // Parse template markdown file for PR title and body
     console.log('Reading template markdown file...');
     const templateData = parseTemplateMarkdown(templateName);
@@ -213,7 +209,11 @@ async function main() {
     fs.writeFileSync(prBodyFile, prBody);
     console.log(`✔️ Created PR body file: ${prBodyFile}`);
 
-  } catch (e) {
+    // Execute template script
+    console.log('⚙️ Processing ...');
+    execTemplateScript(templateName, repositoryName, parameterData);
+    console.log('✔️ All changes applied');
+
     console.error('❌ Error applying template:', e.message);
     process.exit(1);
   }
