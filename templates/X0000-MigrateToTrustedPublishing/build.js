@@ -4,6 +4,7 @@
 // if no change is to be applied for any reason the script must not change any files. This will prohibit creation of an PR. 
 
 const fs = require('node:fs');
+const path = require('node:path');
 
 const workflowPath = '.github/workflows/test-and-release.yml';
 
