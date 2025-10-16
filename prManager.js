@@ -118,13 +118,13 @@ function findPRsByTitle(title) {
   // Search for PRs with exact title match created by current user (iobroker-bot)
   // Use query string format with all qualifiers in the search query
   // The search query is wrapped in single quotes, and the title is in double quotes within it
-  const searchQuery = `repo:${repositoryName} author:@me in:title "${escapedTitle}"`;
+  const searchQuery = `"${escapedTitle}" in:title`;
   
   // Replace single quotes in searchQuery with '\'' for safe bash execution
   const safeSearchQuery = searchQuery.replace(/'/g, "'\\''");
   
   const output = executeGhCommand(
-    `gh search prs --json number,title --limit 100 '${safeSearchQuery}'`,
+    `gh search prs --json number,title --limit 100 --repo ${repositoryName} --author: @me '${safeSearchQuery}'`,
   );
   console.log(`DEBUG: ${output}`);
   const prs = JSON.parse(output);
