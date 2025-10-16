@@ -60,5 +60,5 @@ To complete the migration to Trusted Publishing, you need to configure it in you
 6. **Remove the NPM_TOKEN secret** from your GitHub repository settings (optional, after confirming everything works)
 
 For more information, see:
-- [NPM Trusted Publishing documentation](https://docs.npmjs.com/generating-provenance-statements)
+- [NPM Trusted Publishing documentation](https://docs.npmjs.com/trusted-publishers)
 - [GitHub Actions OIDC documentation](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect)
