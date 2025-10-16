@@ -110,7 +110,7 @@ function findPRsByTitle(title) {
   // Search for PRs with exact title match created by current user (iobroker-bot)
   const searchQuery = `is:pr repo:${repositoryName} author:@me in:title "${escapedTitle}"`;
   const output = executeGhCommand(
-    `gh search prs --json number,title,state,closedAt --repo ${repositoryName} --limit 100 -- "${searchQuery}"`,
+    `gh search prs --json number,title --repo ${repositoryName} --limit 100 -- "${searchQuery}"`,
   );
   
   const prs = JSON.parse(output);
