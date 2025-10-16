@@ -214,6 +214,7 @@ async function main() {
     execTemplateScript(templateName, repositoryName, parameterData);
     console.log('✔️ All changes applied');
 
+  } catch (e) {
     console.error('❌ Error applying template:', e.message);
     process.exit(1);
   }
