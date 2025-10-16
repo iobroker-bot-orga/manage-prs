@@ -124,7 +124,7 @@ function findPRsByTitle(title) {
   const safeSearchQuery = searchQuery.replace(/'/g, "'\\''");
   
   const output = executeGhCommand(
-    `gh search prs --json number,title --limit 100 --repo ${repositoryName} --author: @me '${safeSearchQuery}'`,
+    `gh search prs --json number,title --limit 100 --repo ${repositoryName} --author @me '${safeSearchQuery}'`,
   );
   console.log(`DEBUG: ${output}`);
   const prs = JSON.parse(output);
