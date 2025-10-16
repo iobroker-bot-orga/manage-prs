@@ -77,8 +77,11 @@ console.log(`ⓘ Head Branch: ${headBranch}`);
  * @returns {string} Command output
  */
 function executeGhCommand(command) {
+  console.log(`DEBUG: (GH-CMD) ${command}`);
   try {
-    return execSync(command, { encoding: 'utf-8' });
+    const res = execSync(command, { encoding: 'utf-8' });
+    console.log(`DEBUG: (GH-RES) ${command}`);
+    return res;
   } catch (error) {
     console.error(`❌ Error executing command: ${command}`);
     console.error(error.message);
