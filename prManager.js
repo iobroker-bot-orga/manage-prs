@@ -104,41 +104,35 @@ function getCurrentUser() {
  * @returns {Array} Array of PR objects with number, state, merged status, and closed_by
  */
 function findPRsByTitle(title) {
-  try {
-    // Escape title for JSON query
-    const escapedTitle = title.replace(/"/g, '\\"');
-    
-    // Search for PRs with exact title match created by current user (iobroker-bot)
-    const searchQuery = `is:pr repo:${repositoryName} author:@me in:title "${escapedTitle}"`;
-    const output = executeGhCommand(
-      `gh search prs --json number,title,state,closed,closedAt --repo ${repositoryName} --limit 100 -- "${searchQuery}"`,
-    );
-    
-    const prs = JSON.parse(output);
-    
-    // Filter for exact title match and get additional details
-    const matchingPRs = prs
-      .filter((pr) => pr.title === title)
-      .map((pr) => {
-        // Get detailed PR info including merge status and who closed it
-        const detailsOutput = executeGhCommand(
-          `gh pr view ${pr.number} --repo ${repositoryName} --json number,state,merged,closedBy`,
-        );
-        const details = JSON.parse(detailsOutput);
-        return {
-          number: details.number,
-          state: details.state.toUpperCase(),
-          merged: details.merged || false,
-          closedBy: details.closedBy ? details.closedBy.login : null,
-        };
-      });
-    
-    return matchingPRs;
-  } catch (error) {
-    // If search fails, return empty array
-    console.log('⚠️  Warning: Could not search for existing PRs');
-    return [];
-  }
+  // Escape title for JSON query
+  const escapedTitle = title.replace(/"/g, '\\"');
+  
+  // Search for PRs with exact title match created by current user (iobroker-bot)
+  const searchQuery = `is:pr repo:${repositoryName} author:@me in:title "${escapedTitle}"`;
+  const output = executeGhCommand(
+    `gh search prs --json number,title,state,closedAt --repo ${repositoryName} --limit 100 -- "${searchQuery}"`,
+  );
+  
+  const prs = JSON.parse(output);
+  
+  // Filter for exact title match and get additional details
+  const matchingPRs = prs
+    .filter((pr) => pr.title === title)
+    .map((pr) => {
+      // Get detailed PR info including merge status and who closed it
+      const detailsOutput = executeGhCommand(
+        `gh pr view ${pr.number} --repo ${repositoryName} --json number,state,merged,closedBy`,
+      );
+      const details = JSON.parse(detailsOutput);
+      return {
+        number: details.number,
+        state: details.state.toUpperCase(),
+        merged: details.merged || false,
+        closedBy: details.closedBy ? details.closedBy.login : null,
+      };
+    });
+  
+  return matchingPRs;
 }
 
 /**
