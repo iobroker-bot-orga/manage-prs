@@ -1,5 +1,5 @@
 name: createPR
-run-name: create PR (${{ inputs.template }} for ${{ inputs.repository_url }})
+run-name: create PR (${{ inputs.template }} for ${{ contains(inputs.repository_url, 'github.com') && replace(replace(replace(replace(inputs.repository_url, 'https://github.com/', ''), 'git@github.com:', ''), 'http://github.com/', ''), '.git', '') || inputs.repository_url }})
 
 on:
   workflow_dispatch:
@@ -16,6 +16,17 @@ on:
         description: 'Optional parameter data to pass to the template'
         required: false
         type: string
+      pr_mode:
+        description: 'PR mode for handling existing PRs'
+        required: false
+        type: choice
+        default: 'recreate'
+        options:
+          - 'force creation'
+          - 'recreate'
+          - 'skip if existing'
+          - 'skip if closed'
+          - 'skip if merged'
 
 jobs:
   create-pr:
@@ -29,6 +40,7 @@ jobs:
           echo "Repository URL: ${{ inputs.repository_url }}"
           echo "Template: ${{ inputs.template }}"
           echo "Parameter Data: ${{ inputs.parameter_data }}"
+          echo "PR Mode: ${{ inputs.pr_mode }}"
           echo "==================================================================="
 
       - name: Checkout this repository
@@ -234,29 +246,17 @@ jobs:
             echo "    Using default PR body"
           fi
           
-          echo "    Creating PR with:"
+          echo "    PR Details:"
           echo "      Title: $PR_TITLE"
           echo "      Base: ${{ env.default_branch }}"
           echo "      Head: ${CURRENT_USER}:${{ env.branch_name }}"
           echo "      Repository: ${{ steps.repo_info.outputs.full_name }}"
+          echo "      Mode: ${{ inputs.pr_mode }}"
           
-          # Create PR and capture the exit code
-          if gh pr create \
-            --repo ${{ steps.repo_info.outputs.full_name }} \
-            --title "$PR_TITLE" \
-            --body "$PR_BODY" \
-            --base ${{ env.default_branch }} \
-            --head "${CURRENT_USER}:${{ env.branch_name }}"; then
-            echo "    Pull request created successfully"
-            echo ">>> Completed: Create Pull Request"
-            echo "==================================================================="
-            echo "Workflow completed successfully (PR has been created)"
-            echo "==================================================================="
-          else
-            echo "    ERROR: Failed to create pull request"
-            echo ">>> Failed: Create Pull Request"
-            echo "==================================================================="
-            echo "Workflow failed"
-            echo "==================================================================="
-            exit 1
-          fi
+          # Use prManager.js to handle PR creation based on mode
+          node ../prManager.js "${{ inputs.pr_mode }}" "${{ steps.repo_info.outputs.full_name }}" "$PR_TITLE" "$PR_BODY" "${{ env.default_branch }}" "${CURRENT_USER}:${{ env.branch_name }}"
+          
+          echo ">>> Completed: Create Pull Request"
+          echo "==================================================================="
+          echo "Workflow completed successfully"
+          echo "==================================================================="
