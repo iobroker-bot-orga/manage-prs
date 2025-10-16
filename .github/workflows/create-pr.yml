@@ -229,23 +229,19 @@ jobs:
           # Get the authenticated user for fork reference
           CURRENT_USER=$(gh api user -q .login)
           
-          # Read PR title and body from files created by createPR.js
-          if [ -f .pr-title ]; then
-            PR_TITLE=$(cat .pr-title)
-            echo "    Using PR title from template: $PR_TITLE"
-          else
-            PR_TITLE="Update from template: ${{ inputs.template }}"
-            echo "    Using default PR title: $PR_TITLE"
+          # Verify PR metadata files exist
+          if [ ! -f .pr-title ]; then
+            echo "    Creating default PR title..."
+            echo "Update from template: ${{ inputs.template }}" > .pr-title
           fi
           
-          if [ -f .pr-body ]; then
-            PR_BODY=$(cat .pr-body)
-            echo "    Using PR body from template"
-          else
-            PR_BODY="This PR applies changes from template: ${{ inputs.template }}"
-            echo "    Using default PR body"
+          if [ ! -f .pr-body ]; then
+            echo "    Creating default PR body..."
+            echo "This PR applies changes from template: ${{ inputs.template }}" > .pr-body
           fi
           
+          # Display PR details
+          PR_TITLE=$(cat .pr-title)
           echo "    PR Details:"
           echo "      Title: $PR_TITLE"
           echo "      Base: ${{ env.default_branch }}"
@@ -254,7 +250,7 @@ jobs:
           echo "      Mode: ${{ inputs.pr_mode }}"
           
           # Use prManager.js to handle PR creation based on mode
-          node ../prManager.js "${{ inputs.pr_mode }}" "${{ steps.repo_info.outputs.full_name }}" "$PR_TITLE" "$PR_BODY" "${{ env.default_branch }}" "${CURRENT_USER}:${{ env.branch_name }}"
+          node ../prManager.js "${{ inputs.pr_mode }}" "${{ steps.repo_info.outputs.full_name }}" "${{ env.default_branch }}" "${CURRENT_USER}:${{ env.branch_name }}"
           
           echo ">>> Completed: Create Pull Request"
           echo "==================================================================="

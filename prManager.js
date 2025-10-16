@@ -3,7 +3,9 @@
 /**
  * prManager.js - Script to manage PR creation based on mode
  *
- * Usage: node prManager.js <mode> <repository-name> <pr-title> <pr-body> <base-branch> <head-branch>
+ * Usage: node prManager.js <mode> <repository-name> <base-branch> <head-branch>
+ *
+ * This script reads PR title and body from .pr-title and .pr-body files.
  *
  * This script handles different PR creation modes:
  * - force creation: Close existing open PRs and create new one
@@ -15,25 +17,46 @@
 
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
 const { execSync } = require('child_process');
 
 // Get command line arguments
 const args = process.argv.slice(2);
 
-if (args.length < 6) {
+if (args.length < 4) {
   console.error('❌ Error: Missing required arguments');
   console.error(
-    'Usage: node prManager.js <mode> <repository-name> <pr-title> <pr-body> <base-branch> <head-branch>',
+    'Usage: node prManager.js <mode> <repository-name> <base-branch> <head-branch>',
   );
   process.exit(1);
 }
 
 const mode = args[0];
 const repositoryName = args[1];
-const prTitle = args[2];
-const prBody = args[3];
-const baseBranch = args[4];
-const headBranch = args[5];
+const baseBranch = args[2];
+const headBranch = args[3];
+
+// Read PR title and body from files
+let prTitle, prBody;
+try {
+  if (fs.existsSync('.pr-title')) {
+    prTitle = fs.readFileSync('.pr-title', 'utf-8').trim();
+  } else {
+    console.error('❌ Error: .pr-title file not found');
+    process.exit(1);
+  }
+  
+  if (fs.existsSync('.pr-body')) {
+    prBody = fs.readFileSync('.pr-body', 'utf-8').trim();
+  } else {
+    console.error('❌ Error: .pr-body file not found');
+    process.exit(1);
+  }
+} catch (error) {
+  console.error('❌ Error reading PR metadata files:', error.message);
+  process.exit(1);
+}
 
 const validModes = ['force creation', 'recreate', 'skip if existing', 'skip if closed', 'skip if merged'];
 
@@ -127,15 +150,26 @@ function findPRsByTitle(title) {
 function closePRWithComment(prNumber, comment) {
   console.log(`    Closing PR #${prNumber}...`);
   
-  // Add comment
-  executeGhCommand(
-    `gh pr comment ${prNumber} --repo ${repositoryName} --body "${comment}"`,
-  );
-  
-  // Close PR
-  executeGhCommand(`gh pr close ${prNumber} --repo ${repositoryName}`);
-  
-  console.log(`    ✔️ PR #${prNumber} closed with comment`);
+  try {
+    // Write comment to temporary file to avoid shell escaping issues
+    const tmpCommentFile = `.pr-comment-${prNumber}`;
+    fs.writeFileSync(tmpCommentFile, comment, 'utf-8');
+    
+    // Add comment using --body-file
+    executeGhCommand(
+      `gh pr comment ${prNumber} --repo ${repositoryName} --body-file "${tmpCommentFile}"`,
+    );
+    
+    // Clean up temporary file
+    fs.unlinkSync(tmpCommentFile);
+    
+    // Close PR
+    executeGhCommand(`gh pr close ${prNumber} --repo ${repositoryName}`);
+    
+    console.log(`    ✔️ PR #${prNumber} closed with comment`);
+  } catch (error) {
+    console.error(`    ⚠️  Warning: Could not close PR #${prNumber}:`, error.message);
+  }
 }
 
 /**
@@ -146,9 +180,18 @@ function createPR() {
   console.log('    Creating new PR...');
   
   try {
+    // Write PR body to a temporary file to avoid shell escaping issues
+    const tmpBodyFile = '.pr-body-temp';
+    fs.writeFileSync(tmpBodyFile, prBody, 'utf-8');
+    
+    // Use --body-file to avoid escaping issues
     executeGhCommand(
-      `gh pr create --repo ${repositoryName} --title "${prTitle}" --body "${prBody}" --base ${baseBranch} --head "${headBranch}"`,
+      `gh pr create --repo ${repositoryName} --title "${prTitle}" --body-file "${tmpBodyFile}" --base ${baseBranch} --head "${headBranch}"`,
     );
+    
+    // Clean up temporary file
+    fs.unlinkSync(tmpBodyFile);
+    
     console.log('    ✔️ Pull request created successfully');
     return true;
   } catch (error) {
