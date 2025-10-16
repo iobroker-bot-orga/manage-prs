@@ -107,13 +107,24 @@ function getCurrentUser() {
  * @returns {Array} Array of PR objects with number, state, merged status, and closed_by
  */
 function findPRsByTitle(title) {
-  // Escape title for JSON query
-  const escapedTitle = title.replace(/"/g, '\\"');
+  // Escape the title for use within double quotes in the search query
+  // Escape backslashes first, then double quotes, then dollar signs and backticks
+  const escapedTitle = title
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\$/g, '\\$')
+    .replace(/`/g, '\\`');
   
   // Search for PRs with exact title match created by current user (iobroker-bot)
-  const searchQuery = `is:pr repo:${repositoryName} author:@me in:title "${escapedTitle}"`;
+  // Use query string format with all qualifiers in the search query
+  // The search query is wrapped in single quotes, and the title is in double quotes within it
+  const searchQuery = `repo:${repositoryName} author:@me in:title "${escapedTitle}"`;
+  
+  // Replace single quotes in searchQuery with '\'' for safe bash execution
+  const safeSearchQuery = searchQuery.replace(/'/g, "'\\''");
+  
   const output = executeGhCommand(
-    `gh search prs --json number,title --repo ${repositoryName} --limit 100 -- "${searchQuery}"`,
+    `gh search prs --json number,title --limit 100 '${safeSearchQuery}'`,
   );
   console.log(`DEBUG: ${output}`);
   const prs = JSON.parse(output);
@@ -176,9 +187,23 @@ function createPR() {
   console.log('    Creating new PR...');
   
   try {
+    // Escape title for use in shell command
+    const escapedTitle = prTitle
+      .replace(/\\/g, '\\\\')
+      .replace(/"/g, '\\"')
+      .replace(/\$/g, '\\$')
+      .replace(/`/g, '\\`');
+    
+    // Escape head branch for use in shell command
+    const escapedHead = headBranch
+      .replace(/\\/g, '\\\\')
+      .replace(/"/g, '\\"')
+      .replace(/\$/g, '\\$')
+      .replace(/`/g, '\\`');
+    
     // Use .pr-body file directly with --body-file
     executeGhCommand(
-      `gh pr create --repo ${repositoryName} --title "${prTitle}" --body-file ".pr-body" --base ${baseBranch} --head "${headBranch}"`,
+      `gh pr create --repo ${repositoryName} --title "${escapedTitle}" --body-file ".pr-body" --base ${baseBranch} --head "${escapedHead}"`,
     );
     
     console.log('    ✔️ Pull request created successfully');
