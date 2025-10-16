@@ -1,7 +1,6 @@
 # work files
 .pr-title
 .pr-body
-.pr-body-temp
 .pr-comment-*
 
 # Node modules

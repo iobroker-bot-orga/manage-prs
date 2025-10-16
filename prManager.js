@@ -37,22 +37,21 @@ const repositoryName = args[1];
 const baseBranch = args[2];
 const headBranch = args[3];
 
-// Read PR title and body from files
-let prTitle, prBody;
+// Verify PR metadata files exist
+let prTitle;
 try {
-  if (fs.existsSync('.pr-title')) {
-    prTitle = fs.readFileSync('.pr-title', 'utf-8').trim();
-  } else {
+  if (!fs.existsSync('.pr-title')) {
     console.error('❌ Error: .pr-title file not found');
     process.exit(1);
   }
   
-  if (fs.existsSync('.pr-body')) {
-    prBody = fs.readFileSync('.pr-body', 'utf-8').trim();
-  } else {
+  if (!fs.existsSync('.pr-body')) {
     console.error('❌ Error: .pr-body file not found');
     process.exit(1);
   }
+  
+  // Read PR title for display and matching
+  prTitle = fs.readFileSync('.pr-title', 'utf-8').trim();
 } catch (error) {
   console.error('❌ Error reading PR metadata files:', error.message);
   process.exit(1);
@@ -180,17 +179,10 @@ function createPR() {
   console.log('    Creating new PR...');
   
   try {
-    // Write PR body to a temporary file to avoid shell escaping issues
-    const tmpBodyFile = '.pr-body-temp';
-    fs.writeFileSync(tmpBodyFile, prBody, 'utf-8');
-    
-    // Use --body-file to avoid escaping issues
+    // Use .pr-body file directly with --body-file
     executeGhCommand(
-      `gh pr create --repo ${repositoryName} --title "${prTitle}" --body-file "${tmpBodyFile}" --base ${baseBranch} --head "${headBranch}"`,
+      `gh pr create --repo ${repositoryName} --title "${prTitle}" --body-file ".pr-body" --base ${baseBranch} --head "${headBranch}"`,
     );
-    
-    // Clean up temporary file
-    fs.unlinkSync(tmpBodyFile);
     
     console.log('    ✔️ Pull request created successfully');
     return true;
