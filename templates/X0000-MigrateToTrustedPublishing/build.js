@@ -469,7 +469,7 @@ if (modified) {
 // update documentation
 const [owner, repoName] =  repositoryName.split('/');
 const prBodyFile = path.join(process.cwd(), '.pr-body');
-const prBody = fs.readFileSync(prBodyFile, 'utf-8');
+let prBody = fs.readFileSync(prBodyFile, 'utf-8');
 prBody = prBody.replaceAll('%OWNER%', owner).replaceAll('%REPONAME%', repoName);
 fs.writeFileSync(prBodyFile, prBody);
 console.log(`✔️ Updated PR body file: ${prBodyFile}`);
