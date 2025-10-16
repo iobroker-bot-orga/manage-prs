@@ -25,17 +25,23 @@ Use the `create-pr` workflow to apply template changes to a target repository:
    - Owner/Repo: `owner/repo`
 4. Enter the template name
 5. (Optional) Enter parameter data to pass to the template
-6. Click **Run workflow**
+6. Select the **PR mode** (default: `recreate`):
+   - **force creation**: Always create a new PR. Close any existing open PRs first.
+   - **recreate**: Close existing open PRs and create a new one, unless a PR was previously closed by someone other than iobroker-bot (in which case, skip creation).
+   - **skip if existing**: Skip PR creation if an open PR with the same title already exists.
+   - **skip if closed**: Skip PR creation if a PR with the same title was previously closed by someone other than iobroker-bot without merging.
+   - **skip if merged**: Skip PR creation if a PR with the same title was already merged.
+7. Click **Run workflow**
 
 The workflow will:
 - Clone the target repository
 - Apply the template using `createPR.js`
-- Read PR title and body from the template markdown file (`templates/<template-name>.md`)
+- Read PR title and body from the template markdown file (`templates/<template-name>/description.md`)
 - Create PR with title prefixed with `[iobroker-bot] ` from the first line of the template
 - Use remaining content as PR body description
 - Append template name and parameter data to PR body
 - Commit changes
-- Create a pull request
+- Use `prManager.js` to create a pull request based on the selected mode
 
 ## GitHub Copilot Instructions
 
@@ -62,12 +68,22 @@ A weekly GitHub Action (`check-copilot-template.yml`) automatically:
 
 - **createPR.js**: Node.js script that applies template changes to repositories
   - Usage: `node createPR.js <repository-name> <template-name> [parameter-data]`
-  - Reads template markdown file (`templates/<template-name>.md`) to generate PR title and body
+  - Reads template markdown file (`templates/<template-name>/description.md`) to generate PR title and body
   - First line of markdown file becomes PR title (with `[iobroker-bot] ` prefix)
   - Remaining content becomes PR body description
   - Appends template name and optional parameter data to PR body
   - Creates `.pr-title` and `.pr-body` files for the workflow to use
   - Extensible for custom template logic
+
+- **prManager.js**: Node.js script that manages PR creation based on different modes
+  - Usage: `node prManager.js <mode> <repository-name> <base-branch> <head-branch>`
+  - Reads `.pr-title` and `.pr-body` files created by `createPR.js`
+  - Handles different PR creation modes:
+    - `force creation`: Always create a new PR, closing existing open PRs first
+    - `recreate`: Close open PRs and create new one, skip if previously closed by others
+    - `skip if existing`: Skip if an open PR already exists
+    - `skip if closed`: Skip if previously closed by someone other than iobroker-bot
+    - `skip if merged`: Skip if a PR with the same title was already merged
 
 ### Workflows
 
