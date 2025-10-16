@@ -112,7 +112,7 @@ function findPRsByTitle(title) {
   const output = executeGhCommand(
     `gh search prs --json number,title --repo ${repositoryName} --limit 100 -- "${searchQuery}"`,
   );
-  
+  console.log(`DEBUG: ${output}`);
   const prs = JSON.parse(output);
   
   // Filter for exact title match and get additional details
