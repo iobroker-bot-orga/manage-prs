@@ -65,7 +65,7 @@ async function getLatestRepoLive() {
         
         const options = {
             headers: {
-                'Authorization': process.env.IOBBOT_GITHUB_TOKEN ? `token ${process.env.IOBBOT_GITHUB_TOKEN}` : 'none',
+                'Authorization': process.env.GH_TOKEN ? `token ${process.env.GH_TOKEN}` : 'none',
                 'user-agent': 'Action script',
             }
         };
