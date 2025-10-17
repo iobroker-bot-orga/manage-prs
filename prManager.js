@@ -196,7 +196,7 @@ function closePRWithComment(prNumber, comment) {
  * @returns {boolean} True if PR created successfully
  */
 function createPR() {
-  console.log('    Creating new PR...');
+  console.log('    ⏳ Creating new PR...');
   
   try {
     // Escape title for use in shell command
