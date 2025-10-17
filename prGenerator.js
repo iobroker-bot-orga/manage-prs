@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * createPR.js - Script to apply template changes to a repository
+ * prGenerator.js - Script to apply template changes to a repository
  *
- * Usage: node createPR.js <repository-name> <template-name> [parameter-data]
+ * Usage: node prGenerator.js <repository-name> <template-name> [parameter-data]
  *
  * This script is called by the GitHub Actions workflow to apply
  * template changes to a target repository.
@@ -20,7 +20,7 @@ const args = process.argv.slice(2);
 if (args.length < 2) {
   console.error('❌ Error: Missing required arguments');
   console.error(
-    'Usage: node createPR.js <repository-name> <template-name> [parameter-data]',
+    'Usage: node prGenerator.js <repository-name> <template-name> [parameter-data]',
   );
   process.exit(1);
 }

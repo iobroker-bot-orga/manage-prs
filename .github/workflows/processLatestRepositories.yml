@@ -1,0 +1,57 @@
+name: Process LATEST repositories
+
+on:
+  repository_dispatch:
+    types: [process-latest-restart]
+
+  workflow_dispatch:
+    inputs:
+      template:
+        type: string
+        required: true
+        description: 'Name of the template to apply'
+
+      parameter_data:
+        type: string
+        required: false
+        description: 'Optional parameter data to pass to the template'
+
+      pr_mode:
+        description: 'PR mode for handling existing PRs'
+        required: false
+        type: choice
+        default: 'recreate'
+        options:
+          - 'force creation'
+          - 'recreate'
+          - 'skip if existing'
+          - 'skip if closed'
+          - 'skip if merged'
+          - 'REVOKE'
+
+      from:
+        type: string
+        required: false
+        description: 'Resume processing from this adapter name (optional)'
+
+  #schedule:
+    # * is a special character in YAML, so you have to quote this string
+    # every friday at 1:00
+    # - cron:  '15 0 * * 5'
+
+jobs:
+  process-latest-repositories:
+    name: process latest repositories
+    if: |
+      github.repository == 'iobroker-bot-orga/manage-prs'
+      
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: node ./processLatestRepositories.js --template="${{ github.event.inputs.template }}${{ github.event.client_payload.template }}" --parameter_data="${{ github.event.inputs.parameter_data }}${{ github.event.client_payload.parameter_data }}" --pr_mode="${{ github.event.inputs.pr_mode }}${{ github.event.client_payload.pr_mode }}" --from="${{ github.event.inputs.from }}${{ github.event.client_payload.from }}"
+        env:
+          GH_TOKEN: ${{ secrets.IOBBOT_GITHUB_TOKEN_WITH_WF }}

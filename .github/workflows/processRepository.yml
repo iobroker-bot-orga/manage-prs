@@ -1,5 +1,5 @@
-name: createPR
-run-name: create PR (${{ inputs.template }} for ${{ inputs.repository_url }})
+name: processRepository
+run-name: process repository (${{ inputs.template }} for ${{ inputs.repository_url }})
 
 on:
   workflow_dispatch:
@@ -30,7 +30,7 @@ on:
           - 'REVOKE'
 
 jobs:
-  create-pr:
+  process-repository:
     runs-on: ubuntu-latest
     steps:
       - name: Log workflow parameters
@@ -180,13 +180,13 @@ jobs:
           echo "==================================================================="
           echo ">>> Completed: Create branch"
 
-      - name: Run createPR.js script
+      - name: Run prGenerator.js script
         run: |
-          echo ">>> Starting: Run createPR.js script"
+          echo ">>> Starting: Run prGenerator.js script"
           cd target-repo
-          echo "    Executing: node ../createPR.js \"${{ steps.repo_info.outputs.full_name }}\" \"${{ inputs.template }}\" \"${{ inputs.parameter_data }}\""
-          node ../createPR.js "${{ steps.repo_info.outputs.full_name }}" "${{ inputs.template }}" "${{ inputs.parameter_data }}"
-          echo ">>> Completed: Run createPR.js script"
+          echo "    Executing: node ../prGenerator.js \"${{ steps.repo_info.outputs.full_name }}\" \"${{ inputs.template }}\" \"${{ inputs.parameter_data }}\""
+          node ../prGenerator.js "${{ steps.repo_info.outputs.full_name }}" "${{ inputs.template }}" "${{ inputs.parameter_data }}"
+          echo ">>> Completed: Run prGenerator.js script"
 
       - name: Commit and push changes
         env:
