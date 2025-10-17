@@ -282,6 +282,7 @@ async function main() {
         
         if ( ! await checkProcessing(context)) {
             console.log(`ⓘ SKIPPING ${owner}/ioBroker.${adapter} (check failed)`);
+            continue; // TEMPORARY
         } else {
             if (! opts.dry) {
                 triggerRepoProcessing(owner, adapter);
