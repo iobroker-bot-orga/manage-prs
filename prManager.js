@@ -142,7 +142,7 @@ function findPRsByTitle(title) {
       let closedBy = null;
       if (state === 'CLOSED') {
         closedBy = executeGhCommand(
-          `gh api repos/${repositoryName}/issues/${pr.number}/events --jq "map(select(.event==\"closed\")) | last | .actor.login"`
+          `gh api repos/${repositoryName}/issues/${pr.number}/events --jq "map(select(.event==\\"closed\\")) | last | .actor.login"`
         )
       }
       return {
