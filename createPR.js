@@ -200,8 +200,8 @@ async function main() {
     }
 
     // Write PR metadata to files for the workflow to use
-    const prTitleFile = path.join(process.cwd(), '.pr-title');
-    const prBodyFile = path.join(process.cwd(), '.pr-body');
+    const prTitleFile = path.join(process.cwd(), '.iobroker-pr-title.tmp');
+    const prBodyFile = path.join(process.cwd(), '.iobroker-pr-body.tmp');
 
     fs.writeFileSync(prTitleFile, prTitle);
     console.log(`✔️ Created PR title file: ${prTitleFile}`);

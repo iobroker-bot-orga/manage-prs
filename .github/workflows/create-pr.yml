@@ -27,6 +27,7 @@ on:
           - 'skip if existing'
           - 'skip if closed'
           - 'skip if merged'
+          - 'REVOKE'
 
 jobs:
   create-pr:
@@ -194,7 +195,7 @@ jobs:
           echo ">>> Starting: Commit and push changes"
           cd target-repo
           echo "    Staging all changes..."
-          git add -v . :!./.pr-body :!./.pr-title
+          git add -v . :!./.iobroker-pr-body.tmp :!./.iobroker-pr-title.tmp
           echo "    Checking for staged changes..."
           if git diff --staged --quiet; then
             echo "    No changes to commit"
@@ -230,18 +231,18 @@ jobs:
           CURRENT_USER=$(gh api user -q .login)
           
           # Verify PR metadata files exist
-          if [ ! -f .pr-title ]; then
+          if [ ! -f .iobroker-pr-title.tmp ]; then
             echo "    Creating default PR title..."
-            echo "Update from template: ${{ inputs.template }}" > .pr-title
+            echo "Update from template: ${{ inputs.template }}" > .iobroker-pr-title.tmp
           fi
           
-          if [ ! -f .pr-body ]; then
+          if [ ! -f .iobroker-pr-body.tmp ]; then
             echo "    Creating default PR body..."
-            echo "This PR applies changes from template: ${{ inputs.template }}" > .pr-body
+            echo "This PR applies changes from template: ${{ inputs.template }}" > .iobroker-pr-body.tmp
           fi
           
           # Display PR details
-          PR_TITLE=$(cat .pr-title)
+          PR_TITLE=$(cat .iobroker-pr-title.tmp)
           echo "    PR Details:"
           echo "      Title: $PR_TITLE"
           echo "      Base: ${{ env.default_branch }}"

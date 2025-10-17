@@ -31,6 +31,7 @@ Use the `create-pr` workflow to apply template changes to a target repository:
    - **skip if existing**: Skip PR creation if an open PR with the same title already exists.
    - **skip if closed**: Skip PR creation if a PR with the same title was previously closed by someone other than iobroker-bot without merging.
    - **skip if merged**: Skip PR creation if a PR with the same title was already merged.
+   - **REVOKE**: Close all existing open PRs with matching title (add revocation comment) and skip PR creation. This mode executes the template script to calculate the PR title but does not create a new PR.
 7. Click **Run workflow**
 
 The workflow will:
@@ -43,6 +44,11 @@ The workflow will:
 - Append template name and parameter data to PR body
 - Commit changes
 - Use `prManager.js` to create a pull request based on the selected mode
+
+**Work Files**: The workflow creates temporary work files with the `.iobroker-` prefix and `.tmp` suffix:
+- `.iobroker-pr-title.tmp`: Contains the PR title
+- `.iobroker-pr-body.tmp`: Contains the PR body
+- `.iobroker-pr-comment-*.tmp`: Temporary files for PR comments (automatically cleaned up)
 
 ## GitHub Copilot Instructions
 
@@ -75,18 +81,19 @@ A weekly GitHub Action (`check-copilot-template.yml`) automatically:
   - Remaining content becomes PR body description
   - Executes the template's build script (`templates/<template-name>/build.js`) to apply changes
   - Appends template name and optional parameter data to PR body
-  - Creates `.pr-title` and `.pr-body` files for the workflow to use
+  - Creates `.iobroker-pr-title.tmp` and `.iobroker-pr-body.tmp` files for the workflow to use
   - Extensible for custom template logic
 
 - **prManager.js**: Node.js script that manages PR creation based on different modes
   - Usage: `node prManager.js <mode> <repository-name> <base-branch> <head-branch>`
-  - Reads `.pr-title` and `.pr-body` files created by `createPR.js`
+  - Reads `.iobroker-pr-title.tmp` and `.iobroker-pr-body.tmp` files created by `createPR.js`
   - Handles different PR creation modes:
     - `force creation`: Always create a new PR, closing existing open PRs first
     - `recreate`: Close open PRs and create new one, skip if previously closed by others
     - `skip if existing`: Skip if an open PR already exists
     - `skip if closed`: Skip if previously closed by someone other than iobroker-bot
     - `skip if merged`: Skip if a PR with the same title was already merged
+    - `REVOKE`: Close all existing open PRs with revocation comment, skip PR creation
 
 ### Workflows
 

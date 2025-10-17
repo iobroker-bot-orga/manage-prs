@@ -5,7 +5,11 @@
  *
  * Usage: node prManager.js <mode> <repository-name> <base-branch> <head-branch>
  *
- * This script reads PR title and body from .pr-title and .pr-body files.
+ * This script reads PR title and body from temporary work files:
+ * - .iobroker-pr-title.tmp: Contains the PR title
+ * - .iobroker-pr-body.tmp: Contains the PR body
+ *
+ * These work files follow the iobroker naming convention (.iobroker-* prefix, .tmp suffix).
  *
  * This script handles different PR creation modes:
  * - force creation: Close existing open PRs and create new one
@@ -13,6 +17,7 @@
  * - skip if existing: Skip if open PR exists
  * - skip if closed: Skip if closed PR exists
  * - skip if merged: Skip if merged PR exists
+ * - REVOKE: Close all existing open PRs with revocation comment, skip PR creation
  */
 
 'use strict';
@@ -40,24 +45,24 @@ const headBranch = args[3];
 // Verify PR metadata files exist
 let prTitle;
 try {
-  if (!fs.existsSync('.pr-title')) {
-    console.error('❌ Error: .pr-title file not found');
+  if (!fs.existsSync('.iobroker-pr-title.tmp')) {
+    console.error('❌ Error: .iobroker-pr-title.tmp file not found');
     process.exit(1);
   }
   
-  if (!fs.existsSync('.pr-body')) {
-    console.error('❌ Error: .pr-body file not found');
+  if (!fs.existsSync('.iobroker-pr-body.tmp')) {
+    console.error('❌ Error: .iobroker-pr-body.tmp file not found');
     process.exit(1);
   }
   
   // Read PR title for display and matching
-  prTitle = fs.readFileSync('.pr-title', 'utf-8').trim();
+  prTitle = fs.readFileSync('.iobroker-pr-title.tmp', 'utf-8').trim();
 } catch (error) {
   console.error('❌ Error reading PR metadata files:', error.message);
   process.exit(1);
 }
 
-const validModes = ['force creation', 'recreate', 'skip if existing', 'skip if closed', 'skip if merged'];
+const validModes = ['force creation', 'recreate', 'skip if existing', 'skip if closed', 'skip if merged', 'REVOKE'];
 
 if (!validModes.includes(mode)) {
   console.error(`❌ Error: Invalid mode "${mode}"`);
@@ -168,7 +173,7 @@ function closePRWithComment(prNumber, comment) {
   
   try {
     // Write comment to temporary file to avoid shell escaping issues
-    const tmpCommentFile = `.pr-comment-${prNumber}`;
+    const tmpCommentFile = `.iobroker-pr-comment-${prNumber}.tmp`;
     fs.writeFileSync(tmpCommentFile, comment, 'utf-8');
     
     // Add comment using --body-file
@@ -210,9 +215,9 @@ function createPR() {
       .replace(/\$/g, '\\$')
       .replace(/`/g, '\\`');
     
-    // Use .pr-body file directly with --body-file
+    // Use .iobroker-pr-body.tmp file directly with --body-file
     executeGhCommand(
-      `gh pr create --repo ${repositoryName} --title "${escapedTitle}" --body-file ".pr-body" --base ${baseBranch} --head "${escapedHead}"`,
+      `gh pr create --repo ${repositoryName} --title "${escapedTitle}" --body-file ".iobroker-pr-body.tmp" --base ${baseBranch} --head "${escapedHead}"`,
     );
     
     console.log('    ✔️ Pull request created successfully');
@@ -331,6 +336,28 @@ async function main() {
         if (!createPR()) {
           process.exit(1);
         }
+        break;
+        
+      case 'REVOKE':
+        console.log('📋 Mode: REVOKE');
+        console.log('ⓘ This mode will close all existing open PRs with matching title and skip PR creation');
+        
+        if (openPRs.length > 0) {
+          console.log(`⚠️  Closing ${openPRs.length} existing open PR(s)...`);
+          for (const pr of openPRs) {
+            closePRWithComment(
+              pr.number,
+              '🚫 This PR has been **REVOKED** and is being closed.\n\nThe changes proposed in this PR are no longer applicable or have been superseded.',
+            );
+          }
+          console.log('✔️ All open PRs have been revoked and closed');
+        } else {
+          console.log('ⓘ No open PRs found to revoke');
+        }
+        
+        console.log('ℹ️  Skipping PR creation (REVOKE mode)');
+        console.log('✔️ Workflow completed successfully (PRs revoked, no new PR created)');
+        process.exit(0);
         break;
         
       default:
