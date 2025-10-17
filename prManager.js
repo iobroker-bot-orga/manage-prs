@@ -135,17 +135,25 @@ function findPRsByTitle(title) {
     .map((pr) => {
       // Get detailed PR info including merge status and who closed it
       const detailsOutput = executeGhCommand(
-        `gh pr view ${pr.number} --repo ${repositoryName} --json number,state,closedBy`,
+        `gh pr view ${pr.number} --repo ${repositoryName} --json number,state`,
       );
       const details = JSON.parse(detailsOutput);
+      const state = details.state.toUpperCase();
+      let closedBy = null;
+      if (state == closed){
+        closedBy = executeGhCommand(
+          `gh api repos/${repositoryName}/issues/${pr.number}/events --jq "map(select(.event==\"closed\")) | last | .actor.login"`
+        )
+      }
       return {
         number: details.number,
-        state: details.state.toUpperCase(),
-        merged: details.state.toUpperCase() === 'MERGED',
-        closedBy: details.closedBy ? details.closedBy.login : null,
+        state: state,
+        open: state === 'OPEN',
+        merged: state === 'MERGED',
+        closed: state === 'CLOSED',
+        closedBy: closedBy,
       };
     });
-  
   return matchingPRs;
 }
 
