@@ -1,4 +1,4 @@
-ommunity-adapters//
+//
 // select all adapter which have set
 // - common.adminUI.config === json or
 // - common.adminUI.custom === json 
