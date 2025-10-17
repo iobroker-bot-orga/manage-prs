@@ -236,10 +236,16 @@ async function main() {
     console.log('🔍 Searching for existing PRs...');
     const existingPRs = findPRsByTitle(prTitle);
     
+    let lastPr = {number: 0};
     if (existingPRs.length > 0) {
       console.log(`ⓘ Found ${existingPRs.length} existing PR(s) with same title:`);
+      for (const pr of existingPRs) {
+        if (pr.number > lastPr.number) {
+          lastPr = pr;
+        }
+      }
       existingPRs.forEach((pr) => {
-        console.log(`    - PR #${pr.number}: ${pr.state}${pr.merged ? ' (merged)' : ''}${pr.closedBy ? ` (closed by ${pr.closedBy})` : ''}`);
+        console.log(`    - PR #${pr.number}: ${pr.state}${pr.merged ? ' (merged)' : ''}${pr.closedBy ? ` (closed by ${pr.closedBy})` : ''} ${pr.number === lastPr.number?' ***':''}`);
       });
     } else {
       console.log('ⓘ No existing PRs found with same title');
