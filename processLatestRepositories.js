@@ -144,8 +144,9 @@ function triggerRepoProcessing(owner, adapter) {
     try {
         // Build the gh workflow run command
         const cmd = `gh workflow run processRepository.yml --repo iobroker-bot-orga/manage-prs --field repository_url="${repoUrl}" --field template="${opts.template}" --field parameter_data="${opts.parameter_data}" --field pr_mode="${opts.pr_mode}"`;
+        debug(cmd);
         
-        executeGhCommand(cmd);
+        //executeGhCommand(cmd);
         console.log(`    ✔️ Workflow triggered successfully`);
     } catch (e) {
         console.error(`    ❌ Failed to trigger workflow: ${e.message}`);
