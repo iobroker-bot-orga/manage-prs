@@ -145,7 +145,7 @@ function triggerRepoProcessing(owner, adapter) {
         // Build the gh workflow run command
         const cmd = `gh workflow run processRepository.yml --repo iobroker-bot-orga/manage-prs --field repository_url="${repoUrl}" --field template="${opts.template}" --field parameter_data="${opts.parameter_data}" --field pr_mode="${opts.pr_mode}"`;
         debug(cmd);
-        
+
         //executeGhCommand(cmd);
         console.log(`    ✔️ Workflow triggered successfully`);
     } catch (e) {
@@ -257,11 +257,7 @@ async function main() {
     for (const adapter in latestRepo) {
         if (!counter) {
             console.log(`ⓘ Restart limit reached, will restart from adapter: ${adapter}`);
-            if (!opts.dry) {
-                triggerRestart(adapter);
-            } else {
-                console.log(`🧪 Would trigger restart from ${adapter}`);
-            }
+            triggerRestart(adapter);
             break;
         };
 
