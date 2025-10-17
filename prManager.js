@@ -82,10 +82,10 @@ console.log(`ⓘ Head Branch: ${headBranch}`);
  * @returns {string} Command output
  */
 function executeGhCommand(command) {
-  console.log(`DEBUG: (GH-CMD) ${command}`);
+  //console.log(`DEBUG: (GH-CMD) ${command}`);
   try {
     const res = execSync(command, { encoding: 'utf-8' });
-    console.log(`DEBUG: (GH-RES) ${res}`);
+    //console.log(`DEBUG: (GH-RES) ${res}`);
     return res;
   } catch (error) {
     console.error(`❌ Error executing command: ${command}`);
@@ -131,7 +131,7 @@ function findPRsByTitle(title) {
   const output = executeGhCommand(
     `gh search prs --json number,title --limit 100 --repo ${repositoryName} --author @me '${safeSearchQuery}'`,
   );
-  console.log(`DEBUG: ${output}`);
+
   const prs = JSON.parse(output);
   
   // Filter for exact title match and get additional details
@@ -169,8 +169,6 @@ function findPRsByTitle(title) {
  * @param {string} comment - Comment to add
  */
 function closePRWithComment(prNumber, comment) {
-  console.log(`    Closing PR #${prNumber}...`);
-  
   try {
     // Write comment to temporary file to avoid shell escaping issues
     const tmpCommentFile = `.iobroker-pr-comment-${prNumber}.tmp`;
