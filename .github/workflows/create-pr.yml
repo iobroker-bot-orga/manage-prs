@@ -209,11 +209,11 @@ jobs:
           fi
           echo ">>> Completed: Commit and push changes"
 
-      - name: Create Pull Request
+      - name: Manage Pull Request
         env:
           GH_TOKEN: ${{ secrets.IOBBOT_GITHUB_TOKEN_WITH_WF }}
         run: |
-          echo ">>> Starting: Create Pull Request"
+          echo ">>> Starting: Pull Request Management"
           
           # Skip PR creation if there are no changes
           if [ "${{ env.has_changes }}" = "false" ]; then
@@ -252,7 +252,7 @@ jobs:
           # Use prManager.js to handle PR creation based on mode
           node ../prManager.js "${{ inputs.pr_mode }}" "${{ steps.repo_info.outputs.full_name }}" "${{ env.default_branch }}" "${CURRENT_USER}:${{ env.branch_name }}"
           
-          echo ">>> Completed: Create Pull Request"
+          echo ">>> Completed: Pull Request Management"
           echo "==================================================================="
           echo "Workflow completed successfully"
           echo "==================================================================="
