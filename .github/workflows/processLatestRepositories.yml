@@ -16,6 +16,11 @@ on:
         required: false
         description: 'Optional parameter data to pass to the template'
 
+      flags:
+        type: string
+        required: false
+        description: 'Optional flags to pass to the worflow'
+
       pr_mode:
         description: 'PR mode for handling existing PRs'
         required: false
@@ -52,6 +57,6 @@ jobs:
         with:
           node-version: 20
       - run: npm install
-      - run: node ./processLatestRepositories.js --template="${{ github.event.inputs.template }}${{ github.event.client_payload.template }}" --parameter_data="${{ github.event.inputs.parameter_data }}${{ github.event.client_payload.parameter_data }}" --pr_mode="${{ github.event.inputs.pr_mode }}${{ github.event.client_payload.pr_mode }}" --from="${{ github.event.inputs.from }}${{ github.event.client_payload.from }}"
+      - run: node ./processLatestRepositories.js --template="${{ github.event.inputs.template }}${{ github.event.client_payload.template }}" --parameter_data="${{ github.event.inputs.parameter_data }}${{ github.event.client_payload.parameter_data }}" --pr_mode="${{ github.event.inputs.pr_mode }}${{ github.event.client_payload.pr_mode }}" --from="${{ github.event.inputs.from }}${{ github.event.client_payload.from }}" ${{ github.event.inputs.flags }}${{ github.event.client_payload.flags }}
         env:
           GH_TOKEN: ${{ secrets.IOBBOT_GITHUB_TOKEN_WITH_WF }}

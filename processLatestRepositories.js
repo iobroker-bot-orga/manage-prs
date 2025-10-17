@@ -163,7 +163,18 @@ function triggerRestart(adapter) {
     
     try {
         // Build the gh api command for repository dispatch
-        const cmd = `gh api repos/iobroker-bot-orga/manage-prs/dispatches --method POST --field event_type='process-latest-restart' --field client_payload[template]='${opts.template}' --field client_payload[parameter_data]='${opts.parameter_data}' --field client_payload[pr_mode]='${opts.pr_mode}' --field client_payload[from]='${adapter}'`;
+        let flags='';
+        if (opts.debug){
+            flags = `$flags --debug`;
+        }
+        if (opts.dry){
+            flags = `$flags --dry`;
+        };
+        if (flags !== '') {
+            flags = `--field flags='${flags}'`;
+        };
+
+        const cmd = `gh api repos/iobroker-bot-orga/manage-prs/dispatches --method POST --field event_type='process-latest-restart' --field client_payload[template]='${opts.template}' --field client_payload[parameter_data]='${opts.parameter_data}' --field client_payload[pr_mode]='${opts.pr_mode}' --field client_payload[from]='${adapter}' ${flags}`;
         
         executeGhCommand(cmd);
         console.log(`ⓘ ✔️ Restart triggered successfully`);
