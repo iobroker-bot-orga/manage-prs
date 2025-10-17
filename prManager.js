@@ -144,6 +144,7 @@ function findPRsByTitle(title) {
         closedBy = executeGhCommand(
           `gh api repos/${repositoryName}/issues/${pr.number}/events --jq "map(select(.event==\\"closed\\")) | last | .actor.login"`
         )
+        closedBy = closedBy.replace('\n','').replace('\r','').trim();
       }
       return {
         number: details.number,
@@ -242,10 +243,10 @@ async function main() {
     }
     
     // Filter PRs by state
-    const openPRs = existingPRs.filter((pr) => pr.state === 'OPEN');
+    const openPRs = existingPRs.filter((pr) => pr.open);
     const mergedPRs = existingPRs.filter((pr) => pr.merged);
     const closedByOthersPRs = existingPRs.filter(
-      (pr) => pr.state === 'CLOSED' && !pr.merged && pr.closedBy && pr.closedBy !== currentUser,
+      (pr) => pr.closed && !pr.merged && pr.closedBy && pr.closedBy !== currentUser,
     );
     
     // Handle different modes
@@ -269,13 +270,6 @@ async function main() {
         
       case 'recreate':
         console.log('📋 Mode: Recreate');
-        // Check if closed by others without merging
-        if (closedByOthersPRs.length > 0) {
-          console.log('⚠️  PR was previously closed by someone other than iobroker-bot without merging');
-          console.log('ℹ️  Skipping PR creation (existing closed PR will not be reopened)');
-          console.log('✔️ Workflow completed successfully (no PR created)');
-          process.exit(0);
-        }
         // Close existing open PRs
         if (openPRs.length > 0) {
           console.log(`⚠️  Closing ${openPRs.length} existing open PR(s)...`);
@@ -284,6 +278,14 @@ async function main() {
               pr.number,
               'This PR is being closed because a new PR will be created with updated changes.',
             );
+          }
+        } else {
+          // if no open PR exists check if newest PR has been closed by others without merging
+          if (closedByOthersPRs.length > 0) {
+            console.log('⚠️  PR was previously closed by someone other than iobroker-bot without merging');
+            console.log('ℹ️  Skipping PR creation (existing closed PR will not be reopened)');
+            console.log('✔️ Workflow completed successfully (no PR created)');
+            process.exit(0);
           }
         }
         if (!createPR()) {
@@ -305,6 +307,7 @@ async function main() {
         break;
         
       case 'skip if closed':
+        // check if newest PR has been closed by others without merging
         console.log('📋 Mode: Skip if Closed');
         if (closedByOthersPRs.length > 0) {
           console.log('⚠️  PR was previously closed by someone other than iobroker-bot without merging');
