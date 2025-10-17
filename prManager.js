@@ -5,7 +5,7 @@
  *
  * Usage: node prManager.js <mode> <repository-name> <base-branch> <head-branch>
  *
- * This script reads PR title and body from .pr-title and .pr-body files.
+ * This script reads PR title and body from .iobroker-pr-title.tmp and .iobroker-pr-body.tmp files.
  *
  * This script handles different PR creation modes:
  * - force creation: Close existing open PRs and create new one
@@ -13,6 +13,7 @@
  * - skip if existing: Skip if open PR exists
  * - skip if closed: Skip if closed PR exists
  * - skip if merged: Skip if merged PR exists
+ * - REVOKE: Close all existing open PRs with revocation comment, skip PR creation
  */
 
 'use strict';

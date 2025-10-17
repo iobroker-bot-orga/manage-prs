@@ -468,7 +468,7 @@ if (modified) {
 
 // update documentation
 const [owner, repoName] =  repositoryName.split('/');
-const prBodyFile = path.join(process.cwd(), '.pr-body');
+const prBodyFile = path.join(process.cwd(), '.iobroker-pr-body.tmp');
 let prBody = fs.readFileSync(prBodyFile, 'utf-8');
 prBody = prBody.replaceAll('%OWNER%', owner).replaceAll('%REPONAME%', repoName);
 fs.writeFileSync(prBodyFile, prBody);
