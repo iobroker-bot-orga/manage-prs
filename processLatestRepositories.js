@@ -72,10 +72,12 @@ async function getLatestRepoLive() {
             
             res.on('end', () => {
                 try {
+                    debug(`Retrieved data:\n${data}`);
                     const parsed = JSON.parse(data);
                     console.log(`ⓘ Retrieved ${Object.keys(parsed).length} repositories`);
                     resolve(parsed);
                 } catch (e) {
+                    console.log(`❌ Retrieved data:\n${data}`);
                     reject(new Error(`Failed to parse JSON: ${e.message}`));
                 }
             });
