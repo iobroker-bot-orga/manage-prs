@@ -140,7 +140,7 @@ function findPRsByTitle(title) {
       const details = JSON.parse(detailsOutput);
       const state = details.state.toUpperCase();
       let closedBy = null;
-      if (state == closed){
+      if (state === 'CLOSED') {
         closedBy = executeGhCommand(
           `gh api repos/${repositoryName}/issues/${pr.number}/events --jq "map(select(.event==\"closed\")) | last | .actor.login"`
         )
