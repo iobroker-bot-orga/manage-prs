@@ -98,7 +98,7 @@ async function initCheck(context){
     try {
         checkScript = require(filename); 
     } catch (e) {
-        if ( e.code === 'MODULE_NOT_FOUND') {
+        if (e.code === 'MODULE_NOT_FOUND') {
             console.log(`[INFO] no checking script found`);
         } else {
             throw(e);
@@ -154,16 +154,6 @@ function triggerRestart(adapter) {
     
     try {
         // Build the gh api command for repository dispatch
-        const payload = {
-            event_type: 'process-latest-restart',
-            client_payload: {
-                template: opts.template,
-                parameter_data: opts.parameter_data,
-                pr_mode: opts.pr_mode,
-                from: adapter
-            }
-        };
-        
         const cmd = `gh api repos/iobroker-bot-orga/manage-prs/dispatches --method POST --field event_type='process-latest-restart' --field client_payload[template]='${opts.template}' --field client_payload[parameter_data]='${opts.parameter_data}' --field client_payload[pr_mode]='${opts.pr_mode}' --field client_payload[from]='${adapter}'`;
         
         executeGhCommand(cmd);
@@ -225,17 +215,21 @@ async function main() {
 
     const latestRepo = await getLatestRepoLive();
     const total = Object.keys(latestRepo).filter(k => !k.startsWith('_')).length;
-    const delay = 120; // seconds (2 minutes)
-    let counter = 3 * 60 * (60 / delay); /* restart after 3h (90 repositories at 2min each) */
+    
+    // Configuration constants
+    const DELAY_BETWEEN_REPOS_SECONDS = 120; // 2 minutes between repository processing
+    const RESTART_AFTER_HOURS = 3; // Restart after 3 hours to avoid workflow timeout
+    const MAX_REPOS_BEFORE_RESTART = RESTART_AFTER_HOURS * 60 * (60 / DELAY_BETWEEN_REPOS_SECONDS); // ~90 repos at 2min each
 
     console.log(`[INFO] Found ${total} repositories to process`);
-    console.log(`[INFO] Delay between processing: ${delay} seconds`);
-    console.log(`[INFO] Will restart after 3h (${counter} repositories)`);
+    console.log(`[INFO] Delay between processing: ${DELAY_BETWEEN_REPOS_SECONDS} seconds`);
+    console.log(`[INFO] Will restart after ${RESTART_AFTER_HOURS}h (${MAX_REPOS_BEFORE_RESTART} repositories)`);
 
     context.template = opts.template;
     await initCheck(context);
 
     let curr = 0;
+    let counter = MAX_REPOS_BEFORE_RESTART;
     let skip = opts.from && (opts.from !== '');
     if (skip) console.log (`[INFO] --from set to "${opts.from}" - searching for first adapter to process ...`);
     
@@ -289,11 +283,11 @@ async function main() {
 
         counter = counter - 1;
         if (counter) {
-            console.log(`[INFO] Will restart after ${counter} more repositories, sleeping (${delay}s) ...`);
+            console.log(`[INFO] Will restart after ${counter} more repositories, sleeping (${DELAY_BETWEEN_REPOS_SECONDS}s) ...`);
         } else {
-            console.log(`[INFO] Will restart after delay, sleeping (${delay}s) ...`);            
+            console.log(`[INFO] Will restart after delay, sleeping (${DELAY_BETWEEN_REPOS_SECONDS}s) ...`);            
         }
-        await sleep(delay * 1000);
+        await sleep(DELAY_BETWEEN_REPOS_SECONDS * 1000);
     }
 
     if (checkScript && checkScript.finalize) {
