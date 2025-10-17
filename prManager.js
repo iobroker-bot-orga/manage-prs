@@ -5,7 +5,11 @@
  *
  * Usage: node prManager.js <mode> <repository-name> <base-branch> <head-branch>
  *
- * This script reads PR title and body from .iobroker-pr-title.tmp and .iobroker-pr-body.tmp files.
+ * This script reads PR title and body from temporary work files:
+ * - .iobroker-pr-title.tmp: Contains the PR title
+ * - .iobroker-pr-body.tmp: Contains the PR body
+ *
+ * These work files follow the iobroker naming convention (.iobroker-* prefix, .tmp suffix).
  *
  * This script handles different PR creation modes:
  * - force creation: Close existing open PRs and create new one
