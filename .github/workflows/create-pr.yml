@@ -209,7 +209,7 @@ jobs:
           fi
           echo ">>> Completed: Commit and push changes"
 
-      - name: Manage Pull Request
+      - name: Manage Pull Request(s)
         env:
           GH_TOKEN: ${{ secrets.IOBBOT_GITHUB_TOKEN_WITH_WF }}
         run: |
