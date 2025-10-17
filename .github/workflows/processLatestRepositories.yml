@@ -55,3 +55,4 @@ jobs:
       - run: node ./processLatestRepositories.js --template="${{ github.event.inputs.template }}${{ github.event.client_payload.template }}" --parameter_data="${{ github.event.inputs.parameter_data }}${{ github.event.client_payload.parameter_data }}" --pr_mode="${{ github.event.inputs.pr_mode }}${{ github.event.client_payload.pr_mode }}" --from="${{ github.event.inputs.from }}${{ github.event.client_payload.from }}"
         env:
           GH_TOKEN: ${{ secrets.IOBBOT_GITHUB_TOKEN_WITH_WF }}
+          IOBBOT_GITHUB_TOKEN: ${{ secrets.IOBBOT_GITHUB_TOKEN_WITH_WF }}
