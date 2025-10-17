@@ -17,7 +17,7 @@ This repository (`manage-prs`) is a GitHub Actions workflow automation tool desi
 
 ## Key Components
 
-### createPR.js
+### prGenerator.js
 Node.js script that applies template changes to target repositories. This script:
 - Accepts repository name and template name as command-line arguments
 - Creates marker files to indicate template application
@@ -25,11 +25,15 @@ Node.js script that applies template changes to target repositories. This script
 
 ### GitHub Actions Workflows
 Located in `.github/workflows/`:
-- `create-pr.yml`: Main workflow for creating PRs in target repositories
+- `processRepository.yml`: Main workflow for creating PRs in target repositories
   - Triggers via workflow_dispatch with manual inputs
   - Clones target repository
-  - Executes createPR.js script
+  - Executes prGenerator.js script
   - Commits changes and creates pull request
+- `processLatestRepositories.yml`: Workflow for processing multiple repositories
+  - Retrieves list of repositories from ioBroker latest repository
+  - Triggers processRepository workflow for each repository with 2-minute delays
+  - Automatically restarts after ~3 hours to continue processing
 
 ## Development Guidelines
 
@@ -69,7 +73,7 @@ git config user.email "github-actions[bot]@users.noreply.github.com"
 // CLI argument validation
 if (args.length < 2) {
   console.error('Error: Missing required arguments');
-  console.error('Usage: node createPR.js <repository-name> <template-name>');
+  console.error('Usage: node prGenerator.js <repository-name> <template-name>');
   process.exit(1);
 }
 
@@ -159,7 +163,7 @@ fi
 ## Extending Functionality
 
 ### Adding New Templates
-1. Define template application logic in createPR.js
+1. Define template application logic in prGenerator.js
 2. Add validation for template name
 3. Create appropriate file operations for template
 4. Update workflow documentation
