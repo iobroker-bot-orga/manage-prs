@@ -293,7 +293,6 @@ async function main() {
         
         if ( ! await checkProcessing(context)) {
             console.log(`ⓘ SKIPPING ${owner}/ioBroker.${adapter} (check failed)`);
-            continue; // TEMPORARY
         } else {
             if (! opts.dry) {
                 triggerRepoProcessing(owner, adapter);
@@ -308,7 +307,7 @@ async function main() {
         } else {
             console.log(`ⓘ Will restart after delay, sleeping (${DELAY_BETWEEN_REPOS_SECONDS}s) ...`);            
         }
-        await sleep(DELAY_BETWEEN_REPOS_SECONDS * 1000);
+        await sleep(opts.dry?1000:DELAY_BETWEEN_REPOS_SECONDS * 1000);
     }
 
     if (checkScript && checkScript.finalize) {
