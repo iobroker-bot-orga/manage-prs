@@ -19,7 +19,7 @@ const context = {};
 
 function debug (text){
     if (opts.debug) {
-        console.log(`[DEBUG] ${text}`);
+        console.log(`🐛 ${text}`);
     }
 }
 
@@ -61,7 +61,7 @@ function executeGhCommand(command) {
 async function getLatestRepoLive() {
     return new Promise((resolve, reject) => {
         const url = 'http://repo.iobroker.live/sources-dist-latest.json';
-        console.log(`[INFO] Retrieving "${url}"`);
+        console.log(`ⓘ Retrieving "${url}"`);
         
         const req = http.get(url, (res) => {
             let data = '';
@@ -73,7 +73,7 @@ async function getLatestRepoLive() {
             res.on('end', () => {
                 try {
                     const parsed = JSON.parse(data);
-                    console.log(`[INFO] Retrieved ${Object.keys(parsed).length} repositories`);
+                    console.log(`ⓘ Retrieved ${Object.keys(parsed).length} repositories`);
                     resolve(parsed);
                 } catch (e) {
                     reject(new Error(`Failed to parse JSON: ${e.message}`));
@@ -92,14 +92,14 @@ async function getLatestRepoLive() {
 async function initCheck(context){
     debug(`initCheck('${context.template}')`);
 
-    const filename = `${__dirname}/templates/${context.template}.js`;
-    console.log(`[INFO] initializing checking script ${filename}`);
+    const filename = `${__dirname}/templates/${context.template}/filter.js`;
+    console.log(`ⓘ initializing checking script ${filename}`);
 
     try {
         checkScript = require(filename); 
     } catch (e) {
         if (e.code === 'MODULE_NOT_FOUND') {
-            console.log(`[INFO] no checking script found`);
+            console.log(`ⓘ no checking script found`);
         } else {
             throw(e);
         }
@@ -130,7 +130,7 @@ function triggerRepoProcessing(owner, adapter) {
 
     debug(`trigger repository processing for ${repoUrl}`);
 
-    console.log(`    Triggering workflow for ${repoUrl}`);
+    console.log(`    ⏳ Triggering workflow for ${repoUrl}`);
     
     try {
         // Build the gh workflow run command
@@ -150,16 +150,16 @@ function triggerRepoProcessing(owner, adapter) {
 function triggerRestart(adapter) {
     debug(`trigger latest restart from ${adapter}`);
 
-    console.log(`[INFO] Triggering workflow restart from adapter: ${adapter}`);
+    console.log(`ⓘ Triggering workflow restart from adapter: ${adapter}`);
     
     try {
         // Build the gh api command for repository dispatch
         const cmd = `gh api repos/iobroker-bot-orga/manage-prs/dispatches --method POST --field event_type='process-latest-restart' --field client_payload[template]='${opts.template}' --field client_payload[parameter_data]='${opts.parameter_data}' --field client_payload[pr_mode]='${opts.pr_mode}' --field client_payload[from]='${adapter}'`;
         
         executeGhCommand(cmd);
-        console.log(`[INFO] ✔️ Restart triggered successfully`);
+        console.log(`ⓘ ✔️ Restart triggered successfully`);
     } catch (e) {
-        console.error(`[ERROR] Failed to trigger restart: ${e.message}`);
+        console.error(`❌ Failed to trigger restart: ${e.message}`);
     }
 }
 
@@ -199,19 +199,19 @@ async function main() {
     opts.pr_mode = values['pr_mode'] || 'recreate';
 
     if (!opts.template) {
-        console.error('[ERROR] Template is required. Use --template=<template-name>');
+        console.error('❌ Template is required. Use --template=<template-name>');
         process.exit(1);
     }
 
-    console.log('[INFO] ===================================================================');
-    console.log('[INFO] processLatestRepositories - Starting');
-    console.log('[INFO] ===================================================================');
-    console.log(`[INFO] Template: ${opts.template}`);
-    console.log(`[INFO] Parameter Data: ${opts.parameter_data || '(none)'}`);
-    console.log(`[INFO] PR Mode: ${opts.pr_mode}`);
-    console.log(`[INFO] From: ${opts.from || '(start from beginning)'}`);
-    console.log(`[INFO] Dry Run: ${opts.dry}`);
-    console.log('[INFO] ===================================================================');
+    console.log('ⓘ ===================================================================');
+    console.log('ⓘ processLatestRepositories - Starting');
+    console.log('ⓘ ===================================================================');
+    console.log(`ⓘ Template: ${opts.template}`);
+    console.log(`ⓘ Parameter Data: ${opts.parameter_data || '(none)'}`);
+    console.log(`ⓘ PR Mode: ${opts.pr_mode}`);
+    console.log(`ⓘ From: ${opts.from || '(start from beginning)'}`);
+    console.log(`ⓘ Dry Run: ${opts.dry}`);
+    console.log('ⓘ ===================================================================');
 
     const latestRepo = await getLatestRepoLive();
     const total = Object.keys(latestRepo).filter(k => !k.startsWith('_')).length;
@@ -221,9 +221,9 @@ async function main() {
     const RESTART_AFTER_HOURS = 3; // Restart after 3 hours to avoid workflow timeout
     const MAX_REPOS_BEFORE_RESTART = RESTART_AFTER_HOURS * 60 * (60 / DELAY_BETWEEN_REPOS_SECONDS); // ~90 repos at 2min each
 
-    console.log(`[INFO] Found ${total} repositories to process`);
-    console.log(`[INFO] Delay between processing: ${DELAY_BETWEEN_REPOS_SECONDS} seconds`);
-    console.log(`[INFO] Will restart after ${RESTART_AFTER_HOURS}h (${MAX_REPOS_BEFORE_RESTART} repositories)`);
+    console.log(`ⓘ Found ${total} repositories to process`);
+    console.log(`ⓘ Delay between processing: ${DELAY_BETWEEN_REPOS_SECONDS} seconds`);
+    console.log(`ⓘ Will restart after ${RESTART_AFTER_HOURS}h (${MAX_REPOS_BEFORE_RESTART} repositories)`);
 
     context.template = opts.template;
     await initCheck(context);
@@ -231,15 +231,15 @@ async function main() {
     let curr = 0;
     let counter = MAX_REPOS_BEFORE_RESTART;
     let skip = opts.from && (opts.from !== '');
-    if (skip) console.log (`[INFO] --from set to "${opts.from}" - searching for first adapter to process ...`);
+    if (skip) console.log (`ⓘ --from set to "${opts.from}" - searching for first adapter to process ...`);
     
     for (const adapter in latestRepo) {
         if (!counter) {
-            console.log(`[INFO] Restart limit reached, will restart from adapter: ${adapter}`);
+            console.log(`ⓘ Restart limit reached, will restart from adapter: ${adapter}`);
             if (!opts.dry) {
                 triggerRestart(adapter);
             } else {
-                console.log(`[DRY] Would trigger restart from ${adapter}`);
+                console.log(`🧪 Would trigger restart from ${adapter}`);
             }
             break;
         };
@@ -255,7 +255,7 @@ async function main() {
         // Skip until we reach the 'from' adapter
         if (adapter === opts.from) {
             skip = false;
-            console.log(`[INFO] Found resume point: ${adapter}`);
+            console.log(`ⓘ Found resume point: ${adapter}`);
         }
         if (skip) {
             debug(`Skipping ${adapter} (before resume point)`);
@@ -266,26 +266,26 @@ async function main() {
 
         const parts = latestRepo[adapter].meta.split('/');
         const owner = parts[3];
-        console.log(`\n[INFO] Processing ${owner}/ioBroker.${adapter} (${curr}/${total})`);
+        console.log(`\nⓘ Processing ${owner}/ioBroker.${adapter} (${curr}/${total})`);
 
         context.owner = owner;
         context.adapter = adapter;        
         
         if ( ! await checkProcessing(context)) {
-            console.log(`[INFO] SKIPPING ${owner}/ioBroker.${adapter} (check failed)`);
+            console.log(`ⓘ SKIPPING ${owner}/ioBroker.${adapter} (check failed)`);
         } else {
             if (! opts.dry) {
                 triggerRepoProcessing(owner, adapter);
             } else {
-                console.log (`[DRY] Would trigger processing for ${owner}/ioBroker.${adapter}`)
+                console.log (`🧪 Would trigger processing for ${owner}/ioBroker.${adapter}`)
             }
         }
 
         counter = counter - 1;
         if (counter) {
-            console.log(`[INFO] Will restart after ${counter} more repositories, sleeping (${DELAY_BETWEEN_REPOS_SECONDS}s) ...`);
+            console.log(`ⓘ Will restart after ${counter} more repositories, sleeping (${DELAY_BETWEEN_REPOS_SECONDS}s) ...`);
         } else {
-            console.log(`[INFO] Will restart after delay, sleeping (${DELAY_BETWEEN_REPOS_SECONDS}s) ...`);            
+            console.log(`ⓘ Will restart after delay, sleeping (${DELAY_BETWEEN_REPOS_SECONDS}s) ...`);            
         }
         await sleep(DELAY_BETWEEN_REPOS_SECONDS * 1000);
     }
@@ -294,9 +294,9 @@ async function main() {
         await checkScript.finalize(context);
     }
 
-    console.log('[INFO] ===================================================================');
-    console.log('[INFO] Task completed successfully');
-    console.log('[INFO] ===================================================================');
+    console.log('ⓘ ===================================================================');
+    console.log('ⓘ Task completed successfully');
+    console.log('ⓘ ===================================================================');
 }
 
 main();
