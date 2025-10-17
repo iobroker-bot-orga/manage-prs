@@ -16,9 +16,9 @@ This repository provides GitHub Actions workflows and Node.js scripts to automat
 
 ### Creating a PR from a Template
 
-Use the `create-pr` workflow to apply template changes to a target repository:
+Use the `processRepository` workflow to apply template changes to a target repository:
 
-1. Go to **Actions** → **createPR** workflow
+1. Go to **Actions** → **processRepository** workflow
 2. Click **Run workflow**
 3. Enter the target repository in one of the following formats:
    - Full URL: `https://github.com/owner/repo`
@@ -36,7 +36,7 @@ Use the `create-pr` workflow to apply template changes to a target repository:
 
 The workflow will:
 - Clone the target repository
-- Apply the template using `createPR.js`
+- Apply the template using `prGenerator.js`
 - Read PR title and body from the template markdown file (`templates/<template-name>/description.md`)
 - Execute the template's build script (`templates/<template-name>/build.js`)
 - Create PR with title prefixed with `[iobroker-bot] ` from the first line of the template
@@ -49,6 +49,31 @@ The workflow will:
 - `.iobroker-pr-title.tmp`: Contains the PR title
 - `.iobroker-pr-body.tmp`: Contains the PR body
 - `.iobroker-pr-comment-*.tmp`: Temporary files for PR comments (automatically cleaned up)
+
+### Processing Multiple Repositories
+
+Use the `processLatestRepositories` workflow to apply template changes to multiple ioBroker adapter repositories from the latest repository:
+
+1. Go to **Actions** → **processLatestRepositories** workflow
+2. Click **Run workflow**
+3. Enter the template name (required)
+4. (Optional) Enter parameter data to pass to the template
+5. Select the **PR mode** (default: `recreate`)
+6. (Optional) Enter an adapter name in the **from** field to resume processing from that adapter
+7. Click **Run workflow**
+
+The workflow will:
+- Retrieve the list of all adapters from the ioBroker latest repository
+- Process each adapter by triggering the `processRepository` workflow
+- Wait 2 minutes between processing each repository
+- Automatically restart itself after processing repositories for ~3 hours (to avoid workflow timeout)
+- Resume from a specific adapter if the **from** parameter is provided
+
+**Features:**
+- **Automatic restart**: The workflow automatically restarts itself after 3 hours to continue processing remaining repositories
+- **Resume capability**: Use the `from` parameter to skip already processed adapters
+- **Configurable delay**: 2-minute delay between repository processing to avoid rate limits
+- **Template checking**: Optional template-specific check scripts can be added to `templates/<template-name>.js` to filter which repositories should be processed
 
 ## GitHub Copilot Instructions
 
@@ -73,8 +98,8 @@ A weekly GitHub Action (`check-copilot-template.yml`) automatically:
 
 ### Scripts
 
-- **createPR.js**: Node.js script that applies template changes to repositories
-  - Usage: `node createPR.js <repository-name> <template-name> [parameter-data]`
+- **prGenerator.js**: Node.js script that applies template changes to repositories
+  - Usage: `node prGenerator.js <repository-name> <template-name> [parameter-data]`
   - Validates that template directory exists with required files: `description.md` and `build.js`
   - Reads template markdown file (`templates/<template-name>/description.md`) to generate PR title and body
   - First line of markdown file becomes PR title (with `[iobroker-bot] ` prefix)
@@ -86,7 +111,7 @@ A weekly GitHub Action (`check-copilot-template.yml`) automatically:
 
 - **prManager.js**: Node.js script that manages PR creation based on different modes
   - Usage: `node prManager.js <mode> <repository-name> <base-branch> <head-branch>`
-  - Reads `.iobroker-pr-title.tmp` and `.iobroker-pr-body.tmp` files created by `createPR.js`
+  - Reads `.iobroker-pr-title.tmp` and `.iobroker-pr-body.tmp` files created by `prGenerator.js`
   - Handles different PR creation modes:
     - `force creation`: Always create a new PR, closing existing open PRs first
     - `recreate`: Close open PRs and create new one, skip if previously closed by others
@@ -95,11 +120,27 @@ A weekly GitHub Action (`check-copilot-template.yml`) automatically:
     - `skip if merged`: Skip if a PR with the same title was already merged
     - `REVOKE`: Close all existing open PRs with revocation comment, skip PR creation
 
+- **processLatestRepositories.js**: Node.js script that processes multiple repositories from the ioBroker latest repository
+  - Usage: `node processLatestRepositories.js --template=<template-name> [--parameter_data=<data>] [--pr_mode=<mode>] [--from=<adapter-name>] [--dry] [--debug]`
+  - Retrieves the list of adapters from http://repo.iobroker.live/sources-dist-latest.json
+  - Triggers the `processRepository` workflow for each adapter
+  - Implements 2-minute delay between processing repositories
+  - Automatically restarts after ~3 hours (90 repositories at 2min each) to avoid workflow timeout
+  - Supports resuming from a specific adapter using `--from` parameter
+  - Optional template-specific checking via `templates/<template-name>.js` module
+  - Uses `gh` CLI for triggering workflows instead of REST API calls
+
 ### Workflows
 
-- **create-pr.yml**: Main workflow for creating PRs
+- **processRepository.yml**: Main workflow for creating PRs in a single repository
   - Triggered manually via workflow_dispatch
   - Handles repository forking, cloning, and PR creation
+  
+- **processLatestRepositories.yml**: Workflow for processing multiple repositories
+  - Triggered manually via workflow_dispatch or via repository_dispatch for automatic restarts
+  - Retrieves list of repositories from ioBroker latest repository
+  - Triggers `processRepository` workflow for each repository with 2-minute delays
+  - Automatically restarts after ~3 hours to continue processing
   
 - **check-copilot-template.yml**: Automated template version checking
   - Runs weekly on Sundays at 3:23 AM UTC
