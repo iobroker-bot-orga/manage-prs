@@ -1,6 +1,6 @@
 # Templates
 
-This directory contains templates that can be applied to target repositories using the `createPR.js` script.
+This directory contains templates that can be applied to target repositories using the `prGenerator.js` script.
 
 ## Structure
 
@@ -52,19 +52,19 @@ module.exports = function(repoPath, params) {
 
 ## Usage
 
-When running the `createPR.js` script, specify the template name as the second argument:
+When running the `prGenerator.js` script, specify the template name as the second argument:
 
 ```bash
-node createPR.js <repository-name> <template-name> [parameter-data]
+node prGenerator.js <repository-name> <template-name> [parameter-data]
 ```
 
 For example:
 ```bash
 # Without parameters
-node createPR.js owner/repo example
+node prGenerator.js owner/repo example
 
 # With parameters
-node createPR.js owner/repo example "version=1.2.3,author=bot"
+node prGenerator.js owner/repo example "version=1.2.3,author=bot"
 ```
 
 ## Validation
