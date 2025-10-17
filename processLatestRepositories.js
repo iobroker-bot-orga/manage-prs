@@ -3,7 +3,7 @@
 
 const {parseArgs} = require('node:util');
 const { execSync } = require('child_process');
-const https = require('node:https');
+const http = require('node:http');
 
 const opts = {
     dry: false,
@@ -63,7 +63,7 @@ async function getLatestRepoLive() {
         const url = 'http://repo.iobroker.live/sources-dist-latest.json';
         console.log(`[INFO] Retrieving "${url}"`);
         
-        const req = https.get(url, (res) => {
+        const req = http.get(url, (res) => {
             let data = '';
             
             res.on('data', (chunk) => {
