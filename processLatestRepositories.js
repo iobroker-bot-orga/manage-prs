@@ -63,7 +63,14 @@ async function getLatestRepoLive() {
         const url = 'http://repo.iobroker.live/sources-dist-latest.json';
         console.log(`ⓘ Retrieving "${url}"`);
         
-        const req = http.get(url, (res) => {
+        const options = {
+            headers: {
+                'Authorization': process.env.IOBBOT_GITHUB_TOKEN ? `token ${process.env.IOBBOT_GITHUB_TOKEN}` : 'none',
+                'user-agent': 'Action script',
+            }
+        };
+        
+        const req = http.get(url, options, (res) => {
             let data = '';
             
             res.on('data', (chunk) => {
