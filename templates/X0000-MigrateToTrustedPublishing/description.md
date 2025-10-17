@@ -74,7 +74,7 @@ For more information, see:
 
 ## Deutsche Beschreibung
 
-# Migration zu NPM Trusted Publishing
+## Migration zu NPM Trusted Publishing
 
 ## Allgemeine Informationen
 
