@@ -1,4 +1,4 @@
-# Migrate to NPM Trusted Publishing
+Migrate to NPM Trusted Publishing
 
 [German description can be found below](#deutsche-beschreibung)  
 [Deutsche Beschreibung befindet sich weiter unten](#deutsche-beschreibung)
