@@ -1,7 +1,7 @@
 # work files
-.pr-title
-.pr-body
-.pr-comment-*
+.iobroker-pr-title.tmp
+.iobroker-pr-body.tmp
+.iobroker-pr-comment-*.tmp
 
 # Node modules
 node_modules/
