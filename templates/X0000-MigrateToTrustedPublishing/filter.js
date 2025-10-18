@@ -11,7 +11,7 @@ async function init(context) {
 }
 
 async function test(context) {
-    return (context.owner === `mcm4iob` || context.owner === `iobroker-community-adapters` );
+    return true;
 }
 
 async function finalize(context) {
