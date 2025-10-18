@@ -1,7 +1,7 @@
+Block .commitinfo by adding to .gitignore
+
 [German description can be found below](#deutsche-beschreibung)  
 [Deutsche Beschreibung weiter unten](#deutsche-beschreibung)
-
-# Block .commitinfo by adding to .gitignore
 
 ## General information
 
@@ -35,8 +35,6 @@ This PR adds the file `.commitinfo` to `.gitignore` to prevent it from being com
 
 # Deutsche Beschreibung
 
-# .commitinfo durch Hinzufügen zu .gitignore blockieren
-
 ## Allgemeine Informationen
 
 Dieser PR wurde von iobroker-bot erstellt. Bitte die Änderungen sorgfältig prüfen und den PR bei erfolgreicher Prüfung mergen.
@@ -53,7 +51,7 @@ Und **VIELEN DANK** für die Pflege dieses Adapters von mir und allen Nutzern.
 
 ## Durch diesen PR bereitgestellte Änderungen
 
-Dieser PR behebt den Hinweis **[S9006] .commitinfo-Datei sollte durch .gitignore ausgeschlossen werden, bitte eine Zeile mit dem Text ".commitinfo" zu .gitignore hinzufügen**, der vom ioBroker Repository Checker protokolliert wurde.
+Dieser PR behebt den Hinweis **[S9006] .commitinfo file should be excluded by .gitignore, please add a line with text ".commitinfo" to .gitignore**, der vom ioBroker Repository Checker protokolliert wurde.
 
 ### Hintergrund
 
