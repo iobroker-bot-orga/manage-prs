@@ -20,7 +20,7 @@ This PR fixes the suggestion **[S9006] .commitinfo file should be excluded by .g
 
 ### Background
 
-The file `.commitinfo` is created by `@alcalzone/releasescript` and is normally deleted automatically during processing. However, it can be left over in case of errors or abnormal termination of the release script. Since the `.commitinfo` file should never be committed to GitHub, adding it to `.gitignore` is recommended to prevent accidental commits.
+The file `.commitinfo` is created by `@alcalzone/releasescript` and is normally deleted automatically during processing. However, it may be left over in case of errors or abnormal termination of the release script. Since the `.commitinfo` file should never be committed to GitHub, adding it to `.gitignore` is recommended to prevent accidental commits.
 
 **Note:** Adding `.commitinfo` to `.gitignore` will not influence development tasks and will have no effect on user installations.
 
