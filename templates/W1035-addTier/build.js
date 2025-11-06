@@ -22,7 +22,7 @@ const ioPackagePath = './io-package.json';
 // Check if io-package.json exists
 if (!fs.existsSync(ioPackagePath)) {
     console.log(`❌ ${ioPackagePath} does not exist, cannot create PR.`);
-    process.exit(0);
+    process.exit(1);
 }
 
 console.log(`✔️ ${ioPackagePath} exists.`);
