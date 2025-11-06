@@ -117,6 +117,7 @@ const licenseInformation = {
 };
 
 // Build the replacement string with proper indentation
+// Note: We need to add extra indentation for nested properties (4 spaces more)
 const licenseInfoLines = [
     `"licenseInformation": {`,
     `${indentation}    "type": "free",`,
@@ -124,7 +125,7 @@ const licenseInfoLines = [
     `${indentation}}`
 ];
 
-const replacement = licenseInfoLines.join('\n' + indentation);
+const replacement = licenseInfoLines.join('\n');
 
 // Replace the old license attribute with the new licenseInformation object
 const newContent = originalContent.replace(licenseRegex, replacement);
