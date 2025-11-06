@@ -31,9 +31,7 @@ The `common.tier` attribute in `io-package.json` defines the start order of adap
 
 Setting this attribute ensures that adapter instances are started in the correct order during system initialization, which is important for adapters that depend on other adapters being available.
 
-**Note:** The tier attribute controls the startup sequence and does not relate to quality, maturity, or support level of the adapter.
-
-More information about io-package.json attributes can be found in the [ioBroker documentation](https://github.com/ioBroker/ioBroker.docs/blob/master/docs/en/dev/objectsschema.md).
+More information about io-package.json attributes can be found in the [ioBroker documentation](https://github.com/iobroker-community-adapters/ioBroker.harmony/issues).
 
 ### Changes
 
@@ -75,9 +73,7 @@ Das Attribut `common.tier` in der `io-package.json` definiert die Startreihenfol
 
 Das Setzen dieses Attributs stellt sicher, dass Adapter-Instanzen während der Systeminitialisierung in der richtigen Reihenfolge gestartet werden, was wichtig für Adapter ist, die von der Verfügbarkeit anderer Adapter abhängen.
 
-**Hinweis:** Das Tier-Attribut steuert die Startreihenfolge und bezieht sich nicht auf Qualität, Reife oder Support-Level des Adapters.
-
-Weitere Informationen zu io-package.json-Attributen finden sich in der [ioBroker-Dokumentation](https://github.com/ioBroker/ioBroker.docs/blob/master/docs/en/dev/objectsschema.md).
+Weitere Informationen zu io-package.json-Attributen finden sich in der [ioBroker-Dokumentation](https://github.com/iobroker-community-adapters/ioBroker.harmony/issues).
 
 ### Änderungen
 
