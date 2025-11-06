@@ -1,7 +1,7 @@
 // This script implements the required changes for a PR 
 // The working directory is set to the root of the repository.
 // The script must exit with status 0 if everything is ok.
-// if no change is to be applied for any reason the script must not change any files. This will prohibit creation of an PR. 
+// if no change is to be applied for any reason the script must not change any files. This will prohibit creation of a PR. 
 
 const fs = require('node:fs');
 
@@ -88,7 +88,7 @@ if (currentTier !== undefined) {
         insertMode = 'after';
     } else {
         // Try to find license or licenseInformation
-        const licenseMatch = originalContent.match(/"licenseInformation"\s*:\s*\{/) || 
+        const licenseMatch = originalContent.match(/"licenseInformation"\s*:\s*("[^"]*"|\{)/) || 
                             originalContent.match(/"license"\s*:\s*"[^"]*"/);
         
         if (licenseMatch) {
@@ -111,8 +111,11 @@ if (currentTier !== undefined) {
     const lines = originalContent.split('\n');
     let indentation = '        '; // default 8 spaces
     
+    // Try to find indentation from common fields
     for (const line of lines) {
-        if (line.includes('"loglevel"') || line.includes('"type"') || line.includes('"license"')) {
+        if (line.includes('"loglevel"') || line.includes('"type"') || 
+            line.includes('"license"') || line.includes('"name"') || 
+            line.includes('"version"')) {
             const match = line.match(/^(\s*)"/);
             if (match) {
                 indentation = match[1];
