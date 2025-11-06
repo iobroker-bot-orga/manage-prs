@@ -128,6 +128,21 @@ const indentation = linePrefix.match(/^\s*/)[0];
 
 console.log(`ⓘ Using indentation: ${indentation.length} spaces`);
 
+// Detect the indentation increment used in the file
+// We use the indentation of the license line itself to determine the increment
+// by comparing it to the parent (common) indentation
+let indentIncrement = '    '; // Default to 4 spaces
+
+// Find the indentation of the common object itself
+const commonLineStart = originalContent.lastIndexOf('\n', commonMatch.index) + 1;
+const commonIndent = originalContent.substring(commonLineStart, commonMatch.index).match(/^\s*/)[0];
+
+// The increment is the difference between the license line indentation and common indentation
+if (indentation.length > commonIndent.length) {
+    indentIncrement = indentation.substring(commonIndent.length);
+    console.log(`ⓘ Detected indentation increment: ${indentIncrement.length} ${indentIncrement.includes('\t') ? 'tabs' : 'spaces'}`);
+}
+
 // Build the licenseInformation object
 // Use JSON.stringify to properly escape the license value
 const licenseInformation = {
@@ -136,11 +151,10 @@ const licenseInformation = {
 };
 
 // Build the replacement string with proper indentation
-// Note: We need to add extra indentation for nested properties (4 spaces more)
 const licenseInfoLines = [
     `"licenseInformation": {`,
-    `${indentation}    "type": "free",`,
-    `${indentation}    "license": ${JSON.stringify(licenseValue)}`,
+    `${indentation}${indentIncrement}"type": "free",`,
+    `${indentation}${indentIncrement}"license": ${JSON.stringify(licenseValue)}`,
     `${indentation}}`
 ];
 
