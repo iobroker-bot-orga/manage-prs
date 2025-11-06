@@ -88,29 +88,48 @@ if (!licenseValue) {
 const originalContent = fs.readFileSync(ioPackagePath, 'utf8');
 
 // Find the position of common.license to replace it
-const licenseRegex = /"license"\s*:\s*"[^"]*"/;
-const licenseMatch = originalContent.match(licenseRegex);
+// Look for "license" within the "common" object to avoid matching other license properties
+const commonMatch = originalContent.match(/"common"\s*:\s*\{/);
+if (!commonMatch) {
+    console.log(`❌ Could not find 'common' section in ${ioPackagePath}, cannot create PR.`);
+    process.exit(0);
+}
+
+// Search for license only within the common section
+const commonStart = commonMatch.index;
+// Updated regex to handle escaped quotes within the license value
+// Matches "license": "value" where value can contain escaped quotes
+const licenseRegex = /"license"\s*:\s*"(?:[^"\\]|\\.)*"/;
+const licenseMatch = originalContent.substring(commonStart).match(licenseRegex);
 
 if (!licenseMatch) {
     console.log(`❌ Could not find common.license attribute in ${ioPackagePath}, cannot create PR.`);
     process.exit(0);
 }
 
-console.log(`✔️ Found common.license attribute at position ${licenseMatch.index}`);
+// Adjust the match index to be relative to the full content
+const actualLicenseIndex = commonStart + licenseMatch.index;
+const actualLicenseMatch = {
+    ...licenseMatch,
+    index: actualLicenseIndex
+};
+
+console.log(`✔️ Found common.license attribute at position ${actualLicenseMatch.index}`);
 
 // Find the beginning of the line (including indentation)
-let lineStart = licenseMatch.index;
+let lineStart = actualLicenseMatch.index;
 while (lineStart > 0 && originalContent[lineStart - 1] !== '\n') {
     lineStart--;
 }
 
 // Extract indentation from the license line
-const linePrefix = originalContent.substring(lineStart, licenseMatch.index);
+const linePrefix = originalContent.substring(lineStart, actualLicenseMatch.index);
 const indentation = linePrefix.match(/^\s*/)[0];
 
 console.log(`ⓘ Using indentation: ${indentation.length} spaces`);
 
 // Build the licenseInformation object
+// Use JSON.stringify to properly escape the license value
 const licenseInformation = {
     type: 'free',
     license: licenseValue
@@ -121,14 +140,19 @@ const licenseInformation = {
 const licenseInfoLines = [
     `"licenseInformation": {`,
     `${indentation}    "type": "free",`,
-    `${indentation}    "license": "${licenseValue}"`,
+    `${indentation}    "license": ${JSON.stringify(licenseValue)}`,
     `${indentation}}`
 ];
 
 const replacement = licenseInfoLines.join('\n');
 
 // Replace the old license attribute with the new licenseInformation object
-const newContent = originalContent.replace(licenseRegex, replacement);
+// We need to replace the exact matched string, not the regex pattern
+const oldLicenseString = originalContent.substring(
+    actualLicenseMatch.index,
+    actualLicenseMatch.index + actualLicenseMatch[0].length
+);
+const newContent = originalContent.replace(oldLicenseString, replacement);
 
 // Validate that the new content is valid JSON
 try {
