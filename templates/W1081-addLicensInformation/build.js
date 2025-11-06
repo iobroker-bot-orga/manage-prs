@@ -23,7 +23,7 @@ const packageJsonPath = './package.json';
 // Check if io-package.json exists
 if (!fs.existsSync(ioPackagePath)) {
     console.log(`❌ ${ioPackagePath} does not exist, cannot create PR.`);
-    process.exit(0);
+    process.exit(1);
 }
 
 console.log(`✔️ ${ioPackagePath} exists.`);
@@ -81,7 +81,7 @@ if (ioPackage.common?.license) {
 // If we still don't have a license value, we cannot proceed
 if (!licenseValue) {
     console.log(`❌ No license information found in either ${ioPackagePath} or ${packageJsonPath}, cannot create PR.`);
-    process.exit(0);
+    process.exit(1);
 }
 
 // Read the original file to preserve formatting
@@ -92,7 +92,7 @@ const originalContent = fs.readFileSync(ioPackagePath, 'utf8');
 const commonMatch = originalContent.match(/"common"\s*:\s*\{/);
 if (!commonMatch) {
     console.log(`❌ Could not find 'common' section in ${ioPackagePath}, cannot create PR.`);
-    process.exit(0);
+    process.exit(1);
 }
 
 // Search for license only within the common section
@@ -104,7 +104,7 @@ const licenseMatch = originalContent.substring(commonStart).match(licenseRegex);
 
 if (!licenseMatch) {
     console.log(`❌ Could not find common.license attribute in ${ioPackagePath}, cannot create PR.`);
-    process.exit(0);
+    process.exit(1);
 }
 
 // Adjust the match index to be relative to the full content
