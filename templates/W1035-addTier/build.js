@@ -76,27 +76,30 @@ if (currentTier !== undefined) {
     }
     
     // Try to find loglevel
-    const loglevelMatch = originalContent.match(/"loglevel"\s*:\s*"[^"]*"\s*,?/);
+    const loglevelRegex = /"loglevel"\s*:\s*"[^"]*"/;
+    const loglevelMatch = originalContent.match(loglevelRegex);
     let insertPosition;
-    let insertAfterComma = false;
+    let insertMode = 'after'; // 'after' or 'before'
     
     if (loglevelMatch) {
         // Insert after loglevel
         console.log(`ⓘ Found 'loglevel', will insert tier after it`);
         insertPosition = loglevelMatch.index + loglevelMatch[0].length;
-        
-        // Check if loglevel line ends with comma
-        if (!loglevelMatch[0].trim().endsWith(',')) {
-            insertAfterComma = true;
-        }
+        insertMode = 'after';
     } else {
         // Try to find license or licenseInformation
         const licenseMatch = originalContent.match(/"licenseInformation"\s*:\s*\{/) || 
-                            originalContent.match(/"license"\s*:\s*"[^"]*"\s*,?/);
+                            originalContent.match(/"license"\s*:\s*"[^"]*"/);
         
         if (licenseMatch) {
             console.log(`ⓘ Found license field, will insert tier before it`);
-            insertPosition = licenseMatch.index;
+            // Find the beginning of the line (including indentation)
+            let lineStart = licenseMatch.index;
+            while (lineStart > 0 && originalContent[lineStart - 1] !== '\n') {
+                lineStart--;
+            }
+            insertPosition = lineStart;
+            insertMode = 'before';
         } else {
             console.error(`❌ Could not find suitable position to insert tier`);
             process.exit(1);
@@ -109,7 +112,7 @@ if (currentTier !== undefined) {
     let indentation = '        '; // default 8 spaces
     
     for (const line of lines) {
-        if (line.includes('"loglevel"') || line.includes('"type"')) {
+        if (line.includes('"loglevel"') || line.includes('"type"') || line.includes('"license"')) {
             const match = line.match(/^(\s*)"/);
             if (match) {
                 indentation = match[1];
@@ -119,11 +122,11 @@ if (currentTier !== undefined) {
     }
     
     let tierLine;
-    if (loglevelMatch) {
-        tierLine = insertAfterComma 
-            ? `,\n${indentation}"tier": ${defaultTier}`
-            : `\n${indentation}"tier": ${defaultTier}`;
+    if (insertMode === 'after') {
+        // After loglevel, need comma and newline
+        tierLine = `,\n${indentation}"tier": ${defaultTier}`;
     } else {
+        // Before license, need the tier line with comma
         tierLine = `${indentation}"tier": ${defaultTier},\n`;
     }
     
