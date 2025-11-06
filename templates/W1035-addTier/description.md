@@ -23,15 +23,17 @@ This PR fixes the warning **[W1035] Attribute common.tier is missing in io-packa
 
 ### Background
 
-The `common.tier` attribute in `io-package.json` is used to categorize adapters into different quality tiers within the ioBroker ecosystem. This helps users understand the maturity and support level of an adapter:
+The `common.tier` attribute in `io-package.json` defines the start order of adapter instances. Allowed values are 1, 2, or 3:
 
-- **Tier 1**: Official ioBroker adapters with highest priority support
-- **Tier 2**: Community-maintained adapters (default for most adapters)
-- **Tier 3**: Visualization adapters and other specialized adapters
+- **Tier 1**: Start first - for critical adapters like database servers that must be started before all other adapters
+- **Tier 2**: Start second - for most adapters (default)
+- **Tier 3**: Start last - for visualization adapters that should be started after all other adapters
 
-Having this attribute set allows the ioBroker system to properly categorize and display the adapter in the admin interface and repository listings.
+Setting this attribute ensures that adapter instances are started in the correct order during system initialization, which is important for adapters that depend on other adapters being available.
 
-**Note:** Adding the `tier` attribute will not affect the functionality of the adapter but helps with proper categorization in the ioBroker ecosystem.
+**Note:** The tier attribute controls the startup sequence and does not relate to quality, maturity, or support level of the adapter.
+
+More information about io-package.json attributes can be found in the [ioBroker documentation](https://github.com/ioBroker/ioBroker.docs/blob/master/docs/en/dev/objectsschema.md).
 
 ### Changes
 
@@ -65,15 +67,17 @@ Dieser PR behebt die Warnung **[W1035] Attribute common.tier is missing in io-pa
 
 ### Hintergrund
 
-Das Attribut `common.tier` in der `io-package.json` wird verwendet, um Adapter in verschiedene Qualitätsstufen innerhalb des ioBroker-Ökosystems zu kategorisieren. Dies hilft Benutzern, die Reife und den Supportlevel eines Adapters zu verstehen:
+Das Attribut `common.tier` in der `io-package.json` definiert die Startreihenfolge von Adapter-Instanzen. Zulässige Werte sind 1, 2 oder 3:
 
-- **Tier 1**: Offizielle ioBroker-Adapter mit höchster Support-Priorität
-- **Tier 2**: Community-gepflegte Adapter (Standard für die meisten Adapter)
-- **Tier 3**: Visualisierungs-Adapter und andere spezialisierte Adapter
+- **Tier 1**: Zuerst starten - für kritische Adapter wie Datenbankserver, die vor allen anderen Adaptern gestartet werden müssen
+- **Tier 2**: Als zweites starten - für die meisten Adapter (Standard)
+- **Tier 3**: Zuletzt starten - für Visualisierungs-Adapter, die nach allen anderen Adaptern gestartet werden sollen
 
-Das Setzen dieses Attributs ermöglicht es dem ioBroker-System, den Adapter in der Admin-Oberfläche und in Repository-Auflistungen korrekt zu kategorisieren und anzuzeigen.
+Das Setzen dieses Attributs stellt sicher, dass Adapter-Instanzen während der Systeminitialisierung in der richtigen Reihenfolge gestartet werden, was wichtig für Adapter ist, die von der Verfügbarkeit anderer Adapter abhängen.
 
-**Hinweis:** Das Hinzufügen des `tier`-Attributs beeinflusst nicht die Funktionalität des Adapters, hilft aber bei der korrekten Kategorisierung im ioBroker-Ökosystem.
+**Hinweis:** Das Tier-Attribut steuert die Startreihenfolge und bezieht sich nicht auf Qualität, Reife oder Support-Level des Adapters.
+
+Weitere Informationen zu io-package.json-Attributen finden sich in der [ioBroker-Dokumentation](https://github.com/ioBroker/ioBroker.docs/blob/master/docs/en/dev/objectsschema.md).
 
 ### Änderungen
 
