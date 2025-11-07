@@ -1,6 +1,5 @@
+Optimize Dependabot Schedule Configuration
 [German description can be found below](#deutsche-beschreibung) | [Deutsche Beschreibung weiter unten](#deutsche-beschreibung)
-
-# Optimize Dependabot Schedule Configuration
 
 ## General information 
 
