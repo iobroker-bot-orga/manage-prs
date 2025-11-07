@@ -28,10 +28,12 @@ if (!fs.existsSync(dependabotPath)) {
 
 console.log(`✔️ ${dependabotPath} exists.`);
 
-// Calculate random day-of-month (2-28) and random time (1:00-4:00)
-const randomDay = Math.floor(Math.random() * 27) + 2; // 2 to 28
-const randomHour = Math.floor(Math.random() * 3) + 1; // 1 to 3
-const randomMinute = Math.floor(Math.random() * 60); // 0 to 59
+// Calculate deterministic random day-of-month (2-28) and random time (1:00-4:00) based on repository name
+// This ensures the same repository always gets the same schedule
+const hash = simpleHash(repositoryName);
+const randomDay = (hash % 27) + 2; // 2 to 28
+const randomHour = ((hash >> 8) % 3) + 1; // 1 to 3
+const randomMinute = (hash >> 16) % 60; // 0 to 59
 const cronExpression = `${randomMinute} ${randomHour} ${randomDay} * *`;
 
 console.log(`ⓘ Generated random schedule: Day ${randomDay}, Time ${randomHour}:${randomMinute.toString().padStart(2, '0')}`);
@@ -60,6 +62,10 @@ if (hasMultiplePackageJson) {
 }
 
 let changesMade = false;
+
+// Check if there's exactly one npm block for multi-directory handling
+const npmBlocks = dependabotConfig.updates.filter(u => u['package-ecosystem'] === 'npm');
+const shouldUpdateNpmDirectories = hasMultiplePackageJson && npmBlocks.length === 1;
 
 // Process each update block
 dependabotConfig.updates.forEach((update, index) => {
@@ -104,16 +110,11 @@ dependabotConfig.updates.forEach((update, index) => {
   }
   
   // Handle npm package ecosystem with multiple package.json files
-  if (hasMultiplePackageJson && update['package-ecosystem'] === 'npm') {
-    // Check if there's exactly one npm block and it uses directory: "/"
-    const npmBlocks = dependabotConfig.updates.filter(u => u['package-ecosystem'] === 'npm');
-    
-    if (npmBlocks.length === 1 && update.directory === '/') {
-      console.log(`✔️ Replacing directory: "/" with directories: "**/*"`);
-      delete update.directory;
-      update.directories = '**/*';
-      changesMade = true;
-    }
+  if (shouldUpdateNpmDirectories && update['package-ecosystem'] === 'npm' && update.directory === '/') {
+    console.log(`✔️ Replacing directory: "/" with directories: "**/*"`);
+    delete update.directory;
+    update.directories = '**/*';
+    changesMade = true;
   }
 });
 
@@ -135,6 +136,21 @@ if (changesMade) {
 console.log(`\n✔️ processing completed`);
 
 process.exit(0);
+
+/**
+ * Simple hash function for strings
+ * @param {string} str - String to hash
+ * @returns {number} - Hash value
+ */
+function simpleHash(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return Math.abs(hash);
+}
 
 /**
  * Recursively find all package.json files in a directory
