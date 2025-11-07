@@ -55,6 +55,9 @@ jobs:
           echo "Node version: $(node --version)"
           echo "NPM version: $(npm --version)"
 
+      - name: Install dependencies
+        run: npm i
+
       - name: Extract repository info
         id: repo_info
         run: |

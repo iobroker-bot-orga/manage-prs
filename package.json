@@ -1,6 +1,8 @@
 {
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  },
   "devDependencies": {
     "@iobroker/eslint-config": "^2.2.0",
-    "js-yaml": "^4.1.0"
   }
 }
