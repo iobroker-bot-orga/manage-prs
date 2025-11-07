@@ -91,9 +91,9 @@ dependabotConfig.updates.forEach((update, index) => {
         delete update.schedule.time;
       }
       
-      // Add cron expression
-      update.schedule.cron = cronExpression;
-      console.log(`✔️ Added cron expression: ${cronExpression}`);
+      // Add cronjob expression
+      update.schedule.cronjob = cronExpression;
+      console.log(`✔️ Added cronjob expression: ${cronExpression}`);
       changesMade = true;
     }
   }
@@ -124,10 +124,19 @@ if (changesMade) {
     indent: 2,
     lineWidth: -1,
     noRefs: true,
-    quotingType: '"'
+    quotingType: '"',
+    forceQuotes: true
   });
   
-  fs.writeFileSync(dependabotPath, updatedYaml, 'utf8');
+  // Generate human-readable comment for execution schedule
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                      'July', 'August', 'September', 'October', 'November', 'December'];
+  const formattedTime = `${randomHour.toString().padStart(2, '0')}:${randomMinute.toString().padStart(2, '0')}`;
+  const scheduleComment = `# Dependabot will run on day ${randomDay} of each month at ${formattedTime} (Europe/Berlin timezone)\n`;
+  
+  const finalYaml = scheduleComment + updatedYaml;
+  
+  fs.writeFileSync(dependabotPath, finalYaml, 'utf8');
   console.log(`\n✔️ ${dependabotPath} updated successfully.`);
 } else {
   console.log(`\nⓘ No changes were made to ${dependabotPath}.`);
