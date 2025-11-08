@@ -114,7 +114,10 @@ jobs:
               echo "    Repository: $CURRENT_USER/${{ steps.repo_info.outputs.repo }}"
               exit 1
             fi
-            if [ "$FORK_PARENT" != "${{ steps.repo_info.outputs.full_name }}" ]; then
+            # Compare case-insensitively since GitHub URLs are case-insensitive
+            FORK_PARENT_LOWER=$(echo "$FORK_PARENT" | tr '[:upper:]' '[:lower:]')
+            EXPECTED_PARENT_LOWER=$(echo "${{ steps.repo_info.outputs.full_name }}" | tr '[:upper:]' '[:lower:]')
+            if [ "$FORK_PARENT_LOWER" != "$EXPECTED_PARENT_LOWER" ]; then
               echo "    ERROR: Fork exists but is not based on ${{ steps.repo_info.outputs.full_name }}"
               echo "    Fork parent: $FORK_PARENT"
               echo "    Expected: ${{ steps.repo_info.outputs.full_name }}"
