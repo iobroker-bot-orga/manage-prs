@@ -111,9 +111,16 @@ dependabotConfig.updates.forEach((update, index) => {
   
   // Handle npm package ecosystem with multiple package.json files
   if (shouldUpdateNpmDirectories && update['package-ecosystem'] === 'npm' && update.directory === '/') {
-    console.log(`✔️ Replacing directory: "/" with directories: "**/*"`);
+    console.log(`✔️ Replacing directory: "/" with directories array`);
     delete update.directory;
-    update.directories = '**/*';
+    update.directories = ['**/*'];
+    changesMade = true;
+  }
+  
+  // Fix incorrect directories syntax if it exists (should be array, not string)
+  if (update.directories && typeof update.directories === 'string') {
+    console.log(`✔️ Converting directories from string to array format`);
+    update.directories = [update.directories];
     changesMade = true;
   }
 });
@@ -128,13 +135,16 @@ if (changesMade) {
     forceQuotes: true
   });
   
+  // Add empty line before each '- package-ecosystem:' for better readability
+  const formattedYaml = updatedYaml.replace(/(\n)(  - package-ecosystem:)/g, '\n\n$2');
+  
   // Generate human-readable comment for execution schedule
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
                       'July', 'August', 'September', 'October', 'November', 'December'];
   const formattedTime = `${randomHour.toString().padStart(2, '0')}:${randomMinute.toString().padStart(2, '0')}`;
   const scheduleComment = `# Dependabot will run on day ${randomDay} of each month at ${formattedTime} (Europe/Berlin timezone)\n`;
   
-  const finalYaml = scheduleComment + updatedYaml;
+  const finalYaml = scheduleComment + formattedYaml;
   
   fs.writeFileSync(dependabotPath, finalYaml, 'utf8');
   console.log(`\n✔️ ${dependabotPath} updated successfully.`);

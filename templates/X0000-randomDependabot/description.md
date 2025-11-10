@@ -33,7 +33,13 @@ This PR makes the following changes to address these issues:
 
 3. **Timezone Configuration**: Ensures all schedules use `timezone: Europe/Berlin` for consistent timing.
 
-4. **Multi-directory Support**: If multiple `package.json` files are detected in the repository, the configuration for npm packages is updated to use `directories: "**/*"` instead of `directory: "/"` to properly scan all subdirectories.
+4. **Multi-directory Support**: If multiple `package.json` files are detected in the repository, the configuration for npm packages is updated to use correct YAML array syntax for `directories` field instead of `directory: "/"` to properly scan all subdirectories. The correct format is:
+   ```yaml
+   directories:
+     - "**/*"
+   ```
+
+5. **Syntax Correction**: This PR also corrects any existing invalid `directories: "**/*"` string syntax to the proper YAML array format. The incorrect string syntax is not supported by GitHub Dependabot and must be an array.
 
 ### Benefits
 
@@ -66,7 +72,13 @@ Diese PR führt die folgenden Änderungen durch, um diese Probleme zu beheben:
 
 3. **Zeitzonenkonfiguration**: Alle Zeitpläne verwenden `timezone: Europe/Berlin` für eine konsistente Zeitplanung.
 
-4. **Unterstützung mehrerer Verzeichnisse**: Wenn mehrere `package.json`-Dateien im Repository erkannt werden, wird die Konfiguration für npm-Pakete aktualisiert, um `directories: "**/*"` anstelle von `directory: "/"` zu verwenden, damit alle Unterverzeichnisse ordnungsgemäß gescannt werden.
+4. **Unterstützung mehrerer Verzeichnisse**: Wenn mehrere `package.json`-Dateien im Repository erkannt werden, wird die Konfiguration für npm-Pakete aktualisiert, um die korrekte YAML-Array-Syntax für das `directories`-Feld anstelle von `directory: "/"` zu verwenden, damit alle Unterverzeichnisse ordnungsgemäß gescannt werden. Das korrekte Format ist:
+   ```yaml
+   directories:
+     - "**/*"
+   ```
+
+5. **Syntaxkorrektur**: Diese PR korrigiert auch jede vorhandene ungültige `directories: "**/*"` String-Syntax in das richtige YAML-Array-Format. Die falsche String-Syntax wird von GitHub Dependabot nicht unterstützt und muss ein Array sein.
 
 ### Vorteile
 
