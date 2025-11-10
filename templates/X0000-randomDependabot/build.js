@@ -111,9 +111,16 @@ dependabotConfig.updates.forEach((update, index) => {
   
   // Handle npm package ecosystem with multiple package.json files
   if (shouldUpdateNpmDirectories && update['package-ecosystem'] === 'npm' && update.directory === '/') {
-    console.log(`✔️ Replacing directory: "/" with directories: "**/*"`);
+    console.log(`✔️ Replacing directory: "/" with directories array`);
     delete update.directory;
-    update.directories = '**/*';
+    update.directories = ['**/*'];
+    changesMade = true;
+  }
+  
+  // Fix incorrect directories syntax if it exists (should be array, not string)
+  if (update.directories && typeof update.directories === 'string') {
+    console.log(`✔️ Converting directories from string to array format`);
+    update.directories = [update.directories];
     changesMade = true;
   }
 });
