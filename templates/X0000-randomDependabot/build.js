@@ -135,13 +135,16 @@ if (changesMade) {
     forceQuotes: true
   });
   
+  // Add empty line before each '- package-ecosystem:' for better readability
+  const formattedYaml = updatedYaml.replace(/(\n)(  - package-ecosystem:)/g, '\n\n$2');
+  
   // Generate human-readable comment for execution schedule
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
                       'July', 'August', 'September', 'October', 'November', 'December'];
   const formattedTime = `${randomHour.toString().padStart(2, '0')}:${randomMinute.toString().padStart(2, '0')}`;
   const scheduleComment = `# Dependabot will run on day ${randomDay} of each month at ${formattedTime} (Europe/Berlin timezone)\n`;
   
-  const finalYaml = scheduleComment + updatedYaml;
+  const finalYaml = scheduleComment + formattedYaml;
   
   fs.writeFileSync(dependabotPath, finalYaml, 'utf8');
   console.log(`\n✔️ ${dependabotPath} updated successfully.`);
