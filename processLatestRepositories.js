@@ -3,7 +3,7 @@
 
 const {parseArgs} = require('node:util');
 const { execSync } = require('child_process');
-const http = require('node:http');
+const https = require('node:https');
 
 const opts = {
     dry: false,
@@ -60,7 +60,7 @@ function executeGhCommand(command) {
  */
 async function getLatestRepoLive() {
     return new Promise((resolve, reject) => {
-        const url = 'http://repo.iobroker.live/sources-dist-latest.json';
+        const url = 'https://download.iobroker.net/sources-dist-latest.json';
         console.log(`ⓘ Retrieving "${url}"`);
         
         const options = {
@@ -70,7 +70,7 @@ async function getLatestRepoLive() {
             }
         };
         
-        const req = http.get(url, options, (res) => {
+        const req = https.get(url, options, (res) => {
             let data = '';
             
             res.on('data', (chunk) => {

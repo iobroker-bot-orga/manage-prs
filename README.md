@@ -122,7 +122,7 @@ A weekly GitHub Action (`check-copilot-template.yml`) automatically:
 
 - **processLatestRepositories.js**: Node.js script that processes multiple repositories from the ioBroker latest repository
   - Usage: `node processLatestRepositories.js --template=<template-name> [--parameter_data=<data>] [--pr_mode=<mode>] [--from=<adapter-name>] [--dry] [--debug]`
-  - Retrieves the list of adapters from http://repo.iobroker.live/sources-dist-latest.json
+  - Retrieves the list of adapters from https://download.iobroker.net/sources-dist-latest.json
   - Triggers the `processRepository` workflow for each adapter
   - Implements 2-minute delay between processing repositories
   - Automatically restarts after ~3 hours (90 repositories at 2min each) to avoid workflow timeout
