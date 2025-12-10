@@ -35,6 +35,24 @@ function sleep(ms) {
 }
 
 /**
+ * Validate filter pattern format
+ * @param {string} pattern - Filter pattern to validate
+ * @returns {boolean} True if the pattern is valid or empty
+ */
+function validateFilterPattern(pattern) {
+    if (!pattern) {
+        return true; // Empty pattern is valid (no filtering)
+    }
+
+    const parts = pattern.split('/');
+    if (parts.length !== 2) {
+        return false;
+    }
+
+    return true;
+}
+
+/**
  * Check if a repository matches the filter pattern
  * @param {string} owner - Repository owner
  * @param {string} repo - Repository name
@@ -52,13 +70,7 @@ function matchesFilter(owner, repo, pattern) {
     const lowerPattern = pattern.toLowerCase();
 
     // Split pattern into owner and repo parts
-    const parts = lowerPattern.split('/');
-    if (parts.length !== 2) {
-        console.warn(`⚠️ Invalid filter pattern: ${pattern}. Expected format: owner/repo`);
-        return true; // Invalid pattern, don't filter
-    }
-
-    const [ownerPattern, repoPattern] = parts;
+    const [ownerPattern, repoPattern] = lowerPattern.split('/');
 
     // Escape special regex characters and convert wildcard pattern to regex
     const escapeRegex = (str) => str.replace(/[.+?^${}()|[\]\\-]/g, '\\$&');
@@ -262,6 +274,13 @@ async function main() {
 
     if (!opts.template) {
         console.error('❌ Template is required. Use --template=<template-name>');
+        process.exit(1);
+    }
+
+    if (!validateFilterPattern(opts.filter)) {
+        console.error(`❌ Invalid filter pattern: ${opts.filter}`);
+        console.error('   Expected format: owner/repo');
+        console.error('   Examples: iobroker-community-adapters/*, */*watch*, iobroker*/*');
         process.exit(1);
     }
 
