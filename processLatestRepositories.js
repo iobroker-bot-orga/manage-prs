@@ -61,7 +61,7 @@ function matchesFilter(owner, repo, pattern) {
     const [ownerPattern, repoPattern] = parts;
 
     // Escape special regex characters and convert wildcard pattern to regex
-    const escapeRegex = (str) => str.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+    const escapeRegex = (str) => str.replace(/[.+?^${}()|[\]\\-]/g, '\\$&');
     const toRegexPattern = (pattern) => escapeRegex(pattern).replace(/\*/g, '.*');
     
     const ownerRegex = new RegExp('^' + toRegexPattern(ownerPattern) + '$');
