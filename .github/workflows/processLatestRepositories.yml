@@ -37,7 +37,7 @@ on:
       flags:
         type: string
         required: false
-        description: 'Optional flags to pass to the worflow'
+        description: 'Optional flags to pass to the workflow'
 
       from:
         type: string
