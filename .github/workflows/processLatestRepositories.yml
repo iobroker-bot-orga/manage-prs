@@ -11,15 +11,10 @@ on:
         required: true
         description: 'Name of the template to apply'
 
-      parameter_data:
+      filter:
         type: string
         required: false
-        description: 'Optional parameter data to pass to the template'
-
-      flags:
-        type: string
-        required: false
-        description: 'Optional flags to pass to the worflow'
+        description: 'Filter repositories by owner/name pattern (optional). Supports wildcards: owner/*, */name, owner*/*, */*pattern*. Case-insensitive.'
 
       pr_mode:
         description: 'PR mode for handling existing PRs'
@@ -34,15 +29,20 @@ on:
           - 'skip if merged'
           - 'REVOKE'
 
+      parameter_data:
+        type: string
+        required: false
+        description: 'Optional parameter data to pass to the template'
+
+      flags:
+        type: string
+        required: false
+        description: 'Optional flags to pass to the worflow'
+
       from:
         type: string
         required: false
         description: 'Resume processing from this adapter name (optional)'
-
-      filter:
-        type: string
-        required: false
-        description: 'Filter repositories by owner/name pattern (optional). Supports wildcards: owner/*, */name, owner*/*, */*pattern*. Case-insensitive.'
 
   #schedule:
     # * is a special character in YAML, so you have to quote this string
