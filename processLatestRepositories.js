@@ -12,6 +12,7 @@ const opts = {
     template: '',
     parameter_data: '',
     pr_mode: 'recreate',
+    filter: '',
 }
 
 let checkScript;
@@ -31,6 +32,39 @@ function sleep(ms) {
     return new Promise((resolve) => {
       setTimeout(resolve, ms);
     });
+}
+
+/**
+ * Check if a repository matches the filter pattern
+ * @param {string} owner - Repository owner
+ * @param {string} repo - Repository name
+ * @param {string} pattern - Filter pattern (e.g., owner/*, * /repo, owner/repo, * / *pattern*)
+ * @returns {boolean} True if the repository matches the pattern
+ */
+function matchesFilter(owner, repo, pattern) {
+    if (!pattern) {
+        return true; // No filter means match all
+    }
+
+    // Normalize to lowercase for case-insensitive matching
+    const lowerOwner = owner.toLowerCase();
+    const lowerRepo = repo.toLowerCase();
+    const lowerPattern = pattern.toLowerCase();
+
+    // Split pattern into owner and repo parts
+    const parts = lowerPattern.split('/');
+    if (parts.length !== 2) {
+        console.warn(`⚠️ Invalid filter pattern: ${pattern}. Expected format: owner/repo`);
+        return true; // Invalid pattern, don't filter
+    }
+
+    const [ownerPattern, repoPattern] = parts;
+
+    // Convert wildcard pattern to regex
+    const ownerRegex = new RegExp('^' + ownerPattern.replace(/\*/g, '.*') + '$');
+    const repoRegex = new RegExp('^' + repoPattern.replace(/\*/g, '.*') + '$');
+
+    return ownerRegex.test(lowerOwner) && repoRegex.test(lowerRepo);
 }
 
 /**
@@ -175,7 +209,7 @@ function triggerRestart(adapter) {
             flags = `--field client_payload[flags]='${flags}'`;
         };
 
-        const cmd = `gh api repos/iobroker-bot-orga/manage-prs/dispatches --method POST --field event_type='process-latest-restart' --field client_payload[template]='${opts.template}' --field client_payload[parameter_data]='${opts.parameter_data}' --field client_payload[pr_mode]='${opts.pr_mode}' --field client_payload[from]='${adapter}' ${flags}`;
+        const cmd = `gh api repos/iobroker-bot-orga/manage-prs/dispatches --method POST --field event_type='process-latest-restart' --field client_payload[template]='${opts.template}' --field client_payload[parameter_data]='${opts.parameter_data}' --field client_payload[pr_mode]='${opts.pr_mode}' --field client_payload[from]='${adapter}' --field client_payload[filter]='${opts.filter}' ${flags}`;
         
         executeGhCommand(cmd);
         console.log(`ⓘ ✔️ Restart triggered successfully`);
@@ -205,6 +239,9 @@ async function main() {
         'pr_mode': {
             type: 'string',
         },
+        'filter': {
+            type: 'string',
+        },
     };
 
     const {
@@ -218,6 +255,7 @@ async function main() {
     opts.template = values['template'] || '';
     opts.parameter_data = values['parameter_data'] || '';
     opts.pr_mode = values['pr_mode'] || 'recreate';
+    opts.filter = values['filter'] || '';
 
     if (!opts.template) {
         console.error('❌ Template is required. Use --template=<template-name>');
@@ -231,6 +269,7 @@ async function main() {
     console.log(`ⓘ Parameter Data: ${opts.parameter_data || '(none)'}`);
     console.log(`ⓘ PR Mode: ${opts.pr_mode}`);
     console.log(`ⓘ From: ${opts.from || '(start from beginning)'}`);
+    console.log(`ⓘ Filter: ${opts.filter || '(none - process all repositories)'}`);
     console.log(`ⓘ Dry Run: ${opts.dry}`);
     console.log('ⓘ ===================================================================');
 
@@ -283,18 +322,26 @@ async function main() {
 
         const parts = latestRepo[adapter].meta.split('/');
         const owner = parts[3];
-        console.log(`\nⓘ Processing ${owner}/ioBroker.${adapter} (${curr}/${total})`);
+        const repoName = `ioBroker.${adapter}`;
+        
+        // Check if repository matches the filter
+        if (!matchesFilter(owner, repoName, opts.filter)) {
+            console.log(`⏭️ Skipping ${owner}/${repoName} (does not match filter)`);
+            continue; // Skip without delay
+        }
+        
+        console.log(`\nⓘ Processing ${owner}/${repoName} (${curr}/${total})`);
 
         context.owner = owner;
         context.adapter = adapter;        
         
         if ( ! await checkProcessing(context)) {
-            console.log(`ⓘ SKIPPING ${owner}/ioBroker.${adapter} (check failed)`);
+            console.log(`ⓘ SKIPPING ${owner}/${repoName} (check failed)`);
         } else {
             if (! opts.dry) {
                 triggerRepoProcessing(owner, adapter);
             } else {
-                console.log (`🧪 Would trigger processing for ${owner}/ioBroker.${adapter}`)
+                console.log (`🧪 Would trigger processing for ${owner}/${repoName}`)
             }
         }
 
