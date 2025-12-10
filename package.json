@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@iobroker-bot-orga/iobroker-lib": "github:iobroker-bot-orga/iobroker-lib",
     "js-yaml": "^4.1.0"
   },
   "devDependencies": {
