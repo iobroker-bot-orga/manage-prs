@@ -38,7 +38,7 @@ function sleep(ms) {
  * Check if a repository matches the filter pattern
  * @param {string} owner - Repository owner
  * @param {string} repo - Repository name
- * @param {string} pattern - Filter pattern (e.g., owner/*, * /repo, owner/repo, * / *pattern*)
+ * @param {string} pattern - Filter pattern with wildcards (e.g. iobroker-community-adapters/*)
  * @returns {boolean} True if the repository matches the pattern
  */
 function matchesFilter(owner, repo, pattern) {
@@ -60,9 +60,12 @@ function matchesFilter(owner, repo, pattern) {
 
     const [ownerPattern, repoPattern] = parts;
 
-    // Convert wildcard pattern to regex
-    const ownerRegex = new RegExp('^' + ownerPattern.replace(/\*/g, '.*') + '$');
-    const repoRegex = new RegExp('^' + repoPattern.replace(/\*/g, '.*') + '$');
+    // Escape special regex characters and convert wildcard pattern to regex
+    const escapeRegex = (str) => str.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+    const toRegexPattern = (pattern) => escapeRegex(pattern).replace(/\*/g, '.*');
+    
+    const ownerRegex = new RegExp('^' + toRegexPattern(ownerPattern) + '$');
+    const repoRegex = new RegExp('^' + toRegexPattern(repoPattern) + '$');
 
     return ownerRegex.test(lowerOwner) && repoRegex.test(lowerRepo);
 }
