@@ -17,6 +17,7 @@ const opts = {
 
 let checkScript;
 const context = {};
+let filterRegexes = null; // Pre-compiled regex patterns for filter
 
 function debug (text){
     if (opts.debug) {
@@ -53,22 +54,18 @@ function validateFilterPattern(pattern) {
 }
 
 /**
- * Check if a repository matches the filter pattern
- * @param {string} owner - Repository owner
- * @param {string} repo - Repository name
- * @param {string} pattern - Filter pattern with wildcards (e.g. iobroker-community-adapters/*)
- * @returns {boolean} True if the repository matches the pattern
+ * Compile filter pattern into regex objects for efficient matching
+ * @param {string} pattern - Filter pattern with wildcards
+ * @returns {Object|null} Object with ownerRegex and repoRegex, or null if no filter
  */
-function matchesFilter(owner, repo, pattern) {
+function compileFilterPattern(pattern) {
     if (!pattern) {
-        return true; // No filter means match all
+        return null; // No filter
     }
 
     // Normalize to lowercase for case-insensitive matching
-    const lowerOwner = owner.toLowerCase();
-    const lowerRepo = repo.toLowerCase();
     const lowerPattern = pattern.toLowerCase();
-
+    
     // Split pattern into owner and repo parts
     const [ownerPattern, repoPattern] = lowerPattern.split('/');
 
@@ -76,10 +73,28 @@ function matchesFilter(owner, repo, pattern) {
     const escapeRegex = (str) => str.replace(/[.+?^${}()|[\]\\-]/g, '\\$&');
     const toRegexPattern = (pattern) => escapeRegex(pattern).replace(/\*/g, '.*');
     
-    const ownerRegex = new RegExp('^' + toRegexPattern(ownerPattern) + '$');
-    const repoRegex = new RegExp('^' + toRegexPattern(repoPattern) + '$');
+    return {
+        ownerRegex: new RegExp('^' + toRegexPattern(ownerPattern) + '$'),
+        repoRegex: new RegExp('^' + toRegexPattern(repoPattern) + '$')
+    };
+}
 
-    return ownerRegex.test(lowerOwner) && repoRegex.test(lowerRepo);
+/**
+ * Check if a repository matches the pre-compiled filter pattern
+ * @param {string} owner - Repository owner
+ * @param {string} repo - Repository name
+ * @returns {boolean} True if the repository matches the pattern
+ */
+function matchesFilter(owner, repo) {
+    if (!filterRegexes) {
+        return true; // No filter means match all
+    }
+
+    // Normalize to lowercase for case-insensitive matching
+    const lowerOwner = owner.toLowerCase();
+    const lowerRepo = repo.toLowerCase();
+
+    return filterRegexes.ownerRegex.test(lowerOwner) && filterRegexes.repoRegex.test(lowerRepo);
 }
 
 /**
@@ -284,6 +299,9 @@ async function main() {
         process.exit(1);
     }
 
+    // Compile filter pattern once for efficient matching
+    filterRegexes = compileFilterPattern(opts.filter);
+
     console.log('ⓘ ===================================================================');
     console.log('ⓘ processLatestRepositories - Starting');
     console.log('ⓘ ===================================================================');
@@ -347,7 +365,7 @@ async function main() {
         const repoName = `ioBroker.${adapter}`;
         
         // Check if repository matches the filter
-        if (!matchesFilter(owner, repoName, opts.filter)) {
+        if (!matchesFilter(owner, repoName)) {
             console.log(`⏭️ Skipping ${owner}/${repoName} (does not match filter)`);
             continue; // Skip without delay
         }
