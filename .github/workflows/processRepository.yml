@@ -33,15 +33,29 @@ jobs:
   process-repository:
     runs-on: ubuntu-latest
     steps:
+      - name: Trim workflow parameters
+        id: trim_params
+        run: |
+          # Trim all string input parameters to remove leading/trailing whitespace
+          REPO_URL=$(echo "${{ inputs.repository_url }}" | xargs)
+          TEMPLATE=$(echo "${{ inputs.template }}" | xargs)
+          PARAM_DATA=$(echo "${{ inputs.parameter_data }}" | xargs)
+          PR_MODE=$(echo "${{ inputs.pr_mode }}" | xargs)
+          
+          echo "repository_url=$REPO_URL" >> $GITHUB_OUTPUT
+          echo "template=$TEMPLATE" >> $GITHUB_OUTPUT
+          echo "parameter_data=$PARAM_DATA" >> $GITHUB_OUTPUT
+          echo "pr_mode=$PR_MODE" >> $GITHUB_OUTPUT
+
       - name: Log workflow parameters
         run: |
           echo "==================================================================="
           echo "Workflow Parameters:"
           echo "==================================================================="
-          echo "Repository URL: ${{ inputs.repository_url }}"
-          echo "Template: ${{ inputs.template }}"
-          echo "Parameter Data: ${{ inputs.parameter_data }}"
-          echo "PR Mode: ${{ inputs.pr_mode }}"
+          echo "Repository URL: ${{ steps.trim_params.outputs.repository_url }}"
+          echo "Template: ${{ steps.trim_params.outputs.template }}"
+          echo "Parameter Data: ${{ steps.trim_params.outputs.parameter_data }}"
+          echo "PR Mode: ${{ steps.trim_params.outputs.pr_mode }}"
           echo "==================================================================="
 
       - name: Checkout this repository
@@ -62,7 +76,7 @@ jobs:
         id: repo_info
         run: |
           # Extract owner and repo name from input (handles both URL and owner/repo formats)
-          REPO_INPUT="${{ inputs.repository_url }}"
+          REPO_INPUT="${{ steps.trim_params.outputs.repository_url }}"
           # Remove trailing .git if present
           REPO_INPUT="${REPO_INPUT%.git}"
           
@@ -176,7 +190,7 @@ jobs:
           echo "    Detected default branch: $DEFAULT_BRANCH"
           echo "default_branch=$DEFAULT_BRANCH" >> $GITHUB_ENV
           
-          BRANCH_NAME="update-from-template-${{ inputs.template }}-$(date +%s)"
+          BRANCH_NAME="update-from-template-${{ steps.trim_params.outputs.template }}-$(date +%s)"
           echo "    Creating branch: $BRANCH_NAME"
           git checkout -b $BRANCH_NAME
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
@@ -190,8 +204,8 @@ jobs:
         run: |
           echo ">>> Starting: Run prGenerator.js script"
           cd target-repo
-          echo "    Executing: node ../prGenerator.js \"${{ steps.repo_info.outputs.full_name }}\" \"${{ inputs.template }}\" \"${{ inputs.parameter_data }}\""
-          node ../prGenerator.js "${{ steps.repo_info.outputs.full_name }}" "${{ inputs.template }}" "${{ inputs.parameter_data }}"
+          echo "    Executing: node ../prGenerator.js \"${{ steps.repo_info.outputs.full_name }}\" \"${{ steps.trim_params.outputs.template }}\" \"${{ steps.trim_params.outputs.parameter_data }}\""
+          node ../prGenerator.js "${{ steps.repo_info.outputs.full_name }}" "${{ steps.trim_params.outputs.template }}" "${{ steps.trim_params.outputs.parameter_data }}"
           echo ">>> Completed: Run prGenerator.js script"
 
       - name: Commit and push changes
@@ -208,7 +222,7 @@ jobs:
             echo "has_changes=false" >> $GITHUB_ENV
           else
             echo "    Changes detected, committing..."
-            git commit -m "Update from template: ${{ inputs.template }}"
+            git commit -m "Update from template: ${{ steps.trim_params.outputs.template }}"
             echo "    Pushing to fork remote, branch: ${{ env.branch_name }}"
             git push fork ${{ env.branch_name }}
             echo "    Changes pushed successfully"
@@ -239,12 +253,12 @@ jobs:
           # Verify PR metadata files exist
           if [ ! -f .iobroker-pr-title.tmp ]; then
             echo "    Creating default PR title..."
-            echo "Update from template: ${{ inputs.template }}" > .iobroker-pr-title.tmp
+            echo "Update from template: ${{ steps.trim_params.outputs.template }}" > .iobroker-pr-title.tmp
           fi
           
           if [ ! -f .iobroker-pr-body.tmp ]; then
             echo "    Creating default PR body..."
-            echo "This PR applies changes from template: ${{ inputs.template }}" > .iobroker-pr-body.tmp
+            echo "This PR applies changes from template: ${{ steps.trim_params.outputs.template }}" > .iobroker-pr-body.tmp
           fi
           
           # Display PR details
@@ -254,10 +268,10 @@ jobs:
           echo "      Base: ${{ env.default_branch }}"
           echo "      Head: ${CURRENT_USER}:${{ env.branch_name }}"
           echo "      Repository: ${{ steps.repo_info.outputs.full_name }}"
-          echo "      Mode: ${{ inputs.pr_mode }}"
+          echo "      Mode: ${{ steps.trim_params.outputs.pr_mode }}"
           
           # Use prManager.js to handle PR creation based on mode
-          node ../prManager.js "${{ inputs.pr_mode }}" "${{ steps.repo_info.outputs.full_name }}" "${{ env.default_branch }}" "${CURRENT_USER}:${{ env.branch_name }}"
+          node ../prManager.js "${{ steps.trim_params.outputs.pr_mode }}" "${{ steps.repo_info.outputs.full_name }}" "${{ env.default_branch }}" "${CURRENT_USER}:${{ env.branch_name }}"
           
           echo ">>> Completed: Pull Request Management"
           echo "==================================================================="
