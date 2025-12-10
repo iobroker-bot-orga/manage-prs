@@ -12,10 +12,12 @@ const opts = {
     template: '',
     parameter_data: '',
     pr_mode: 'recreate',
+    filter: '',
 }
 
 let checkScript;
 const context = {};
+let filterRegexes = null; // Pre-compiled regex patterns for filter
 
 function debug (text){
     if (opts.debug) {
@@ -31,6 +33,68 @@ function sleep(ms) {
     return new Promise((resolve) => {
       setTimeout(resolve, ms);
     });
+}
+
+/**
+ * Validate filter pattern format
+ * @param {string} pattern - Filter pattern to validate
+ * @returns {boolean} True if the pattern is valid or empty
+ */
+function validateFilterPattern(pattern) {
+    if (!pattern) {
+        return true; // Empty pattern is valid (no filtering)
+    }
+
+    const parts = pattern.split('/');
+    if (parts.length !== 2) {
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * Compile filter pattern into regex objects for efficient matching
+ * @param {string} pattern - Filter pattern with wildcards
+ * @returns {Object|null} Object with ownerRegex and repoRegex, or null if no filter
+ */
+function compileFilterPattern(pattern) {
+    if (!pattern) {
+        return null; // No filter
+    }
+
+    // Normalize to lowercase for case-insensitive matching
+    const lowerPattern = pattern.toLowerCase();
+    
+    // Split pattern into owner and repo parts
+    const [ownerPattern, repoPattern] = lowerPattern.split('/');
+
+    // Escape special regex characters and convert wildcard pattern to regex
+    const escapeRegex = (str) => str.replace(/[.+?^${}()|[\]\\-]/g, '\\$&');
+    const toRegexPattern = (pattern) => escapeRegex(pattern).replace(/\*/g, '.*');
+    
+    return {
+        ownerRegex: new RegExp('^' + toRegexPattern(ownerPattern) + '$'),
+        repoRegex: new RegExp('^' + toRegexPattern(repoPattern) + '$')
+    };
+}
+
+/**
+ * Check if a repository matches the pre-compiled filter pattern
+ * @param {string} owner - Repository owner
+ * @param {string} repo - Repository name
+ * @returns {boolean} True if the repository matches the pattern
+ */
+function matchesFilter(owner, repo) {
+    if (!filterRegexes) {
+        return true; // No filter means match all
+    }
+
+    // Normalize to lowercase for case-insensitive matching
+    const lowerOwner = owner.toLowerCase();
+    const lowerRepo = repo.toLowerCase();
+
+    return filterRegexes.ownerRegex.test(lowerOwner) && filterRegexes.repoRegex.test(lowerRepo);
 }
 
 /**
@@ -175,7 +239,7 @@ function triggerRestart(adapter) {
             flags = `--field client_payload[flags]='${flags}'`;
         };
 
-        const cmd = `gh api repos/iobroker-bot-orga/manage-prs/dispatches --method POST --field event_type='process-latest-restart' --field client_payload[template]='${opts.template}' --field client_payload[parameter_data]='${opts.parameter_data}' --field client_payload[pr_mode]='${opts.pr_mode}' --field client_payload[from]='${adapter}' ${flags}`;
+        const cmd = `gh api repos/iobroker-bot-orga/manage-prs/dispatches --method POST --field event_type='process-latest-restart' --field client_payload[template]='${opts.template}' --field client_payload[parameter_data]='${opts.parameter_data}' --field client_payload[pr_mode]='${opts.pr_mode}' --field client_payload[from]='${adapter}' --field client_payload[filter]='${opts.filter}' ${flags}`;
         
         executeGhCommand(cmd);
         console.log(`ⓘ ✔️ Restart triggered successfully`);
@@ -205,6 +269,9 @@ async function main() {
         'pr_mode': {
             type: 'string',
         },
+        'filter': {
+            type: 'string',
+        },
     };
 
     const {
@@ -218,11 +285,22 @@ async function main() {
     opts.template = values['template'] || '';
     opts.parameter_data = values['parameter_data'] || '';
     opts.pr_mode = values['pr_mode'] || 'recreate';
+    opts.filter = values['filter'] || '';
 
     if (!opts.template) {
         console.error('❌ Template is required. Use --template=<template-name>');
         process.exit(1);
     }
+
+    if (!validateFilterPattern(opts.filter)) {
+        console.error(`❌ Invalid filter pattern: ${opts.filter}`);
+        console.error('   Expected format: owner/repo');
+        console.error('   Examples: iobroker-community-adapters/*, */*watch*, iobroker*/*');
+        process.exit(1);
+    }
+
+    // Compile filter pattern once for efficient matching
+    filterRegexes = compileFilterPattern(opts.filter);
 
     console.log('ⓘ ===================================================================');
     console.log('ⓘ processLatestRepositories - Starting');
@@ -231,6 +309,7 @@ async function main() {
     console.log(`ⓘ Parameter Data: ${opts.parameter_data || '(none)'}`);
     console.log(`ⓘ PR Mode: ${opts.pr_mode}`);
     console.log(`ⓘ From: ${opts.from || '(start from beginning)'}`);
+    console.log(`ⓘ Filter: ${opts.filter || '(none - process all repositories)'}`);
     console.log(`ⓘ Dry Run: ${opts.dry}`);
     console.log('ⓘ ===================================================================');
 
@@ -283,18 +362,26 @@ async function main() {
 
         const parts = latestRepo[adapter].meta.split('/');
         const owner = parts[3];
-        console.log(`\nⓘ Processing ${owner}/ioBroker.${adapter} (${curr}/${total})`);
+        const repoName = `ioBroker.${adapter}`;
+        
+        // Check if repository matches the filter
+        if (!matchesFilter(owner, repoName)) {
+            console.log(`⏭️ Skipping ${owner}/${repoName} (does not match filter)`);
+            continue; // Skip without delay
+        }
+        
+        console.log(`\nⓘ Processing ${owner}/${repoName} (${curr}/${total})`);
 
         context.owner = owner;
         context.adapter = adapter;        
         
         if ( ! await checkProcessing(context)) {
-            console.log(`ⓘ SKIPPING ${owner}/ioBroker.${adapter} (check failed)`);
+            console.log(`ⓘ SKIPPING ${owner}/${repoName} (check failed)`);
         } else {
             if (! opts.dry) {
                 triggerRepoProcessing(owner, adapter);
             } else {
-                console.log (`🧪 Would trigger processing for ${owner}/ioBroker.${adapter}`)
+                console.log (`🧪 Would trigger processing for ${owner}/${repoName}`)
             }
         }
 

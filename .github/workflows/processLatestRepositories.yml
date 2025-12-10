@@ -39,6 +39,11 @@ on:
         required: false
         description: 'Resume processing from this adapter name (optional)'
 
+      filter:
+        type: string
+        required: false
+        description: 'Filter repositories by owner/name pattern (optional). Supports wildcards: owner/*, */name, owner*/*, */*pattern*. Case-insensitive.'
+
   #schedule:
     # * is a special character in YAML, so you have to quote this string
     # every friday at 1:00
@@ -57,6 +62,6 @@ jobs:
         with:
           node-version: 20
       - run: npm install
-      - run: node ./processLatestRepositories.js --template="${{ github.event.inputs.template }}${{ github.event.client_payload.template }}" --parameter_data="${{ github.event.inputs.parameter_data }}${{ github.event.client_payload.parameter_data }}" --pr_mode="${{ github.event.inputs.pr_mode }}${{ github.event.client_payload.pr_mode }}" --from="${{ github.event.inputs.from }}${{ github.event.client_payload.from }}" ${{ github.event.inputs.flags }}${{ github.event.client_payload.flags }}
+      - run: node ./processLatestRepositories.js --template="${{ github.event.inputs.template }}${{ github.event.client_payload.template }}" --parameter_data="${{ github.event.inputs.parameter_data }}${{ github.event.client_payload.parameter_data }}" --pr_mode="${{ github.event.inputs.pr_mode }}${{ github.event.client_payload.pr_mode }}" --from="${{ github.event.inputs.from }}${{ github.event.client_payload.from }}" --filter="${{ github.event.inputs.filter }}${{ github.event.client_payload.filter }}" ${{ github.event.inputs.flags }}${{ github.event.client_payload.flags }}
         env:
           GH_TOKEN: ${{ secrets.IOBBOT_GITHUB_TOKEN_WITH_WF }}
