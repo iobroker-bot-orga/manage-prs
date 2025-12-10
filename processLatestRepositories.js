@@ -3,7 +3,7 @@
 
 const {parseArgs} = require('node:util');
 const { execSync } = require('child_process');
-const https = require('node:https');
+const { getLatestRepo } = require('@iobroker-bot-orga/iobroker-lib');
 
 const opts = {
     dry: false,
@@ -116,50 +116,6 @@ function executeGhCommand(command) {
         }
         throw error;
     }
-}
-
-/**
- * Get latest repository data from ioBroker repo
- * @returns {Promise<Object>} Repository data
- */
-async function getLatestRepoLive() {
-    return new Promise((resolve, reject) => {
-        const url = 'https://download.iobroker.net/sources-dist-latest.json';
-        console.log(`ⓘ Retrieving "${url}"`);
-        
-        const options = {
-            headers: {
-                'Authorization': process.env.GH_TOKEN ? `token ${process.env.GH_TOKEN}` : 'none',
-                'user-agent': 'Action script',
-            }
-        };
-        
-        const req = https.get(url, options, (res) => {
-            let data = '';
-            
-            res.on('data', (chunk) => {
-                data += chunk;
-            });
-            
-            res.on('end', () => {
-                try {
-                    debug(`Retrieved data:\n${data}`);
-                    const parsed = JSON.parse(data);
-                    console.log(`ⓘ Retrieved ${Object.keys(parsed).length} repositories`);
-                    resolve(parsed);
-                } catch (e) {
-                    console.log(`❌ Retrieved data:\n${data}`);
-                    reject(new Error(`Failed to parse JSON: ${e.message}`));
-                }
-            });
-        });
-        
-        req.on('error', (e) => {
-            reject(new Error(`Failed to fetch repository data: ${e.message}`));
-        });
-        
-        req.end();
-    });
 }
 
 async function initCheck(context){
@@ -313,7 +269,7 @@ async function main() {
     console.log(`ⓘ Dry Run: ${opts.dry}`);
     console.log('ⓘ ===================================================================');
 
-    const latestRepo = await getLatestRepoLive();
+    const latestRepo = await getLatestRepo();
     const total = Object.keys(latestRepo).filter(k => !k.startsWith('_')).length;
     
     // Configuration constants
