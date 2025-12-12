@@ -7,6 +7,8 @@ const fs = require('node:fs');
 
 // Target year for copyright updates
 const TARGET_YEAR = 2025;
+// Maximum allowed year - years beyond this will be corrected to TARGET_YEAR
+const MAX_YEAR = 2026;
 
 let changesMade = false;
 
@@ -55,7 +57,24 @@ function updateCopyrightYear(content, section = null) {
     const updatedSection = sectionContent.replace(copyrightRegex, (match, startYear, endYear, whitespace) => {
         const start = parseInt(startYear, 10);
         const end = endYear ? parseInt(endYear, 10) : null;
-        const newestYear = end || start;
+        let newestYear = end || start;
+        
+        // Check if newestYear is greater than MAX_YEAR and correct it
+        if (newestYear > MAX_YEAR) {
+            console.log(`ⓘ Copyright year ${newestYear} exceeds MAX_YEAR (${MAX_YEAR}), correcting to ${TARGET_YEAR}`);
+            newestYear = TARGET_YEAR;
+            modified = true;
+            
+            if (end) {
+                // Update end year to TARGET_YEAR
+                console.log(`✔️ Correcting copyright year range from ${start} - ${end} to ${start} - ${TARGET_YEAR}`);
+                return `Copyright (c) ${start} - ${TARGET_YEAR}${whitespace}`;
+            } else {
+                // Create range with TARGET_YEAR
+                console.log(`✔️ Correcting copyright year from ${start} to ${start} - ${TARGET_YEAR}`);
+                return `Copyright (c) ${start} - ${TARGET_YEAR}${whitespace}`;
+            }
+        }
         
         if (newestYear >= TARGET_YEAR) {
             console.log(`ⓘ Copyright year ${newestYear} is already ${TARGET_YEAR} or later`);
