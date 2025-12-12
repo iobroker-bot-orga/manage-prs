@@ -1,4 +1,4 @@
-Update Copyright Year to 2025
+Update Copyright Year
 
 ## General information 
 
@@ -16,7 +16,7 @@ And **THANKS A LOT** for maintaining this adapter from me and all users.
 
 ## Changes provided by this PR
 
-This PR updates the copyright year to 2025 in the following files:
+This PR updates the copyright year in the following files:
 
 - **README.md**: Updates copyright year in the License section
 - **LICENSE**: Updates copyright year throughout the file
