@@ -25,7 +25,7 @@ function updateCopyrightYear(content, section = null) {
     
     // If section is specified, find the section boundaries
     if (section) {
-        const sectionRegex = new RegExp(`^##?\\s+${section}\\s*$`, 'mi');
+        const sectionRegex = new RegExp(`^##?\\s+${section}\\s*(<.*>)?\\s*$`, 'mi');
         const sectionMatch = content.match(sectionRegex);
         
         if (!sectionMatch) {
