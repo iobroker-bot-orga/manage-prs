@@ -28,10 +28,9 @@ This PR updates the copyright year in the following files:
 
 The script automatically:
 - Detects existing copyright statements with format `Copyright (c) YYYY` or `Copyright (c) YYYY - YYYY`
-- Updates single years to year ranges (e.g., `2024` becomes `2024 - 2025`)
-- Updates existing year ranges to end at 2025 (e.g., `2020 - 2024` becomes `2020 - 2025`)
-- Corrects future copyright years (years beyond 2026) back to 2025 to maintain accuracy
-- Only makes changes if the current year is less than 2025 or greater than 2026
+- Updates single years to year ranges (e.g., `2024` becomes `2024 - <next-year>`)
+- Updates existing year ranges to end at the next year (e.g., `2020 - 2024` becomes `2020 - <next-year>`)
+- Corrects future copyright years (years beyond next year + 1) to maintain accuracy
 - Ensures year boundaries are properly matched using word boundaries
 
 ---
@@ -63,8 +62,7 @@ Dieses PR aktualisiert das Copyright-Jahr in den folgenden Dateien:
 
 Das Skript führt automatisch folgende Aktionen aus:
 - Erkennt vorhandene Copyright-Angaben mit dem Format `Copyright (c) JJJJ` oder `Copyright (c) JJJJ - JJJJ`
-- Aktualisiert einzelne Jahre zu Jahresbereichen (z.B. wird `2024` zu `2024 - 2025`)
-- Aktualisiert vorhandene Jahresbereiche, sodass sie mit 2025 enden (z.B. wird `2020 - 2024` zu `2020 - 2025`)
-- Korrigiert zukünftige Copyright-Jahre (Jahre nach 2026) zurück auf 2025, um Genauigkeit zu gewährleisten
-- Führt Änderungen nur aus, wenn das aktuelle Jahr kleiner als 2025 oder größer als 2026 ist
+- Aktualisiert einzelne Jahre zu Jahresbereichen (z.B. wird `2024` zu `2024 - <nächstes Jahr>`)
+- Aktualisiert vorhandene Jahresbereiche, sodass sie mit dem nächsten Jahr enden (z.B. wird `2020 - 2024` zu `2020 - <nächstes Jahr>`)
+- Korrigiert zukünftige Copyright-Jahre (Jahre nach nächstes Jahr + 1), um Genauigkeit zu gewährleisten
 - Stellt durch Verwendung von Wortgrenzen sicher, dass Jahresgrenzen korrekt erkannt werden
