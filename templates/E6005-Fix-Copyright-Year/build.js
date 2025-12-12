@@ -77,6 +77,12 @@ function updateCopyrightYear(content, section = null) {
         }
         
         if (newestYear >= TARGET_YEAR) {
+            // Check if format needs normalization (should have spaces around hyphen)
+            if (end && !match.includes(' - ')) {
+                console.log(`✔️ Normalizing copyright year format from ${start}-${end} to ${start} - ${end}`);
+                modified = true;
+                return `Copyright (c) ${start} - ${end}${whitespace}`;
+            }
             console.log(`ⓘ Copyright year ${newestYear} is already ${TARGET_YEAR} or later`);
             return match;
         }
