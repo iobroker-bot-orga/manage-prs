@@ -32,7 +32,7 @@ The script automatically:
 - Updates existing year ranges to end at 2025 (e.g., `2020 - 2024` becomes `2020 - 2025`)
 - Normalizes copyright year format to use spaces around hyphens (e.g., `2024-2025` becomes `2024 - 2025`)
 - Corrects future copyright years (years beyond 2026) back to 2025 to maintain accuracy
-- Only makes changes if the current year is less than 2025 or greater than 2026, or if format normalization is needed
+- Makes changes when the year needs updating or when the format needs normalization
 - Ensures year boundaries are properly matched using word boundaries
 
 ---
@@ -68,5 +68,5 @@ Das Skript führt automatisch folgende Aktionen aus:
 - Aktualisiert vorhandene Jahresbereiche, sodass sie mit 2025 enden (z.B. wird `2020 - 2024` zu `2020 - 2025`)
 - Normalisiert das Copyright-Jahr-Format mit Leerzeichen um Bindestriche (z.B. wird `2024-2025` zu `2024 - 2025`)
 - Korrigiert zukünftige Copyright-Jahre (Jahre nach 2026) zurück auf 2025, um Genauigkeit zu gewährleisten
-- Führt Änderungen nur aus, wenn das aktuelle Jahr kleiner als 2025 oder größer als 2026 ist, oder wenn eine Formatnormalisierung erforderlich ist
+- Führt Änderungen aus, wenn das Jahr aktualisiert werden muss oder wenn eine Formatnormalisierung erforderlich ist
 - Stellt durch Verwendung von Wortgrenzen sicher, dass Jahresgrenzen korrekt erkannt werden

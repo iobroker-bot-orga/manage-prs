@@ -78,6 +78,8 @@ function updateCopyrightYear(content, section = null) {
         
         if (newestYear >= TARGET_YEAR) {
             // Check if format needs normalization (should have spaces around hyphen)
+            // This check catches all cases: "2024-2025", "2024 -2025", "2024- 2025"
+            // but not "2024 - 2025" which is the correct format
             if (end && !match.includes(' - ')) {
                 console.log(`✔️ Normalizing copyright year format from ${start}-${end} to ${start} - ${end}`);
                 modified = true;
