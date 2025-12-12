@@ -57,7 +57,7 @@ Bei Fragen oder falls ein PR fehlerhaft erscheint, bitte mich (@ioBroker-Bot) ko
 
 ## Durch dieses PR bereitgestellte Änderungen
 
-**Dieses PR behebt die Repository-Checker-Fehler E6005 und E7001.**
+**Dieser PR behebt die Repository-Checker-Fehler E6005 und E7001.**
 
 Dieses PR aktualisiert das Copyright-Jahr in den folgenden Dateien:
 
