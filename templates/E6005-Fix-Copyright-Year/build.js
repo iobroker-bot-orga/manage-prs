@@ -61,12 +61,12 @@ function updateCopyrightYear(content, section = null) {
         const newestYear = endYear || startYear;
         
         matches.push({
-            fullMatch: match[0],
             startYear: startYear,
             endYear: endYear,
             newestYear: newestYear,
             index: match.index,
-            line: match[0]
+            line: match[0],
+            length: match[0].length
         });
     }
     
@@ -153,7 +153,7 @@ function updateCopyrightYear(content, section = null) {
         // Replace only the selected line in the section
         const updatedSection = sectionContent.substring(0, lineWithNewestYear.index) +
                                updatedLine +
-                               sectionContent.substring(lineWithNewestYear.index + lineWithNewestYear.line.length);
+                               sectionContent.substring(lineWithNewestYear.index + lineWithNewestYear.length);
         return { content: beforeSection + updatedSection + afterSection, changed: true };
     }
     
