@@ -61,6 +61,8 @@ function updateCopyrightYear(content, section = null) {
         const end = endYear ? parseInt(endYear, 10) : null;
         
         // Check if start year is greater than MAX_YEAR - this is clearly an error
+        // as copyrights cannot be for years that haven't occurred yet
+        // In this case, we replace the entire year with TARGET_YEAR as the most reasonable correction
         if (start > MAX_YEAR) {
             modified = true;
             console.log(`✔️ Correcting copyright start year ${start} (exceeds MAX_YEAR ${MAX_YEAR}) to ${TARGET_YEAR}`);
