@@ -62,7 +62,6 @@ function updateCopyrightYear(content, section = null) {
         // Check if newestYear is greater than MAX_YEAR and correct it
         if (newestYear > MAX_YEAR) {
             console.log(`ⓘ Copyright year ${newestYear} exceeds MAX_YEAR (${MAX_YEAR}), correcting to ${TARGET_YEAR}`);
-            newestYear = TARGET_YEAR;
             modified = true;
             
             if (end) {
@@ -70,9 +69,9 @@ function updateCopyrightYear(content, section = null) {
                 console.log(`✔️ Correcting copyright year range from ${start} - ${end} to ${start} - ${TARGET_YEAR}`);
                 return `Copyright (c) ${start} - ${TARGET_YEAR}${whitespace}`;
             } else {
-                // Create range with TARGET_YEAR
-                console.log(`✔️ Correcting copyright year from ${start} to ${start} - ${TARGET_YEAR}`);
-                return `Copyright (c) ${start} - ${TARGET_YEAR}${whitespace}`;
+                // Single year > MAX_YEAR, replace with TARGET_YEAR
+                console.log(`✔️ Correcting copyright year from ${start} to ${TARGET_YEAR}`);
+                return `Copyright (c) ${TARGET_YEAR}${whitespace}`;
             }
         }
         
