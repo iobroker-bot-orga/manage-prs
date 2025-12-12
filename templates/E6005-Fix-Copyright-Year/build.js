@@ -5,12 +5,9 @@
 
 const fs = require('node:fs');
 
-// Calculate target year dynamically based on current date
-// TARGET_YEAR is set to next year to proactively prepare repositories
-const currentYear = new Date().getFullYear();
-const TARGET_YEAR = currentYear + 1;
+const TARGET_YEAR = 2025;
 // Maximum allowed year - years beyond this will be corrected to TARGET_YEAR
-const MAX_YEAR = TARGET_YEAR + 1;
+const MAX_YEAR = 2026;
 
 let changesMade = false;
 
