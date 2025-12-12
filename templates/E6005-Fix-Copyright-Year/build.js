@@ -50,51 +50,110 @@ function updateCopyrightYear(content, section = null) {
     // Pattern 1: Copyright (c) YYYY Name
     // Pattern 2: Copyright (c) YYYY - YYYY Name
     // Using word boundaries to ensure years are matched correctly
-    // Whitespace after year is optional to handle end-of-line cases
-    const copyrightRegex = /Copyright\s+\(c\)\s+(\d{4})\b(?:\s*-\s*(\d{4})\b)?(\s*)/gi;
+    const copyrightRegex = /Copyright\s+\(c\)\s+(\d{4})\b(?:\s*-\s*(\d{4})\b)?[^\n]*/gi;
     
-    let modified = false;
-    const updatedSection = sectionContent.replace(copyrightRegex, (match, startYear, endYear, whitespace) => {
-        const start = parseInt(startYear, 10);
-        const end = endYear ? parseInt(endYear, 10) : null;
-        let newestYear = end || start;
+    // Find all copyright lines
+    const matches = [];
+    let match;
+    while ((match = copyrightRegex.exec(sectionContent)) !== null) {
+        const startYear = parseInt(match[1], 10);
+        const endYear = match[2] ? parseInt(match[2], 10) : null;
+        const newestYear = endYear || startYear;
         
-        // Check if newestYear is greater than MAX_YEAR and correct it
-        if (newestYear > MAX_YEAR) {
-            console.log(`ⓘ Copyright year ${newestYear} exceeds MAX_YEAR (${MAX_YEAR}), correcting to ${TARGET_YEAR}`);
-            newestYear = TARGET_YEAR;
-            modified = true;
-            
-            if (end) {
-                // Update end year to TARGET_YEAR
-                console.log(`✔️ Correcting copyright year range from ${start} - ${end} to ${start} - ${TARGET_YEAR}`);
-                return `Copyright (c) ${start} - ${TARGET_YEAR}${whitespace}`;
-            } else {
-                // Create range with TARGET_YEAR
-                console.log(`✔️ Correcting copyright year from ${start} to ${start} - ${TARGET_YEAR}`);
-                return `Copyright (c) ${start} - ${TARGET_YEAR}${whitespace}`;
-            }
-        }
-        
-        if (newestYear >= TARGET_YEAR) {
-            console.log(`ⓘ Copyright year ${newestYear} is already ${TARGET_YEAR} or later`);
-            return match;
-        }
-        
-        modified = true;
-        
-        if (end) {
-            // Already has a range, update end year
-            console.log(`✔️ Updating copyright year range from ${start} - ${end} to ${start} - ${TARGET_YEAR}`);
-            return `Copyright (c) ${start} - ${TARGET_YEAR}${whitespace}`;
-        } else {
-            // Single year, create range
-            console.log(`✔️ Updating copyright year from ${start} to ${start} - ${TARGET_YEAR}`);
-            return `Copyright (c) ${start} - ${TARGET_YEAR}${whitespace}`;
-        }
+        matches.push({
+            startYear: startYear,
+            endYear: endYear,
+            newestYear: newestYear,
+            index: match.index,
+            line: match[0],
+            length: match[0].length
+        });
+    }
+    
+    if (matches.length === 0) {
+        console.log('ⓘ No copyright lines found');
+        return { content, changed: false };
+    }
+    
+    // Log all detected copyright lines
+    console.log(`ⓘ Found ${matches.length} copyright line(s):`);
+    matches.forEach((m, idx) => {
+        console.log(`  ${idx + 1}. "${m.line}" (newest year: ${m.newestYear})`);
     });
     
+    // Find the line with the newest year
+    let lineWithNewestYear = matches[0];
+    for (let i = 1; i < matches.length; i++) {
+        if (matches[i].newestYear > lineWithNewestYear.newestYear) {
+            lineWithNewestYear = matches[i];
+        }
+    }
+    
+    console.log(`ⓘ Line with newest year selected: "${lineWithNewestYear.line}" (year: ${lineWithNewestYear.newestYear})`);
+    
+    // Check if we need to update this line
+    let modified = false;
+    let updatedLine = lineWithNewestYear.line;
+    
+    // Check if newestYear is greater than MAX_YEAR and correct it
+    if (lineWithNewestYear.newestYear > MAX_YEAR) {
+        console.log(`ⓘ Copyright year ${lineWithNewestYear.newestYear} exceeds MAX_YEAR (${MAX_YEAR}), correcting to ${TARGET_YEAR}`);
+        modified = true;
+        
+        if (lineWithNewestYear.endYear) {
+            // Update end year to TARGET_YEAR
+            console.log(`✔️ Correcting copyright year range from ${lineWithNewestYear.startYear} - ${lineWithNewestYear.endYear} to ${lineWithNewestYear.startYear} - ${TARGET_YEAR}`);
+            updatedLine = lineWithNewestYear.line.replace(
+                new RegExp(`(Copyright\\s+\\(c\\)\\s+${lineWithNewestYear.startYear})\\s*-\\s*${lineWithNewestYear.endYear}\\b`),
+                `$1 - ${TARGET_YEAR}`
+            );
+        } else {
+            // Single year exceeds MAX_YEAR
+            // Check if startYear also exceeds MAX_YEAR - if so, just replace with TARGET_YEAR
+            // Otherwise, create range from startYear to TARGET_YEAR
+            if (lineWithNewestYear.startYear > MAX_YEAR) {
+                console.log(`✔️ Correcting copyright year from ${lineWithNewestYear.startYear} to ${TARGET_YEAR}`);
+                updatedLine = lineWithNewestYear.line.replace(
+                    new RegExp(`(Copyright\\s+\\(c\\)\\s+)${lineWithNewestYear.startYear}\\b`),
+                    `$1${TARGET_YEAR}`
+                );
+            } else {
+                console.log(`✔️ Correcting copyright year from ${lineWithNewestYear.startYear} to ${lineWithNewestYear.startYear} - ${TARGET_YEAR}`);
+                updatedLine = lineWithNewestYear.line.replace(
+                    new RegExp(`(Copyright\\s+\\(c\\)\\s+)${lineWithNewestYear.startYear}\\b`),
+                    `$1${lineWithNewestYear.startYear} - ${TARGET_YEAR}`
+                );
+            }
+        }
+    } else if (lineWithNewestYear.newestYear >= TARGET_YEAR) {
+        console.log(`ⓘ Copyright year ${lineWithNewestYear.newestYear} is already ${TARGET_YEAR} or later, no update needed`);
+        return { content, changed: false };
+    } else {
+        // Year is lower than TARGET_YEAR, update it
+        modified = true;
+        
+        if (lineWithNewestYear.endYear) {
+            // Already has a range, update end year
+            console.log(`✔️ Updating copyright year range from ${lineWithNewestYear.startYear} - ${lineWithNewestYear.endYear} to ${lineWithNewestYear.startYear} - ${TARGET_YEAR}`);
+            updatedLine = lineWithNewestYear.line.replace(
+                new RegExp(`(Copyright\\s+\\(c\\)\\s+${lineWithNewestYear.startYear})\\s*-\\s*${lineWithNewestYear.endYear}\\b`),
+                `$1 - ${TARGET_YEAR}`
+            );
+        } else {
+            // Single year, create range
+            console.log(`✔️ Updating copyright year from ${lineWithNewestYear.startYear} to ${lineWithNewestYear.startYear} - ${TARGET_YEAR}`);
+            updatedLine = lineWithNewestYear.line.replace(
+                new RegExp(`(Copyright\\s+\\(c\\)\\s+)${lineWithNewestYear.startYear}\\b`),
+                `$1${lineWithNewestYear.startYear} - ${TARGET_YEAR}`
+            );
+        }
+    }
+    
     if (modified) {
+        // Replace only the selected line in the section
+        const updatedSection = sectionContent.substring(0, lineWithNewestYear.index) +
+                               updatedLine +
+                               sectionContent.substring(lineWithNewestYear.index + lineWithNewestYear.length);
         return { content: beforeSection + updatedSection + afterSection, changed: true };
     }
     
