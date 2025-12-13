@@ -49,7 +49,7 @@ console.log(`ⓘ common.main exists with value: ${ioPackage.common.main}, procee
 // Remove common.main from the JSON object
 delete ioPackage.common.main;
 
-// Write back with proper formatting (2 spaces indentation)
+// Write back with proper formatting (4 spaces indentation)
 const newContent = JSON.stringify(ioPackage, null, 4);
 
 // Validate that the new content is valid JSON
@@ -69,4 +69,3 @@ console.log(`✔️ Removed common.main from ${ioPackagePath}`);
 console.log(`✔️ processing completed`);
 
 process.exit(0);
-
