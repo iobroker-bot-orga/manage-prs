@@ -217,7 +217,7 @@ jobs:
           echo "    Log status..."
           git status
           echo "    Staging all changes..."
-          git add -v . ':!./.iobroker-pr-body.tmp' ':!./.iobroker-pr-title.tmp' || echo "    ⚠️  Warning: git add returned an error (exit code: $?), but continuing..."
+          git add -v . ':!./.iobroker-pr-body.tmp' ':!./.iobroker-pr-title.tmp' && echo "    ✔️  Changes staged successfully" || echo "    ⚠️  Warning: git add returned an error (exit code: $?), but continuing..."
           echo "    Checking for staged changes..."
           git diff --staged
           if git diff --staged --quiet; then
