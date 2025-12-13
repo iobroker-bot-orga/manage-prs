@@ -218,6 +218,7 @@ jobs:
           git add -v . :!./.iobroker-pr-body.tmp :!./.iobroker-pr-title.tmp
           echo "    Checking for staged changes..."
           #if git diff --staged --quiet; then
+          git diff --staged
           if git diff --staged; then
             echo "    No changes to commit"
             echo "has_changes=false" >> $GITHUB_ENV
