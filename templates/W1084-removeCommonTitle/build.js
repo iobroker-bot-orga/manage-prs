@@ -79,4 +79,3 @@ console.log(`✔️ Removed common.title from ${ioPackagePath}`);
 console.log(`✔️ processing completed`);
 
 process.exit(0);
-
