@@ -214,6 +214,8 @@ jobs:
         run: |
           echo ">>> Starting: Commit and push changes"
           cd target-repo
+          echo "    Log status..."
+          git status
           echo "    Staging all changes..."
           git add -v . ':!./.iobroker-pr-body.tmp' ':!./.iobroker-pr-title.tmp'
           echo "    Checking for staged changes..."
