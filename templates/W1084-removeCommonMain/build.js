@@ -1,0 +1,71 @@
+// This script implements the required changes for a PR 
+// The working directory is set to the root of the repository.
+// The script must exit with status 0 if everything is ok.
+// if no change is to be applied for any reason the script must not change any files. This will prohibit creation of a PR. 
+
+const fs = require('node:fs');
+
+// prepare standard parameters 
+const args = process.argv.slice(2);
+
+if (args.length < 2) {
+  console.error('❌ Error: Missing required arguments');
+  process.exit(1);
+}
+
+const templateName = args[0];
+const repositoryName = args[1];
+const parameterData = args[2] || '';
+
+const ioPackagePath = './io-package.json';
+
+// Check if io-package.json exists
+if (!fs.existsSync(ioPackagePath)) {
+    console.log(`❌ ${ioPackagePath} does not exist, cannot create PR.`);
+    process.exit(1);
+}
+
+console.log(`✔️ ${ioPackagePath} exists.`);
+
+// Read and parse io-package.json
+let ioPackage;
+let originalContent;
+try {
+    originalContent = fs.readFileSync(ioPackagePath, 'utf8');
+    ioPackage = JSON.parse(originalContent);
+} catch (error) {
+    console.error(`❌ Error reading or parsing ${ioPackagePath}: ${error.message}`);
+    process.exit(1);
+}
+
+// Check if common.main exists
+if (!ioPackage.common?.main) {
+    console.log(`✔️ common.main does not exist, no need for a PR.`);
+    process.exit(0);
+}
+
+console.log(`ⓘ common.main exists with value: ${ioPackage.common.main}, proceeding with removal.`);
+
+// Remove common.main from the JSON object
+delete ioPackage.common.main;
+
+// Write back with proper formatting (4 spaces indentation)
+const newContent = JSON.stringify(ioPackage, null, 4);
+
+// Validate that the new content is valid JSON
+try {
+    JSON.parse(newContent);
+} catch (error) {
+    console.error(`❌ Generated invalid JSON: ${error.message}`);
+    process.exit(1);
+}
+
+console.log(`✔️ Validated that resulting JSON is valid.`);
+
+// Write the updated content with trailing newline
+fs.writeFileSync(ioPackagePath, newContent + '\n', 'utf8');
+console.log(`✔️ Removed common.main from ${ioPackagePath}`);
+
+console.log(`✔️ processing completed`);
+
+process.exit(0);
