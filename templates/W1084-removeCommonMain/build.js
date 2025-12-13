@@ -62,8 +62,8 @@ try {
 
 console.log(`✔️ Validated that resulting JSON is valid.`);
 
-// Write the updated content
-fs.writeFileSync(ioPackagePath, newContent, 'utf8');
+// Write the updated content with trailing newline
+fs.writeFileSync(ioPackagePath, newContent + '\n', 'utf8');
 console.log(`✔️ Removed common.main from ${ioPackagePath}`);
 
 console.log(`✔️ processing completed`);
