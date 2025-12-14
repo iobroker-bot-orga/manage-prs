@@ -166,7 +166,8 @@ function removePropertyLine(content, lineStart, lineEnd, hasTrailingComma) {
         return content.slice(0, searchPos) + content.slice(searchPos + 1, lineStart) + content.slice(lineEnd);
     }
     
-    // No comma found (shouldn't happen in valid JSON), just remove the line
+    // No comma found (shouldn't happen in valid JSON)
+    console.warn('⚠️ Warning: Could not find comma on previous line when removing last property. Removing line without comma adjustment.');
     return content.slice(0, lineStart) + content.slice(lineEnd);
 }
 
