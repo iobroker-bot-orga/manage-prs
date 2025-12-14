@@ -103,13 +103,46 @@ const afterCommon = originalContent.slice(commonEnd);
 // Find the line with "main" in the common section only
 // Pattern: optional whitespace, "main", optional whitespace, colon, value, optional comma
 // Also include the newline in the pattern
-const mainLinePattern = /^(\s*)"main"\s*:\s*"[^"]*"\s*,?\s*\r?\n/m;
+// The value pattern handles escaped quotes: (?:[^"\\]|\\.)*
+const mainLinePattern = /^(\s*)"main"\s*:\s*"(?:[^"\\]|\\.)*"\s*,?\s*\r?\n/m;
 
 const match = commonContent.match(mainLinePattern);
 
 if (!match) {
     console.error(`❌ Could not find "main" line in common section of ${ioPackagePath}`);
     process.exit(1);
+}
+
+/**
+ * Removes a property line from a JSON section, handling comma placement correctly
+ * @param {string} content - The content to remove the line from
+ * @param {number} lineStart - Start index of the line to remove
+ * @param {number} lineEnd - End index of the line to remove
+ * @param {boolean} hasTrailingComma - Whether the line has a trailing comma
+ * @returns {string} - The content with the line removed
+ */
+function removePropertyLine(content, lineStart, lineEnd, hasTrailingComma) {
+    if (hasTrailingComma) {
+        // Line has a trailing comma, just remove the entire line
+        return content.slice(0, lineStart) + content.slice(lineEnd);
+    }
+    
+    // This line doesn't have a trailing comma, so it must be the last property
+    // We need to remove the comma from the previous line
+    let searchPos = lineStart - 1;
+    
+    // Skip backwards over whitespace to find the comma
+    while (searchPos >= 0 && /\s/.test(content[searchPos])) {
+        searchPos--;
+    }
+    
+    if (searchPos >= 0 && content[searchPos] === ',') {
+        // Remove the comma from the previous line and the entire main line
+        return content.slice(0, searchPos) + content.slice(searchPos + 1, lineStart) + content.slice(lineEnd);
+    }
+    
+    // No comma found (shouldn't happen in valid JSON), just remove the line
+    return content.slice(0, lineStart) + content.slice(lineEnd);
 }
 
 const fullMatch = match[0];
@@ -119,28 +152,8 @@ const lineEnd = lineStart + fullMatch.length;
 // Check if this line has a trailing comma (before the newline)
 const hasTrailingComma = fullMatch.trimEnd().endsWith(',');
 
-let newCommonContent;
-if (!hasTrailingComma) {
-    // This line doesn't have a trailing comma, so it must be the last property
-    // We need to remove the comma from the previous line
-    let searchPos = lineStart - 1;
-    
-    // Skip backwards over whitespace to find the comma
-    while (searchPos >= 0 && /\s/.test(commonContent[searchPos])) {
-        searchPos--;
-    }
-    
-    if (searchPos >= 0 && commonContent[searchPos] === ',') {
-        // Remove the comma from the previous line and the entire main line
-        newCommonContent = commonContent.slice(0, searchPos) + commonContent.slice(searchPos + 1, lineStart) + commonContent.slice(lineEnd);
-    } else {
-        // No comma found (shouldn't happen in valid JSON), just remove the line
-        newCommonContent = commonContent.slice(0, lineStart) + commonContent.slice(lineEnd);
-    }
-} else {
-    // Line has a trailing comma, just remove the entire line
-    newCommonContent = commonContent.slice(0, lineStart) + commonContent.slice(lineEnd);
-}
+// Remove the property line with proper comma handling
+const newCommonContent = removePropertyLine(commonContent, lineStart, lineEnd, hasTrailingComma);
 
 // Reconstruct the full content
 const newContent = beforeCommon + newCommonContent + afterCommon;
