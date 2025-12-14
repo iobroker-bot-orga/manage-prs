@@ -61,14 +61,37 @@ if (!commonMatch) {
 const commonStart = commonMatch.index + commonMatch[0].length;
 
 // Find the end of the common section (matching closing brace)
+// We need to account for braces inside string literals
 let braceCount = 1;
 let commonEnd = commonStart;
+let inString = false;
+let escapeNext = false;
+
 for (let i = commonStart; i < originalContent.length && braceCount > 0; i++) {
-    if (originalContent[i] === '{') braceCount++;
-    if (originalContent[i] === '}') braceCount--;
-    if (braceCount === 0) {
-        commonEnd = i;
-        break;
+    const char = originalContent[i];
+    
+    if (escapeNext) {
+        escapeNext = false;
+        continue;
+    }
+    
+    if (char === '\\' && inString) {
+        escapeNext = true;
+        continue;
+    }
+    
+    if (char === '"') {
+        inString = !inString;
+        continue;
+    }
+    
+    if (!inString) {
+        if (char === '{') braceCount++;
+        if (char === '}') braceCount--;
+        if (braceCount === 0) {
+            commonEnd = i;
+            break;
+        }
     }
 }
 
@@ -103,7 +126,7 @@ if (!hasTrailingComma) {
     let searchPos = lineStart - 1;
     
     // Skip backwards over whitespace to find the comma
-    while (searchPos >= 0 && (commonContent[searchPos] === ' ' || commonContent[searchPos] === '\t' || commonContent[searchPos] === '\n' || commonContent[searchPos] === '\r')) {
+    while (searchPos >= 0 && /\s/.test(commonContent[searchPos])) {
         searchPos--;
     }
     
