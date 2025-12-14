@@ -112,20 +112,24 @@ const commonContent = originalContent.slice(commonStart, commonEnd);
 const afterCommon = originalContent.slice(commonEnd);
 
 // Find the line with "title" in the common section only
-// Pattern explanation - captures multiple groups for precise control:
-// - Group 1 (\r?\n)? : Optional preceding newline (kept - belongs to previous line)
-// - Group 2 (\s*) : Indentation spaces/tabs
-// - Group 3 ([ \t]*) : Spaces/tabs before comma (not captured for use, but needed for matching)
-// - Group 4 (,?) : Optional comma (checked to determine removal strategy)
-// - Group 5 ([ \t]*) : Spaces/tabs after comma (not captured for use, but needed for matching)
-// - Group 6 (\r?\n)? : Optional trailing newline (removed with the line)
+// Pattern explanation:
+// - (\r?\n)? : Group 1 - Optional preceding newline (this belongs to previous line, we preserve it)
+// - (?:\s*) : Non-capturing - Indentation whitespace at start of title line
+// - "title"\s*:\s*"(?:[^"\\]|\\.)*" : The property key-value (handles escaped quotes)
+// - (?:[ \t]*) : Non-capturing - Optional spaces/tabs before comma ([ \t] not \s to avoid newlines)
+// - (,?) : Group 2 - Optional comma (checked to determine removal strategy)
+// - (?:[ \t]*) : Non-capturing - Optional spaces/tabs after comma
+// - (?:\r?\n)? : Non-capturing - Optional trailing newline (removed with the line)
 //
-// NOTE: [ \t]* is used instead of \s* to prevent capturing newlines in whitespace groups.
+// Handling of preceding newline: In "...\n    "title": "...",\n    "next": ..."
+// the first \n ends the previous line, so match starts there. We preserve it by calculating
+// lineStart AFTER the preceding newline, so we only remove: "    "title": "...",\n"
+//
 // NOTE: This differs from W1084-removeCommonMain which uses ^(\s*) with multiline flag.
 //       Using ^ with multiline causes CRLF issues: ^ matches AFTER \n in \r\n sequences,
 //       including \n in the match and leaving orphaned \r characters.
 //       This pattern explicitly handles preceding newlines to avoid this bug.
-const titleLinePattern = /(\r?\n)?(\s*)"title"\s*:\s*"(?:[^"\\]|\\.)*"([ \t]*)(,?)([ \t]*)(\r?\n)?/;
+const titleLinePattern = /(\r?\n)?(?:\s*)"title"\s*:\s*"(?:[^"\\]|\\.)*"(?:[ \t]*)(,?)(?:[ \t]*)(?:\r?\n)?/;
 
 const match = commonContent.match(titleLinePattern);
 
@@ -167,11 +171,14 @@ function removePropertyLine(content, lineStart, lineEnd, hasTrailingComma) {
 }
 
 const fullMatch = match[0];
-const precedingNewline = match[1] || '';  // Group 1: optional preceding newline (keep this)
-const comma = match[4];                    // Group 4: comma (if present)
+const precedingNewline = match[1] || '';  // Group 1: optional preceding newline
+const comma = match[2];                    // Group 2: comma (if present)
 
-// Calculate the actual line start and end
-// If there's a preceding newline, we want to keep it, so start after it
+// Calculate positions for removal
+// match.index points to start of fullMatch (including any preceding newline)
+// We want to preserve the preceding newline (it ends the previous line), so:
+// - lineStart = position AFTER the preceding newline (start of content to remove)
+// - lineEnd = position at end of fullMatch (end of content to remove)
 const lineStart = match.index + precedingNewline.length;
 const lineEnd = match.index + fullMatch.length;
 
