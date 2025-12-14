@@ -1,0 +1,9 @@
+{
+  "common": {
+    "name": "test-adapter",
+    "version": "1.0.0",
+    "titleLang": {
+      "en": "Test Adapter"
+    }
+  }
+}

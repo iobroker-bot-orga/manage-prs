@@ -160,11 +160,7 @@ function removePropertyLine(content, lineStart, lineEnd, hasTrailingComma) {
 
 const fullMatch = match[0];
 const precedingNewline = match[1] || '';  // Group 1: optional preceding newline (keep this)
-const indentation = match[2];              // Group 2: indentation spaces/tabs
-const whitespaceBeforeComma = match[3];   // Group 3: whitespace before comma
 const comma = match[4];                    // Group 4: comma (if present)
-const whitespaceAfterComma = match[5];    // Group 5: whitespace after comma
-const trailingNewline = match[6] || '';    // Group 6: optional trailing newline
 
 // Calculate the actual line start and end
 // If there's a preceding newline, we want to keep it, so start after it
