@@ -48,8 +48,8 @@ console.log(`ⓘ Found common.title attribute`);
 
 // Check if common.titleLang exists
 if (ioPackage.common?.titleLang === undefined) {
-    console.log(`❌ common.titleLang does not exist, cannot remove common.title. Both attributes are required for this fix.`);
-    process.exit(1);
+    console.log(`⚠️ common.titleLang does not exist, cannot remove common.title. Both attributes are required for this fix.`);
+    process.exit(0);
 }
 
 console.log(`✔️ Found common.titleLang attribute`);
