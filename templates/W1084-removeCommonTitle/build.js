@@ -112,11 +112,12 @@ const commonContent = originalContent.slice(commonStart, commonEnd);
 const afterCommon = originalContent.slice(commonEnd);
 
 // Find the line with "title" in the common section only
-// Pattern: newline or start, optional whitespace, "title", optional whitespace, colon, value, optional comma, newline
+// Pattern: optional preceding newline, optional whitespace, "title", colon, value, optional trailing spaces/tabs, optional comma, optional trailing spaces/tabs, optional newline
 // The value pattern handles escaped quotes: (?:[^"\\]|\\.)*
-// We need to be careful with the newline matching - the line starts AFTER a newline (or at the beginning)
-// and ends WITH a newline that should be removed
-const titleLinePattern = /(\r?\n)?(\s*)"title"\s*:\s*"(?:[^"\\]|\\.)*"\s*,?\s*(\r?\n)/;
+// The preceding newline group captures newlines that belong to the previous line (we keep these)
+// We use [ \t]* instead of \s* to avoid capturing newlines in the whitespace groups
+// The trailing newline group is optional to handle files without trailing newlines
+const titleLinePattern = /(\r?\n)?(\s*)"title"\s*:\s*"(?:[^"\\]|\\.)*"([ \t]*)(,?)([ \t]*)(\r?\n)?/;
 
 const match = commonContent.match(titleLinePattern);
 
@@ -127,9 +128,9 @@ if (!match) {
 
 /**
  * Removes a property line from a JSON section, handling comma placement correctly
- * @param {string} content - The content to remove the line from
- * @param {number} lineStart - Start index of the line to remove
- * @param {number} lineEnd - End index of the line to remove
+ * @param {string} content - The content to remove the line from (relative to commonContent)
+ * @param {number} lineStart - Start index of the line to remove (relative to commonContent)
+ * @param {number} lineEnd - End index of the line to remove (relative to commonContent)
  * @param {boolean} hasTrailingComma - Whether the line has a trailing comma
  * @returns {string} - The content with the line removed
  */
@@ -158,17 +159,20 @@ function removePropertyLine(content, lineStart, lineEnd, hasTrailingComma) {
 }
 
 const fullMatch = match[0];
-const precedingNewline = match[1] || ''; // Group 1: optional preceding newline
-const indentation = match[2];             // Group 2: indentation spaces/tabs
-const trailingNewline = match[3];         // Group 3: trailing newline
+const precedingNewline = match[1] || '';  // Group 1: optional preceding newline (keep this)
+const indentation = match[2];              // Group 2: indentation spaces/tabs
+const whitespaceBeforeComma = match[3];   // Group 3: whitespace before comma
+const comma = match[4];                    // Group 4: comma (if present)
+const whitespaceAfterComma = match[5];    // Group 5: whitespace after comma
+const trailingNewline = match[6] || '';    // Group 6: optional trailing newline
 
 // Calculate the actual line start and end
 // If there's a preceding newline, we want to keep it, so start after it
 const lineStart = match.index + precedingNewline.length;
-const lineEnd = lineStart + fullMatch.length - precedingNewline.length;
+const lineEnd = match.index + fullMatch.length;
 
-// Check if this line has a trailing comma (before the newline)
-const hasTrailingComma = fullMatch.trimEnd().endsWith(',');
+// Check if this line has a trailing comma
+const hasTrailingComma = comma === ',';
 
 // Remove the property line with proper comma handling
 const newCommonContent = removePropertyLine(commonContent, lineStart, lineEnd, hasTrailingComma);
