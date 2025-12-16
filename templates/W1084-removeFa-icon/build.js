@@ -104,8 +104,11 @@ const afterAdminTab = originalContent.slice(adminTabEnd);
 // Pattern explanation:
 // - (\r?\n)? : Group 1 - Optional preceding newline (this belongs to previous line, we preserve it)
 // - (?:\s*) : Non-capturing - Indentation whitespace at start of fa-icon line
-// - "fa-icon"\s*:\s*"(?:[^"\\]|\\.)*" : The property key-value (handles escaped quotes)
-// - (?:[ \t]*) : Non-capturing - Optional spaces/tabs before comma ([ \t] not \s to avoid newlines)
+// - "fa-icon"\s*:\s*"(?:[^"\\]|\\.)*" : The property key-value
+//   * (?:[^"\\]|\\.)* handles string values with escaped quotes: matches either non-quote/non-backslash OR backslash+any-char
+//   * This allows values like "fas fa-test" or values with escaped quotes like "test\"value"
+// - (?:[ \t]*) : Non-capturing - Optional spaces/tabs before comma
+//   * Uses [ \t] (space and tab only) not \s to avoid matching newlines
 // - (,?) : Group 2 - Optional comma (checked to determine removal strategy)
 // - (?:[ \t]*) : Non-capturing - Optional spaces/tabs after comma
 // - (?:\r?\n)? : Non-capturing - Optional trailing newline (removed with the line)
@@ -147,7 +150,8 @@ function removePropertyLine(content, lineStart, lineEnd, hasTrailingComma) {
     }
     
     // No comma found (shouldn't happen in valid JSON)
-    console.warn('⚠️ Warning: Could not find comma on previous line when removing last property. Removing line without comma adjustment.');
+    // This may indicate malformed JSON or unexpected structure in the adminTab section
+    console.warn('⚠️ Warning: Could not find comma on previous line when removing last property. This may indicate malformed JSON or unexpected structure in the adminTab section. Removing line without comma adjustment.');
     return content.slice(0, lineStart) + content.slice(lineEnd);
 }
 
