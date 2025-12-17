@@ -163,7 +163,15 @@ function removeProperty(content, sectionName, propertyName) {
     }
     
     // Find the property line in the section
-    // Pattern: optional whitespace, property name, optional whitespace, colon, value, optional comma
+    // We need to find the property and its value, which could be:
+    // - A string: "value"
+    // - A number: 123
+    // - A boolean: true/false
+    // - An object: { ... }
+    // - An array: [ ... ]
+    // - null
+    // For simplicity and safety, we'll match string values (which is what installedFrom always is)
+    // Pattern: optional whitespace, property name, optional whitespace, colon, string value, optional comma, newline
     const propertyPattern = new RegExp(`^(\\s*)"${propertyName}"\\s*:\\s*"(?:[^"\\\\]|\\\\.)*"\\s*,?\\s*\\r?\\n`, 'm');
     
     const match = sectionContent.match(propertyPattern);
