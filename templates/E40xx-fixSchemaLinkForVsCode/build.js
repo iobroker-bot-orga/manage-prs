@@ -42,10 +42,17 @@ if (!fs.existsSync(ioPackagePath)) {
 }
 
 let ioPackageContent;
+let JSON5;
+try {
+    JSON5 = require('json5');
+} catch (error) {
+    console.log(`❌ json5 package is not available. Please install it: ${error.message}`);
+    process.exit(1);
+}
+
 try {
     ioPackageContent = fs.readFileSync(ioPackagePath, 'utf8');
     // Try to parse with JSON5 to support comments
-    const JSON5 = require('json5');
     JSON5.parse(ioPackageContent);
     console.log(`✔️ io-package.json is valid JSON.`);
 } catch (error) {
