@@ -6,6 +6,24 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
+// Load JSON5 parser for handling JSON files with comments
+let JSON5;
+try {
+    JSON5 = require('json5');
+} catch (error) {
+    console.log(`❌ json5 package is required but not installed in the environment: ${error.message}`);
+    process.exit(1);
+}
+
+// Load comment-json for preserving comments in .vscode/settings.json
+let commentJson;
+try {
+    commentJson = require('comment-json');
+} catch (error) {
+    console.log(`❌ comment-json package is required but not installed in the environment: ${error.message}`);
+    process.exit(1);
+}
+
 // Schema URLs
 const SCHEMA_IOPACKAGE = 'https://raw.githubusercontent.com/ioBroker/ioBroker.js-controller/master/schemas/io-package.json';
 const SCHEMA_JSONCONFIG = 'https://raw.githubusercontent.com/ioBroker/ioBroker.admin/master/packages/jsonConfig/schemas/jsonConfig.json';
@@ -42,14 +60,6 @@ if (!fs.existsSync(ioPackagePath)) {
 }
 
 let ioPackageContent;
-let JSON5;
-try {
-    JSON5 = require('json5');
-} catch (error) {
-    console.log(`❌ json5 package is required but not installed in the environment: ${error.message}`);
-    process.exit(1);
-}
-
 try {
     ioPackageContent = fs.readFileSync(ioPackagePath, 'utf8');
     // Try to parse with JSON5 to support comments
@@ -61,13 +71,13 @@ try {
 }
 
 /**
- * Read and parse .vscode/settings.json
+ * Read and parse .vscode/settings.json using comment-json to preserve comments
  */
 let settingsContent;
 let settings;
 try {
     settingsContent = fs.readFileSync(vsCodeSettingsPath, 'utf8');
-    settings = JSON.parse(settingsContent);
+    settings = commentJson.parse(settingsContent);
     console.log(`✔️ .vscode/settings.json parsed successfully.`);
 } catch (error) {
     console.log(`❌ Failed to parse .vscode/settings.json: ${error.message}`);
@@ -132,6 +142,8 @@ for (let i = 0; i < settings['json.schemas'].length; i++) {
             console.log(`ⓘ Updating io-package.json schema URL from ${schema.url} to ${SCHEMA_IOPACKAGE}`);
             schema.url = SCHEMA_IOPACKAGE;
             changesMade = true;
+        } else {
+            console.log(`✔️ io-package.json schema URL is already correct.`);
         }
     }
     
@@ -146,6 +158,8 @@ for (let i = 0; i < settings['json.schemas'].length; i++) {
             console.log(`ⓘ Updating jsonConfig schema URL from ${schema.url} to ${SCHEMA_JSONCONFIG}`);
             schema.url = SCHEMA_JSONCONFIG;
             changesMade = true;
+        } else {
+            console.log(`✔️ jsonConfig schema URL is already correct.`);
         }
         
         // Ensure all jsonConfig files are in fileMatch
@@ -186,11 +200,11 @@ if (!jsonConfigFound) {
 }
 
 /**
- * Write changes if any were made
+ * Write changes if any were made using comment-json to preserve comments
  */
 if (changesMade) {
     try {
-        const newContent = JSON.stringify(settings, null, 4) + '\n';
+        const newContent = commentJson.stringify(settings, null, 4) + '\n';
         fs.writeFileSync(vsCodeSettingsPath, newContent, 'utf8');
         console.log(`✔️ ${vsCodeSettingsPath} updated successfully.`);
     } catch (error) {

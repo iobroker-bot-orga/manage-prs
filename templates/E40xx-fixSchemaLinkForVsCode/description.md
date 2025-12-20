@@ -23,9 +23,7 @@ This PR fixes several errors and warnings related to schema checking of io-packa
 
 The PR updates the `.vscode/settings.json` file to ensure proper JSON schema validation in Visual Studio Code for ioBroker-specific files.
 
-The script automatically:
-- Validates the existence of `.vscode/settings.json` file (exits successfully if not present)
-- Ensures io-package.json is valid JSON (supports JSON5 format with comments)
+The PR automatically:
 - Adds or updates the `json.schemas` section with proper schema URLs
 - Configures schema validation for `io-package.json` using the official ioBroker.js-controller schema
 - Configures schema validation for jsonConfig files (`admin/jsonConfig.json`, `admin/jsonCustom.json`, `admin/jsonTab.json` and their `.json5` variants) using the official ioBroker.admin schema
@@ -58,13 +56,11 @@ Bei Fragen oder falls ein PR fehlerhaft erscheint, bitte mich (@ioBroker-Bot) ko
 
 ## Durch dieses PR bereitgestellte Änderungen
 
-Dieses PR behebt mehrere Fehler und Warnungen bezüglich der Schema-Überprüfung von io-package.json und jsonConfig-Dateien, die vom Repository-Checker gemeldet wurden.
+Dieser PR behebt mehrere Fehler und Warnungen bezüglich der Schema-Überprüfung von io-package.json und jsonConfig-Dateien, die vom Repository-Checker gemeldet wurden.
 
-Das PR aktualisiert die Datei `.vscode/settings.json`, um eine korrekte JSON-Schema-Validierung in Visual Studio Code für ioBroker-spezifische Dateien sicherzustellen.
+Der PR aktualisiert die Datei `.vscode/settings.json`, um eine korrekte JSON-Schema-Validierung in Visual Studio Code für ioBroker-spezifische Dateien sicherzustellen.
 
-Das Skript führt automatisch folgende Aktionen aus:
-- Überprüft die Existenz der Datei `.vscode/settings.json` (beendet erfolgreich, falls nicht vorhanden)
-- Stellt sicher, dass io-package.json gültiges JSON ist (unterstützt JSON5-Format mit Kommentaren)
+Der PR führt automatisch folgende Aktionen aus:
 - Fügt den Abschnitt `json.schemas` hinzu oder aktualisiert ihn mit den korrekten Schema-URLs
 - Konfiguriert die Schema-Validierung für `io-package.json` unter Verwendung des offiziellen ioBroker.js-controller-Schemas
 - Konfiguriert die Schema-Validierung für jsonConfig-Dateien (`admin/jsonConfig.json`, `admin/jsonCustom.json`, `admin/jsonTab.json` und deren `.json5`-Varianten) unter Verwendung des offiziellen ioBroker.admin-Schemas
