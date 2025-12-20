@@ -46,7 +46,7 @@ let JSON5;
 try {
     JSON5 = require('json5');
 } catch (error) {
-    console.log(`❌ json5 package is not available. Please install it: ${error.message}`);
+    console.log(`❌ json5 package is required but not installed in the environment: ${error.message}`);
     process.exit(1);
 }
 
@@ -93,6 +93,21 @@ if (!Array.isArray(settings['json.schemas'])) {
 console.log(`✔️ json.schemas is an array with ${settings['json.schemas'].length} elements.`);
 
 /**
+ * Validate schema entry structure
+ */
+function validateSchemaEntry(schema, index) {
+    if (!schema.fileMatch || !Array.isArray(schema.fileMatch)) {
+        console.log(`❌ Schema entry ${index} is missing 'fileMatch' attribute or it is not an array.`);
+        process.exit(1);
+    }
+    
+    if (!schema.url || typeof schema.url !== 'string') {
+        console.log(`❌ Schema entry ${index} is missing 'url' attribute or it is not a string.`);
+        process.exit(1);
+    }
+}
+
+/**
  * Track which schemas we've found
  */
 let ioPackageFound = false;
@@ -105,15 +120,7 @@ for (let i = 0; i < settings['json.schemas'].length; i++) {
     const schema = settings['json.schemas'][i];
     
     // Validate schema structure
-    if (!schema.fileMatch || !Array.isArray(schema.fileMatch)) {
-        console.log(`❌ Schema entry ${i} is missing 'fileMatch' attribute or it is not an array.`);
-        process.exit(1);
-    }
-    
-    if (!schema.url || typeof schema.url !== 'string') {
-        console.log(`❌ Schema entry ${i} is missing 'url' attribute or it is not a string.`);
-        process.exit(1);
-    }
+    validateSchemaEntry(schema, i);
     
     // Check for io-package.json
     if (schema.fileMatch.includes('io-package.json')) {
