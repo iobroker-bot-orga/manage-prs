@@ -1,7 +1,9 @@
 {
   "dependencies": {
     "@iobroker-bot-orga/iobroker-lib": "^2.0.1",
-    "js-yaml": "^4.1.0"
+    "comment-json": "^4.5.0",
+    "js-yaml": "^4.1.0",
+    "json5": "^2.2.3"
   },
   "devDependencies": {
     "@iobroker/eslint-config": "^2.2.0"
