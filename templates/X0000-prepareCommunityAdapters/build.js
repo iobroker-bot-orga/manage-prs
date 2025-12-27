@@ -212,6 +212,9 @@ function updateIoPackageJson() {
         process.exit(1);
     }
     
+    // Track if any changes were made to io-package.json
+    let ioPackageChanged = false;
+    
     // Check if common.authors exists
     if (!ioPackage.common) {
         ioPackage.common = {};
@@ -231,6 +234,7 @@ function updateIoPackageJson() {
         // Add author
         ioPackage.common.authors.push(`${COMMUNITY_ADAPTERS_NAME} <${COMMUNITY_ADAPTERS_EMAIL}>`);
         console.log(`✔️ Added ${COMMUNITY_ADAPTERS_NAME} to authors in ${ioPackagePath}.`);
+        ioPackageChanged = true;
         changesMade = true;
     } else {
         console.log(`ⓘ ${COMMUNITY_ADAPTERS_NAME} already exists in authors.`);
@@ -256,6 +260,7 @@ function updateIoPackageJson() {
         });
         console.log(`✔️ Added js-controller dependency with version ${JS_CONTROLLER_VERSION}.`);
         jsControllerUpdated = true;
+        ioPackageChanged = true;
         changesMade = true;
     } else {
         // Check if version needs updating
@@ -264,6 +269,7 @@ function updateIoPackageJson() {
             jsControllerDep['js-controller'] = `>=${JS_CONTROLLER_VERSION}`;
             console.log(`✔️ Updated js-controller dependency from ${currentVersion} to ${JS_CONTROLLER_VERSION}.`);
             jsControllerUpdated = true;
+            ioPackageChanged = true;
             changesMade = true;
         } else {
             console.log(`ⓘ js-controller dependency is already at version ${currentVersion || 'unknown'}, no update needed.`);
@@ -290,6 +296,7 @@ function updateIoPackageJson() {
         });
         console.log(`✔️ Added admin dependency with version ${ADMIN_VERSION}.`);
         adminUpdated = true;
+        ioPackageChanged = true;
         changesMade = true;
     } else {
         // Check if version needs updating
@@ -298,6 +305,7 @@ function updateIoPackageJson() {
             adminDep['admin'] = `>=${ADMIN_VERSION}`;
             console.log(`✔️ Updated admin dependency from ${currentVersion} to ${ADMIN_VERSION}.`);
             adminUpdated = true;
+            ioPackageChanged = true;
             changesMade = true;
         } else {
             console.log(`ⓘ admin dependency is already at version ${currentVersion || 'unknown'}, no update needed.`);
@@ -305,7 +313,7 @@ function updateIoPackageJson() {
     }
     
     // Write back with proper formatting (2 spaces indentation)
-    if (changesMade) {
+    if (ioPackageChanged) {
         fs.writeFileSync(ioPackagePath, JSON.stringify(ioPackage, null, 2) + '\n', 'utf8');
         
         // Update README changelog if dependencies were updated
@@ -351,7 +359,6 @@ function updateReadmeChangelog(jsControllerUpdated, adminUpdated) {
         const insertPosition = wipMatch.index + wipMatch[0].length;
         
         // Check if changelog entries already exist
-        const afterWip = content.substring(insertPosition);
         const alreadyHasEntries = changelogEntries.every(entry => {
             // Remove leading "- " and any extra whitespace for comparison
             const entryText = entry.replace(/^-\s*/, '').trim();
