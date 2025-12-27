@@ -204,7 +204,7 @@ function updateIoPackageJson() {
     }
     
     // Add author
-    ioPackage.common.authors.push(`${COMMUNITY_ADAPTERS_NAME} <${COMMUNITY_ADAPTERS_EMAIL}>`);
+    ioPackage.common.authors.push(COMMUNITY_ADAPTERS_NAME);
     
     // Write back with proper formatting (2 spaces indentation)
     fs.writeFileSync(ioPackagePath, JSON.stringify(ioPackage, null, 2) + '\n', 'utf8');
