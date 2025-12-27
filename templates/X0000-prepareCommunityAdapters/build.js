@@ -225,6 +225,23 @@ function updateIoPackageJson() {
         console.log(`ⓘ Created authors array in ${ioPackagePath}.`);
     }
     
+    // Convert author objects to single-line string format
+    let authorsConverted = false;
+    for (let i = 0; i < ioPackage.common.authors.length; i++) {
+        const author = ioPackage.common.authors[i];
+        if (typeof author === 'object' && author !== null && author.name) {
+            // Convert object to string format
+            const authorString = author.email 
+                ? `${author.name} <${author.email}>`
+                : author.name;
+            ioPackage.common.authors[i] = authorString;
+            console.log(`✔️ Converted author object to string: ${authorString}`);
+            authorsConverted = true;
+            ioPackageChanged = true;
+            changesMade = true;
+        }
+    }
+    
     // Check if iobroker-community-adapters is already in authors
     const hasAuthor = ioPackage.common.authors.some(
         author => typeof author === 'string' && author.includes(COMMUNITY_ADAPTERS_NAME)
