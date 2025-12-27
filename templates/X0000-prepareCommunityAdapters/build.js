@@ -181,7 +181,7 @@ function compareVersions(v1, v2) {
  * Extract version from dependency string (e.g., ">=5.0.0" -> "5.0.0")
  */
 function extractVersion(depString) {
-    const match = depString.match(/[\d.]+/);
+    const match = depString.match(/\d+(?:\.\d+)*/);
     return match ? match[0] : null;
 }
 
@@ -348,9 +348,12 @@ function updateReadmeChangelog(jsControllerUpdated, adminUpdated) {
         
         // Check if changelog entries already exist
         const afterWip = content.substring(insertPosition);
-        const alreadyHasEntries = changelogEntries.every(entry => 
-            content.includes(entry.replace('- ', '').trim())
-        );
+        const alreadyHasEntries = changelogEntries.every(entry => {
+            // Remove leading "- " and any extra whitespace for comparison
+            const entryText = entry.replace(/^-\s*/, '').trim();
+            // Check if the exact text exists in the content (case-insensitive to be safe)
+            return content.toLowerCase().includes(entryText.toLowerCase());
+        });
         
         if (alreadyHasEntries) {
             console.log(`ⓘ Changelog entries already exist in ${readmePath}.`);
