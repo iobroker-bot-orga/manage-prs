@@ -7,6 +7,8 @@ const fs = require('node:fs');
 
 // Constants
 const COPYRIGHT_YEAR = '2025';
+// Note: These constants are defined as per template requirements
+// and may be used in future enhancements
 const JS_CONTROLLER_VERSION = '6.0.11';
 const ADMIN_VERSION = '7.6.17';
 
