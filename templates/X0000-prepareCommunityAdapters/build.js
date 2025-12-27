@@ -165,8 +165,12 @@ function updatePackageJson() {
  * Returns: -1 if v1 < v2, 0 if v1 == v2, 1 if v1 > v2
  */
 function compareVersions(v1, v2) {
-    const parts1 = v1.replace(/[^0-9.]/g, '').split('.').map(Number);
-    const parts2 = v2.replace(/[^0-9.]/g, '').split('.').map(Number);
+    // Extract only valid version numbers (e.g., "1.2.3")
+    const cleanV1 = v1.match(/\d+(?:\.\d+)*/)?.[0] || '0';
+    const cleanV2 = v2.match(/\d+(?:\.\d+)*/)?.[0] || '0';
+    
+    const parts1 = cleanV1.split('.').map(Number);
+    const parts2 = cleanV2.split('.').map(Number);
     
     for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
         const p1 = parts1[i] || 0;
