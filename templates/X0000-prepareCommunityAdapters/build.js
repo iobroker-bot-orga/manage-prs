@@ -61,12 +61,7 @@ function updateReadme() {
     // Find the position after the License header
     const insertPosition = match.index + match[0].length;
     
-    // Check if there's already content after the header on the same line
-    const lineEndAfterHeader = content.indexOf('\n', insertPosition);
-    const afterHeaderContent = content.substring(insertPosition, lineEndAfterHeader).trim();
-    
     // Insert copyright line after the License header
-    // Add two newlines before copyright if there's no newline after header
     const beforeCopyright = content.substring(0, insertPosition);
     const afterLicenseHeader = content.substring(insertPosition);
     
@@ -138,7 +133,12 @@ function updatePackageJson() {
     
     // Check if iobroker-community-adapters is already in contributors
     const hasContributor = packageJson.contributors.some(
-        contributor => contributor.name === COMMUNITY_ADAPTERS_NAME
+        contributor => {
+            if (typeof contributor === 'string') {
+                return contributor.includes(COMMUNITY_ADAPTERS_NAME);
+            }
+            return contributor.name === COMMUNITY_ADAPTERS_NAME;
+        }
     );
     
     if (hasContributor) {
