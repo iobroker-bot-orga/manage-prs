@@ -1,4 +1,4 @@
-# General update for iobroker-community-adapters repository
+General update for iobroker-community-adapters repository
 
 [German description can be found below](#deutsche-beschreibung)  
 [Deutsche Beschreibung weiter unten](#deutsche-beschreibung)
