@@ -226,7 +226,6 @@ function updateIoPackageJson() {
     }
     
     // Convert author objects to single-line string format
-    let authorsConverted = false;
     for (let i = 0; i < ioPackage.common.authors.length; i++) {
         const author = ioPackage.common.authors[i];
         if (typeof author === 'object' && author !== null && author.name) {
@@ -236,7 +235,6 @@ function updateIoPackageJson() {
                 : author.name;
             ioPackage.common.authors[i] = authorString;
             console.log(`✔️ Converted author object to string: ${authorString}`);
-            authorsConverted = true;
             ioPackageChanged = true;
             changesMade = true;
         }
