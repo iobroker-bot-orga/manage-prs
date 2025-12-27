@@ -161,7 +161,32 @@ function updatePackageJson() {
 }
 
 /**
- * Update io-package.json authors
+ * Compare two semantic version strings
+ * Returns: -1 if v1 < v2, 0 if v1 == v2, 1 if v1 > v2
+ */
+function compareVersions(v1, v2) {
+    const parts1 = v1.replace(/[^0-9.]/g, '').split('.').map(Number);
+    const parts2 = v2.replace(/[^0-9.]/g, '').split('.').map(Number);
+    
+    for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
+        const p1 = parts1[i] || 0;
+        const p2 = parts2[i] || 0;
+        if (p1 < p2) return -1;
+        if (p1 > p2) return 1;
+    }
+    return 0;
+}
+
+/**
+ * Extract version from dependency string (e.g., ">=5.0.0" -> "5.0.0")
+ */
+function extractVersion(depString) {
+    const match = depString.match(/[\d.]+/);
+    return match ? match[0] : null;
+}
+
+/**
+ * Update io-package.json authors and dependencies
  */
 function updateIoPackageJson() {
     const ioPackagePath = './io-package.json';
@@ -198,18 +223,176 @@ function updateIoPackageJson() {
         author => typeof author === 'string' && author.includes(COMMUNITY_ADAPTERS_NAME)
     );
     
-    if (hasAuthor) {
+    if (!hasAuthor) {
+        // Add author
+        ioPackage.common.authors.push(`${COMMUNITY_ADAPTERS_NAME} <${COMMUNITY_ADAPTERS_EMAIL}>`);
+        console.log(`✔️ Added ${COMMUNITY_ADAPTERS_NAME} to authors in ${ioPackagePath}.`);
+        changesMade = true;
+    } else {
         console.log(`ⓘ ${COMMUNITY_ADAPTERS_NAME} already exists in authors.`);
+    }
+    
+    // Handle js-controller dependency
+    let jsControllerUpdated = false;
+    
+    if (!ioPackage.common.dependencies) {
+        ioPackage.common.dependencies = [];
+        console.log(`ⓘ Created dependencies array in ${ioPackagePath}.`);
+    }
+    
+    // Find existing js-controller dependency
+    let jsControllerDep = ioPackage.common.dependencies.find(
+        dep => dep && typeof dep === 'object' && 'js-controller' in dep
+    );
+    
+    if (!jsControllerDep) {
+        // Add new js-controller dependency
+        ioPackage.common.dependencies.push({
+            'js-controller': `>=${JS_CONTROLLER_VERSION}`
+        });
+        console.log(`✔️ Added js-controller dependency with version ${JS_CONTROLLER_VERSION}.`);
+        jsControllerUpdated = true;
+        changesMade = true;
+    } else {
+        // Check if version needs updating
+        const currentVersion = extractVersion(jsControllerDep['js-controller']);
+        if (currentVersion && compareVersions(currentVersion, JS_CONTROLLER_VERSION) < 0) {
+            jsControllerDep['js-controller'] = `>=${JS_CONTROLLER_VERSION}`;
+            console.log(`✔️ Updated js-controller dependency from ${currentVersion} to ${JS_CONTROLLER_VERSION}.`);
+            jsControllerUpdated = true;
+            changesMade = true;
+        } else {
+            console.log(`ⓘ js-controller dependency is already at version ${currentVersion || 'unknown'}, no update needed.`);
+        }
+    }
+    
+    // Handle admin dependency
+    let adminUpdated = false;
+    
+    if (!ioPackage.common.globalDependencies) {
+        ioPackage.common.globalDependencies = [];
+        console.log(`ⓘ Created globalDependencies array in ${ioPackagePath}.`);
+    }
+    
+    // Find existing admin dependency
+    let adminDep = ioPackage.common.globalDependencies.find(
+        dep => dep && typeof dep === 'object' && 'admin' in dep
+    );
+    
+    if (!adminDep) {
+        // Add new admin dependency
+        ioPackage.common.globalDependencies.push({
+            'admin': `>=${ADMIN_VERSION}`
+        });
+        console.log(`✔️ Added admin dependency with version ${ADMIN_VERSION}.`);
+        adminUpdated = true;
+        changesMade = true;
+    } else {
+        // Check if version needs updating
+        const currentVersion = extractVersion(adminDep['admin']);
+        if (currentVersion && compareVersions(currentVersion, ADMIN_VERSION) < 0) {
+            adminDep['admin'] = `>=${ADMIN_VERSION}`;
+            console.log(`✔️ Updated admin dependency from ${currentVersion} to ${ADMIN_VERSION}.`);
+            adminUpdated = true;
+            changesMade = true;
+        } else {
+            console.log(`ⓘ admin dependency is already at version ${currentVersion || 'unknown'}, no update needed.`);
+        }
+    }
+    
+    // Write back with proper formatting (2 spaces indentation)
+    if (changesMade) {
+        fs.writeFileSync(ioPackagePath, JSON.stringify(ioPackage, null, 2) + '\n', 'utf8');
+        
+        // Update README changelog if dependencies were updated
+        if (jsControllerUpdated || adminUpdated) {
+            updateReadmeChangelog(jsControllerUpdated, adminUpdated);
+        }
+    }
+}
+
+/**
+ * Update README.md changelog with dependency changes
+ */
+function updateReadmeChangelog(jsControllerUpdated, adminUpdated) {
+    const readmePath = './README.md';
+    
+    if (!fs.existsSync(readmePath)) {
+        console.log(`ⓘ ${readmePath} does not exist, skipping changelog update.`);
         return;
     }
     
-    // Add author
-    ioPackage.common.authors.push(`${COMMUNITY_ADAPTERS_NAME} <${COMMUNITY_ADAPTERS_EMAIL}>`);
+    let content = fs.readFileSync(readmePath, 'utf8');
     
-    // Write back with proper formatting (2 spaces indentation)
-    fs.writeFileSync(ioPackagePath, JSON.stringify(ioPackage, null, 2) + '\n', 'utf8');
-    console.log(`✔️ Added ${COMMUNITY_ADAPTERS_NAME} to authors in ${ioPackagePath}.`);
-    changesMade = true;
+    // Look for existing "WORK IN PROGRESS" section
+    const wipRegex = /###\s+\*\*WORK IN PROGRESS\*\*/i;
+    const wipMatch = content.match(wipRegex);
+    
+    let changelogEntries = [];
+    if (jsControllerUpdated) {
+        changelogEntries.push(`- Adapter requires js-controller ${JS_CONTROLLER_VERSION} now`);
+    }
+    if (adminUpdated) {
+        changelogEntries.push(`- Adapter requires admin ${ADMIN_VERSION} now`);
+    }
+    
+    if (changelogEntries.length === 0) {
+        return;
+    }
+    
+    const changelogText = changelogEntries.join('\n');
+    
+    if (wipMatch) {
+        // Find the position after the WIP header
+        const insertPosition = wipMatch.index + wipMatch[0].length;
+        
+        // Check if changelog entries already exist
+        const afterWip = content.substring(insertPosition);
+        const alreadyHasEntries = changelogEntries.every(entry => 
+            content.includes(entry.replace('- ', '').trim())
+        );
+        
+        if (alreadyHasEntries) {
+            console.log(`ⓘ Changelog entries already exist in ${readmePath}.`);
+            return;
+        }
+        
+        // Insert after WIP header
+        const updatedContent = content.substring(0, insertPosition) + 
+                               '\n' + changelogText + '\n' +
+                               content.substring(insertPosition);
+        
+        fs.writeFileSync(readmePath, updatedContent, 'utf8');
+        console.log(`✔️ Added changelog entries to existing WORK IN PROGRESS section in ${readmePath}.`);
+    } else {
+        // Look for Changelog section and add WIP section
+        const changelogRegex = /##\s+Changelog/i;
+        const changelogMatch = content.match(changelogRegex);
+        
+        if (!changelogMatch) {
+            console.log(`ⓘ Changelog section not found in ${readmePath}, skipping changelog update.`);
+            return;
+        }
+        
+        // Find the position after the Changelog header
+        let insertPosition = changelogMatch.index + changelogMatch[0].length;
+        
+        // Skip to next line
+        const nextNewline = content.indexOf('\n', insertPosition);
+        if (nextNewline !== -1) {
+            insertPosition = nextNewline + 1;
+        }
+        
+        // Create new WIP section
+        const wipSection = `\n### **WORK IN PROGRESS**\n${changelogText}\n`;
+        
+        const updatedContent = content.substring(0, insertPosition) + 
+                               wipSection +
+                               content.substring(insertPosition);
+        
+        fs.writeFileSync(readmePath, updatedContent, 'utf8');
+        console.log(`✔️ Added new WORK IN PROGRESS section with changelog entries to ${readmePath}.`);
+    }
 }
 
 // Execute all updates
