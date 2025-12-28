@@ -357,10 +357,10 @@ function updateReadmeChangelog(jsControllerUpdated, adminUpdated) {
     
     let changelogEntries = [];
     if (jsControllerUpdated) {
-        changelogEntries.push(`- Adapter requires js-controller ${JS_CONTROLLER_VERSION} now`);
+        changelogEntries.push(`- (copilot) Adapter requires js-controller ${JS_CONTROLLER_VERSION} now`);
     }
     if (adminUpdated) {
-        changelogEntries.push(`- Adapter requires admin ${ADMIN_VERSION} now`);
+        changelogEntries.push(`- (copilot) Adapter requires admin ${ADMIN_VERSION} now`);
     }
     
     if (changelogEntries.length === 0) {
