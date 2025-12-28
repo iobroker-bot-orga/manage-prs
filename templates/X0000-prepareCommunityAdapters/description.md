@@ -38,8 +38,8 @@ This PR makes the following changes to prepare the repository for iobroker-commu
 
 The PR ensures that the adapter specifies minimum version requirements for js-controller and admin:
 
-- **js-controller dependency**: Sets or updates the minimum required js-controller version to 6.0.11 in `io-package.json` under `common.dependencies`
-- **admin dependency**: Sets or updates the minimum required admin version to 7.6.17 in `io-package.json` under `common.globalDependencies`
+- **js-controller dependency**: Sets or updates the minimum required js-controller version in `io-package.json` under `common.dependencies`
+- **admin dependency**: Sets or updates the minimum required admin version in `io-package.json` under `common.globalDependencies`
 
 If any dependency requirements are added or updated, corresponding entries are added to the changelog in README.md under a "WORK IN PROGRESS" section, informing users about the new minimum requirements.
 
@@ -89,8 +89,8 @@ Dieser PR nimmt folgende Änderungen vor, um das Repository für iobroker-commun
 
 Der PR stellt sicher, dass der Adapter Mindestversionsanforderungen für js-controller und admin spezifiziert:
 
-- **js-controller Abhängigkeit**: Setzt oder aktualisiert die erforderliche Mindestversion von js-controller auf 6.0.11 in der `io-package.json` unter `common.dependencies`
-- **admin Abhängigkeit**: Setzt oder aktualisiert die erforderliche Mindestversion von admin auf 7.6.17 in der `io-package.json` unter `common.globalDependencies`
+- **js-controller Abhängigkeit**: Setzt oder aktualisiert die erforderliche Mindestversion von js-controller in der `io-package.json` unter `common.dependencies`
+- **admin Abhängigkeit**: Setzt oder aktualisiert die erforderliche Mindestversion von admin in der `io-package.json` unter `common.globalDependencies`
 
 Falls Abhängigkeitsanforderungen hinzugefügt oder aktualisiert werden, werden entsprechende Einträge zum Changelog in der README.md unter einem "WORK IN PROGRESS" Abschnitt hinzugefügt, um Benutzer über die neuen Mindestanforderungen zu informieren.
 
