@@ -6,7 +6,7 @@
 const fs = require('node:fs');
 
 // Constants
-const COPYRIGHT_YEAR = '2025';
+const COPYRIGHT_YEAR = '2026';
 const JS_CONTROLLER_VERSION = '6.0.11';
 const ADMIN_VERSION = '7.6.17';
 
