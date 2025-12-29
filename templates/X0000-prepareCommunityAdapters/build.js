@@ -370,12 +370,16 @@ function updateIoPackageJson() {
 }
 
 /**
- * Remove HTML comment blocks from content to avoid matching headers inside comments
+ * Create a version of content with HTML comments replaced by spaces for searching.
+ * This is used ONLY for finding headers - the original content with comments is preserved.
+ * @param {string} content - The content to process
+ * @returns {string} - Content with comments replaced by spaces (maintaining character positions)
  */
-function removeComments(content) {
-    // Remove HTML comments (<!-- ... -->), but keep track of their positions
+function createSearchableContent(content) {
+    // Replace HTML comments (<!-- ... -->) with spaces to maintain character positions
+    // This allows us to search for headers without matching those inside comments
+    // The original content with comments is always used for the final output
     return content.replace(/<!--[\s\S]*?-->/g, (match) => {
-        // Replace with spaces to maintain character positions
         return ' '.repeat(match.length);
     });
 }
@@ -435,13 +439,13 @@ function updateReadmeChangelog(jsControllerUpdated, adminUpdated) {
     // Get content after the Changelog header
     const afterChangelog = content.substring(changelogStart);
     
-    // Remove comments from the content to avoid matching headers inside comments
-    // This replaces comments with spaces to maintain character positions
-    const afterChangelogNoComments = removeComments(afterChangelog);
+    // Create a searchable version with comments replaced by spaces (for finding headers only)
+    // The original afterChangelog with comments intact will be used in the final output
+    const afterChangelogSearchable = createSearchableContent(afterChangelog);
     
-    // Find the next ### header after the Changelog header
+    // Find the next ### header after the Changelog header (ignoring headers in comments)
     const nextHeaderRegex = /^###\s+(.+)$/im;
-    const nextHeaderMatch = afterChangelogNoComments.match(nextHeaderRegex);
+    const nextHeaderMatch = afterChangelogSearchable.match(nextHeaderRegex);
     
     let updatedContent;
     
@@ -457,8 +461,9 @@ function updateReadmeChangelog(jsControllerUpdated, adminUpdated) {
         const headerText = nextHeaderMatch[1].trim();
         const isWipHeader = WIP_HEADER_REGEX.test(headerText);
         
-        // The position in afterChangelogNoComments is the same as in afterChangelog
-        // because we replaced comments with spaces (maintaining positions)
+        // The position in afterChangelogSearchable is the same as in afterChangelog
+        // because we replaced comments with spaces (maintaining character positions)
+        // This allows us to insert at the correct position in the original content
         const headerPosition = nextHeaderMatch.index;
         const headerFullMatch = nextHeaderMatch[0];
         
