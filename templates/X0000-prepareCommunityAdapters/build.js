@@ -17,7 +17,7 @@ const COMMUNITY_ADAPTERS_EMAIL = 'iobroker-community-adapters@gmx.de';
 const COPYRIGHT_LINE = `Copyright (c) ${COPYRIGHT_YEAR} ${COMMUNITY_ADAPTERS_NAME} <${COMMUNITY_ADAPTERS_EMAIL}>  `;
 
 // Regex patterns for consistent matching
-const COPYRIGHT_REGEX = /^\s*Copyright\s+\(c\)/mi;
+const COPYRIGHT_REGEX = /^Copyright\s+\(c\)/mi;
 const WIP_REGEX = /^\s*###\s+\*\*WORK IN PROGRESS\*\*/i;
 // Maximum distance (in characters) from Changelog header to consider a WIP section as "at the start"
 // 50 chars allows for blank lines and minimal whitespace between ## Changelog and ### **WORK IN PROGRESS**
