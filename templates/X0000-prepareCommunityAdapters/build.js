@@ -16,10 +16,7 @@ const COPYRIGHT_LINE = `Copyright (c) ${COPYRIGHT_YEAR} ${COMMUNITY_ADAPTERS_NAM
 
 // Regex patterns for consistent matching
 const COPYRIGHT_REGEX = /^Copyright\s+\(c\)/mi;
-const WIP_REGEX = /^\s*###\s+\*\*WORK IN PROGRESS\*\*/i;
-// Maximum distance (in characters) from Changelog header to consider a WIP section as "at the start"
-// 50 chars allows for blank lines and minimal whitespace between ## Changelog and ### **WORK IN PROGRESS**
-const WIP_PROXIMITY_THRESHOLD = 50;
+const WIP_HEADER_REGEX = /^\*\*WORK IN PROGRESS\*\*$/i;
 
 // prepare standard parameters 
 const args = process.argv.slice(2);
@@ -373,6 +370,21 @@ function updateIoPackageJson() {
 }
 
 /**
+ * Create a version of content with HTML comments replaced by spaces for searching.
+ * This is used ONLY for finding headers - the original content with comments is preserved.
+ * @param {string} content - The content to process
+ * @returns {string} - Content with comments replaced by spaces (maintaining character positions)
+ */
+function createSearchableContent(content) {
+    // Replace HTML comments (<!-- ... -->) with spaces to maintain character positions
+    // This allows us to search for headers without matching those inside comments
+    // The original content with comments is always used for the final output
+    return content.replace(/<!--[\s\S]*?-->/g, (match) => {
+        return ' '.repeat(match.length);
+    });
+}
+
+/**
  * Update README.md changelog with dependency changes
  */
 function updateReadmeChangelog(jsControllerUpdated, adminUpdated) {
@@ -413,7 +425,7 @@ function updateReadmeChangelog(jsControllerUpdated, adminUpdated) {
     }
     
     // Look for Changelog section
-    const changelogRegex = /##\s+Changelog/i;
+    const changelogRegex = /^##\s+Changelog/im;
     const changelogMatch = content.match(changelogRegex);
     
     if (!changelogMatch) {
@@ -422,34 +434,55 @@ function updateReadmeChangelog(jsControllerUpdated, adminUpdated) {
     }
     
     // Find the position after the Changelog header
-    let insertPosition = changelogMatch.index + changelogMatch[0].length;
+    const changelogStart = changelogMatch.index + changelogMatch[0].length;
     
-    // Skip to next line
-    const nextNewline = content.indexOf('\n', insertPosition);
-    if (nextNewline !== -1) {
-        insertPosition = nextNewline + 1;
-    }
+    // Get content after the Changelog header
+    const afterChangelog = content.substring(changelogStart);
     
-    // Check if there's already a WIP section immediately after the Changelog header
-    const afterChangelogHeader = content.substring(insertPosition);
-    const wipMatch = afterChangelogHeader.match(WIP_REGEX);
+    // Create a searchable version with comments replaced by spaces (for finding headers only)
+    // The original afterChangelog with comments intact will be used in the final output
+    const afterChangelogSearchable = createSearchableContent(afterChangelog);
+    
+    // Find the next ### header after the Changelog header (ignoring headers in comments)
+    const nextHeaderRegex = /^###\s+(.+)$/im;
+    const nextHeaderMatch = afterChangelogSearchable.match(nextHeaderRegex);
     
     let updatedContent;
-    if (wipMatch && wipMatch.index < WIP_PROXIMITY_THRESHOLD) {
-        // WIP section exists right after Changelog header
-        // Add entries after the WIP header
-        const wipHeaderEnd = insertPosition + wipMatch.index + wipMatch[0].length;
-        updatedContent = content.substring(0, wipHeaderEnd) + 
-                        '\n' + changelogText + '\n' +
-                        content.substring(wipHeaderEnd);
-        console.log(`✔️ Added changelog entries to existing WORK IN PROGRESS section in ${readmePath}.`);
-    } else {
-        // Create new WIP section at the start of Changelog
-        const wipSection = `\n### **WORK IN PROGRESS**\n${changelogText}\n\n`;
-        updatedContent = content.substring(0, insertPosition) + 
+    
+    if (!nextHeaderMatch) {
+        // No ### header found after Changelog, add WIP section right after Changelog header
+        const wipSection = `\n\n### **WORK IN PROGRESS**\n${changelogText}\n`;
+        updatedContent = content.substring(0, changelogStart) + 
                         wipSection +
-                        content.substring(insertPosition);
-        console.log(`✔️ Added new WORK IN PROGRESS section with changelog entries to ${readmePath}.`);
+                        afterChangelog;
+        console.log(`✔️ Added new WORK IN PROGRESS section with changelog entries to ${readmePath} (no existing ### header found).`);
+    } else {
+        // Found a ### header, check if it's the WIP header
+        const headerText = nextHeaderMatch[1].trim();
+        const isWipHeader = WIP_HEADER_REGEX.test(headerText);
+        
+        // The position in afterChangelogSearchable is the same as in afterChangelog
+        // because we replaced comments with spaces (maintaining character positions)
+        // This allows us to insert at the correct position in the original content
+        const headerPosition = nextHeaderMatch.index;
+        const headerFullMatch = nextHeaderMatch[0];
+        
+        if (isWipHeader) {
+            // WIP header exists, add entries immediately after it
+            const insertPosition = changelogStart + headerPosition + headerFullMatch.length;
+            updatedContent = content.substring(0, insertPosition) + 
+                            '\n' + changelogText +
+                            content.substring(insertPosition);
+            console.log(`✔️ Added changelog entries to existing WORK IN PROGRESS section in ${readmePath}.`);
+        } else {
+            // Different header found, insert new WIP section before it
+            const insertPosition = changelogStart + headerPosition;
+            const wipSection = `\n### **WORK IN PROGRESS**\n${changelogText}\n\n`;
+            updatedContent = content.substring(0, insertPosition) + 
+                            wipSection +
+                            content.substring(insertPosition);
+            console.log(`✔️ Added new WORK IN PROGRESS section before existing header "${headerText}" in ${readmePath}.`);
+        }
     }
     
     fs.writeFileSync(readmePath, updatedContent, 'utf8');
