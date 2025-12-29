@@ -16,6 +16,7 @@ const COPYRIGHT_LINE = `Copyright (c) ${COPYRIGHT_YEAR} ${COMMUNITY_ADAPTERS_NAM
 
 // Regex patterns for consistent matching
 const COPYRIGHT_REGEX = /^Copyright\s+\(c\)/mi;
+const WIP_HEADER_REGEX = /^\*\*WORK IN PROGRESS\*\*$/i;
 
 // prepare standard parameters 
 const args = process.argv.slice(2);
@@ -439,7 +440,7 @@ function updateReadmeChangelog(jsControllerUpdated, adminUpdated) {
     const afterChangelogNoComments = removeComments(afterChangelog);
     
     // Find the next ### header after the Changelog header
-    const nextHeaderRegex = /^###\s+(.+?)$/im;
+    const nextHeaderRegex = /^###\s+(.+)$/im;
     const nextHeaderMatch = afterChangelogNoComments.match(nextHeaderRegex);
     
     let updatedContent;
@@ -454,7 +455,7 @@ function updateReadmeChangelog(jsControllerUpdated, adminUpdated) {
     } else {
         // Found a ### header, check if it's the WIP header
         const headerText = nextHeaderMatch[1].trim();
-        const isWipHeader = /^\*\*WORK IN PROGRESS\*\*$/i.test(headerText);
+        const isWipHeader = WIP_HEADER_REGEX.test(headerText);
         
         // The position in afterChangelogNoComments is the same as in afterChangelog
         // because we replaced comments with spaces (maintaining positions)
