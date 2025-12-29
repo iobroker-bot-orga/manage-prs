@@ -20,6 +20,7 @@ const COPYRIGHT_LINE = `Copyright (c) ${COPYRIGHT_YEAR} ${COMMUNITY_ADAPTERS_NAM
 const COPYRIGHT_REGEX = /^\s*Copyright\s+\(c\)/mi;
 const WIP_REGEX = /^\s*###\s+\*\*WORK IN PROGRESS\*\*/i;
 // Maximum distance (in characters) from Changelog header to consider a WIP section as "at the start"
+// 50 chars allows for blank lines and minimal whitespace between ## Changelog and ### **WORK IN PROGRESS**
 const WIP_PROXIMITY_THRESHOLD = 50;
 
 // prepare standard parameters 
