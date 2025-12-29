@@ -445,7 +445,7 @@ function updateReadmeChangelog(jsControllerUpdated, adminUpdated) {
         console.log(`✔️ Added changelog entries to existing WORK IN PROGRESS section in ${readmePath}.`);
     } else {
         // Create new WIP section at the start of Changelog
-        const wipSection = `\n### **WORK IN PROGRESS**\n${changelogText}\n`;
+        const wipSection = `\n### **WORK IN PROGRESS**\n${changelogText}\n\n`;
         updatedContent = content.substring(0, insertPosition) + 
                         wipSection +
                         content.substring(insertPosition);
