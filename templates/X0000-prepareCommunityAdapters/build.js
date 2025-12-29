@@ -16,6 +16,12 @@ const COMMUNITY_ADAPTERS_NAME = 'iobroker-community-adapters';
 const COMMUNITY_ADAPTERS_EMAIL = 'iobroker-community-adapters@gmx.de';
 const COPYRIGHT_LINE = `Copyright (c) ${COPYRIGHT_YEAR} ${COMMUNITY_ADAPTERS_NAME} <${COMMUNITY_ADAPTERS_EMAIL}>  `;
 
+// Regex patterns for consistent matching
+const COPYRIGHT_REGEX = /^\s*Copyright\s+\(c\)/mi;
+const WIP_REGEX = /^\s*###\s+\*\*WORK IN PROGRESS\*\*/i;
+// Maximum distance (in characters) from Changelog header to consider a WIP section as "at the start"
+const WIP_PROXIMITY_THRESHOLD = 50;
+
 // prepare standard parameters 
 const args = process.argv.slice(2);
 
@@ -65,8 +71,7 @@ function updateReadme() {
     
     // Look for existing copyright line after the License header
     const afterSection = content.substring(sectionStart);
-    const copyrightRegex = /^\s*Copyright\s+\(c\)/mi;
-    const copyrightMatch = afterSection.match(copyrightRegex);
+    const copyrightMatch = afterSection.match(COPYRIGHT_REGEX);
     
     let insertPosition;
     if (copyrightMatch) {
@@ -113,8 +118,7 @@ function updateLicense() {
     }
     
     // Look for existing copyright line
-    const copyrightRegex = /^\s*Copyright\s+\(c\)/mi;
-    const copyrightMatch = content.match(copyrightRegex);
+    const copyrightMatch = content.match(COPYRIGHT_REGEX);
     
     let updatedContent;
     if (copyrightMatch) {
@@ -429,11 +433,10 @@ function updateReadmeChangelog(jsControllerUpdated, adminUpdated) {
     
     // Check if there's already a WIP section immediately after the Changelog header
     const afterChangelogHeader = content.substring(insertPosition);
-    const wipRegex = /^\s*###\s+\*\*WORK IN PROGRESS\*\*/i;
-    const wipMatch = afterChangelogHeader.match(wipRegex);
+    const wipMatch = afterChangelogHeader.match(WIP_REGEX);
     
     let updatedContent;
-    if (wipMatch && wipMatch.index < 50) {
+    if (wipMatch && wipMatch.index < WIP_PROXIMITY_THRESHOLD) {
         // WIP section exists right after Changelog header
         // Add entries after the WIP header
         const wipHeaderEnd = insertPosition + wipMatch.index + wipMatch[0].length;
