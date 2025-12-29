@@ -53,22 +53,38 @@ function updateReadme() {
     
     // Find the License section
     const licenseSectionRegex = /^##?\s+License\s*(<.*>)?\s*$/mi;
-    const match = content.match(licenseSectionRegex);
+    const sectionMatch = content.match(licenseSectionRegex);
     
-    if (!match) {
+    if (!sectionMatch) {
         console.log(`ⓘ License section not found in ${readmePath}, skipping copyright addition.`);
         return;
     }
     
     // Find the position after the License header
-    const insertPosition = match.index + match[0].length;
+    const sectionStart = sectionMatch.index + sectionMatch[0].length;
     
-    // Insert copyright line after the License header
-    const beforeCopyright = content.substring(0, insertPosition);
-    const afterLicenseHeader = content.substring(insertPosition);
+    // Look for existing copyright line after the License header
+    const afterSection = content.substring(sectionStart);
+    const copyrightRegex = /^\s*Copyright\s+\(c\)/mi;
+    const copyrightMatch = afterSection.match(copyrightRegex);
     
-    // Add copyright at the beginning of the License section content
-    const updatedContent = beforeCopyright + '\n' + COPYRIGHT_LINE + '\n' + afterLicenseHeader;
+    let insertPosition;
+    if (copyrightMatch) {
+        // Insert immediately before the existing copyright line
+        insertPosition = sectionStart + copyrightMatch.index;
+        console.log(`ⓘ Found existing copyright line, inserting before it.`);
+    } else {
+        // No existing copyright, insert after the License header
+        insertPosition = sectionStart;
+        console.log(`ⓘ No existing copyright line found, inserting after License header.`);
+    }
+    
+    // Insert copyright line at the determined position
+    const beforeInsert = content.substring(0, insertPosition);
+    const afterInsert = content.substring(insertPosition);
+    
+    // Add copyright with appropriate newlines
+    const updatedContent = beforeInsert + '\n' + COPYRIGHT_LINE + '\n' + afterInsert;
     
     fs.writeFileSync(readmePath, updatedContent, 'utf8');
     console.log(`✔️ Added copyright line to ${readmePath}.`);
@@ -96,8 +112,23 @@ function updateLicense() {
         return;
     }
     
-    // Add copyright as first line
-    const updatedContent = COPYRIGHT_LINE + '\n' + content;
+    // Look for existing copyright line
+    const copyrightRegex = /^\s*Copyright\s+\(c\)/mi;
+    const copyrightMatch = content.match(copyrightRegex);
+    
+    let updatedContent;
+    if (copyrightMatch) {
+        // Insert immediately before the existing copyright line
+        const insertPosition = copyrightMatch.index;
+        const beforeInsert = content.substring(0, insertPosition);
+        const afterInsert = content.substring(insertPosition);
+        updatedContent = beforeInsert + COPYRIGHT_LINE + '\n' + afterInsert;
+        console.log(`ⓘ Found existing copyright line, inserting before it.`);
+    } else {
+        // No existing copyright, add as first line
+        updatedContent = COPYRIGHT_LINE + '\n' + content;
+        console.log(`ⓘ No existing copyright line found, adding as first line.`);
+    }
     
     fs.writeFileSync(licensePath, updatedContent, 'utf8');
     console.log(`✔️ Added copyright line to ${licensePath}.`);
@@ -351,10 +382,6 @@ function updateReadmeChangelog(jsControllerUpdated, adminUpdated) {
     
     let content = fs.readFileSync(readmePath, 'utf8');
     
-    // Look for existing "WORK IN PROGRESS" section
-    const wipRegex = /###\s+\*\*WORK IN PROGRESS\*\*/i;
-    const wipMatch = content.match(wipRegex);
-    
     let changelogEntries = [];
     if (jsControllerUpdated) {
         changelogEntries.push(`- (@copilot) Adapter requires js-controller ${JS_CONTROLLER_VERSION} now`);
@@ -369,59 +396,61 @@ function updateReadmeChangelog(jsControllerUpdated, adminUpdated) {
     
     const changelogText = changelogEntries.join('\n');
     
-    if (wipMatch) {
-        // Find the position after the WIP header
-        const insertPosition = wipMatch.index + wipMatch[0].length;
-        
-        // Check if changelog entries already exist
-        const alreadyHasEntries = changelogEntries.every(entry => {
-            // Remove leading "- " and any extra whitespace for comparison
-            const entryText = entry.replace(/^-\s*/, '').trim();
-            // Check if the exact text exists in the content (case-insensitive to be safe)
-            return content.toLowerCase().includes(entryText.toLowerCase());
-        });
-        
-        if (alreadyHasEntries) {
-            console.log(`ⓘ Changelog entries already exist in ${readmePath}.`);
-            return;
-        }
-        
-        // Insert after WIP header
-        const updatedContent = content.substring(0, insertPosition) + 
-                               '\n' + changelogText + '\n' +
-                               content.substring(insertPosition);
-        
-        fs.writeFileSync(readmePath, updatedContent, 'utf8');
+    // Check if changelog entries already exist anywhere in the document
+    const alreadyHasEntries = changelogEntries.every(entry => {
+        // Remove leading "- " and any extra whitespace for comparison
+        const entryText = entry.replace(/^-\s*/, '').trim();
+        // Check if the exact text exists in the content (case-insensitive to be safe)
+        return content.toLowerCase().includes(entryText.toLowerCase());
+    });
+    
+    if (alreadyHasEntries) {
+        console.log(`ⓘ Changelog entries already exist in ${readmePath}.`);
+        return;
+    }
+    
+    // Look for Changelog section
+    const changelogRegex = /##\s+Changelog/i;
+    const changelogMatch = content.match(changelogRegex);
+    
+    if (!changelogMatch) {
+        console.log(`ⓘ Changelog section not found in ${readmePath}, skipping changelog update.`);
+        return;
+    }
+    
+    // Find the position after the Changelog header
+    let insertPosition = changelogMatch.index + changelogMatch[0].length;
+    
+    // Skip to next line
+    const nextNewline = content.indexOf('\n', insertPosition);
+    if (nextNewline !== -1) {
+        insertPosition = nextNewline + 1;
+    }
+    
+    // Check if there's already a WIP section immediately after the Changelog header
+    const afterChangelogHeader = content.substring(insertPosition);
+    const wipRegex = /^\s*###\s+\*\*WORK IN PROGRESS\*\*/i;
+    const wipMatch = afterChangelogHeader.match(wipRegex);
+    
+    let updatedContent;
+    if (wipMatch && wipMatch.index < 50) {
+        // WIP section exists right after Changelog header
+        // Add entries after the WIP header
+        const wipHeaderEnd = insertPosition + wipMatch.index + wipMatch[0].length;
+        updatedContent = content.substring(0, wipHeaderEnd) + 
+                        '\n' + changelogText + '\n' +
+                        content.substring(wipHeaderEnd);
         console.log(`✔️ Added changelog entries to existing WORK IN PROGRESS section in ${readmePath}.`);
     } else {
-        // Look for Changelog section and add WIP section
-        const changelogRegex = /##\s+Changelog/i;
-        const changelogMatch = content.match(changelogRegex);
-        
-        if (!changelogMatch) {
-            console.log(`ⓘ Changelog section not found in ${readmePath}, skipping changelog update.`);
-            return;
-        }
-        
-        // Find the position after the Changelog header
-        let insertPosition = changelogMatch.index + changelogMatch[0].length;
-        
-        // Skip to next line
-        const nextNewline = content.indexOf('\n', insertPosition);
-        if (nextNewline !== -1) {
-            insertPosition = nextNewline + 1;
-        }
-        
-        // Create new WIP section
+        // Create new WIP section at the start of Changelog
         const wipSection = `\n### **WORK IN PROGRESS**\n${changelogText}\n`;
-        
-        const updatedContent = content.substring(0, insertPosition) + 
-                               wipSection +
-                               content.substring(insertPosition);
-        
-        fs.writeFileSync(readmePath, updatedContent, 'utf8');
+        updatedContent = content.substring(0, insertPosition) + 
+                        wipSection +
+                        content.substring(insertPosition);
         console.log(`✔️ Added new WORK IN PROGRESS section with changelog entries to ${readmePath}.`);
     }
+    
+    fs.writeFileSync(readmePath, updatedContent, 'utf8');
 }
 
 // Execute all updates
