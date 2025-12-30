@@ -17,6 +17,9 @@ const COPYRIGHT_LINE = `Copyright (c) ${COPYRIGHT_YEAR} ${COMMUNITY_ADAPTERS_NAM
 // Regex patterns for consistent matching
 const COPYRIGHT_REGEX = /^Copyright\s+\(c\)/mi;
 const WIP_HEADER_REGEX = /^\*\*WORK IN PROGRESS\*\*$/i;
+// Regex to detect if a copyright line for iobroker-community-adapters already exists
+// Matches: Copyright (c) YYYY[-YYYY] iobroker-community-adapters [<email>]
+const COMMUNITY_COPYRIGHT_REGEX = /Copyright\s+\(c\)\s+\d{4}(?:-\d{4})?\s+iobroker-community-adapters/i;
 
 // prepare standard parameters 
 const args = process.argv.slice(2);
@@ -48,7 +51,7 @@ function updateReadme() {
     let content = fs.readFileSync(readmePath, 'utf8');
     
     // Check if copyright line with iobroker-community-adapters already exists
-    if (content.includes(COMMUNITY_ADAPTERS_NAME)) {
+    if (COMMUNITY_COPYRIGHT_REGEX.test(content)) {
         console.log(`ⓘ Copyright line with ${COMMUNITY_ADAPTERS_NAME} already exists in ${readmePath}.`);
         return;
     }
@@ -108,7 +111,7 @@ function updateLicense() {
     let content = fs.readFileSync(licensePath, 'utf8');
     
     // Check if copyright line with iobroker-community-adapters already exists
-    if (content.includes(COMMUNITY_ADAPTERS_NAME)) {
+    if (COMMUNITY_COPYRIGHT_REGEX.test(content)) {
         console.log(`ⓘ Copyright line with ${COMMUNITY_ADAPTERS_NAME} already exists in ${licensePath}.`);
         return;
     }
@@ -136,6 +139,23 @@ function updateLicense() {
 }
 
 /**
+ * Convert person object to string format
+ * @param {Object|string} person - Person object or string
+ * @returns {string} - Person string in format "Name <email>" or "Name"
+ */
+function personToString(person) {
+    if (typeof person === 'string') {
+        return person;
+    }
+    if (typeof person === 'object' && person !== null && person.name) {
+        return person.email 
+            ? `${person.name} <${person.email}>`
+            : person.name;
+    }
+    return String(person);
+}
+
+/**
  * Update package.json contributors
  */
 function updatePackageJson() {
@@ -158,10 +178,33 @@ function updatePackageJson() {
         process.exit(1);
     }
     
+    let packageJsonChanged = false;
+    
+    // Convert 'author' to string format if it's an object
+    if (packageJson.author && typeof packageJson.author === 'object') {
+        const authorString = personToString(packageJson.author);
+        packageJson.author = authorString;
+        console.log(`✔️ Converted author object to string: ${authorString}`);
+        packageJsonChanged = true;
+        changesMade = true;
+    }
+    
     // Ensure contributors array exists
     if (!packageJson.contributors) {
         packageJson.contributors = [];
         console.log(`ⓘ Created contributors array in ${packageJsonPath}.`);
+    }
+    
+    // Convert contributor objects to single-line string format
+    for (let i = 0; i < packageJson.contributors.length; i++) {
+        const contributor = packageJson.contributors[i];
+        if (typeof contributor === 'object' && contributor !== null && contributor.name) {
+            const contributorString = personToString(contributor);
+            packageJson.contributors[i] = contributorString;
+            console.log(`✔️ Converted contributor object to string: ${contributorString}`);
+            packageJsonChanged = true;
+            changesMade = true;
+        }
     }
     
     // Check if iobroker-community-adapters is already in contributors
@@ -174,21 +217,38 @@ function updatePackageJson() {
         }
     );
     
-    if (hasContributor) {
+    if (!hasContributor) {
+        // Add contributor as string format
+        packageJson.contributors.push(`${COMMUNITY_ADAPTERS_NAME} <${COMMUNITY_ADAPTERS_EMAIL}>`);
+        console.log(`✔️ Added ${COMMUNITY_ADAPTERS_NAME} to contributors in ${packageJsonPath}.`);
+        packageJsonChanged = true;
+        changesMade = true;
+    } else {
         console.log(`ⓘ ${COMMUNITY_ADAPTERS_NAME} already exists in contributors.`);
-        return;
     }
     
-    // Add contributor
-    packageJson.contributors.push({
-        name: COMMUNITY_ADAPTERS_NAME,
-        email: COMMUNITY_ADAPTERS_EMAIL
-    });
+    // Reorder keys to place 'contributors' right after 'author'
+    // Only reorder if author exists and changes were made
+    if (packageJsonChanged && packageJson.author) {
+        const reordered = {};
+        for (const key in packageJson) {
+            if (key === 'contributors') {
+                // Skip contributors here, we'll add it after 'author'
+                continue;
+            }
+            reordered[key] = packageJson[key];
+            // After adding 'author', add 'contributors'
+            if (key === 'author' && packageJson.contributors) {
+                reordered.contributors = packageJson.contributors;
+            }
+        }
+        packageJson = reordered;
+    }
     
     // Write back with proper formatting (2 spaces indentation)
-    fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + '\n', 'utf8');
-    console.log(`✔️ Added ${COMMUNITY_ADAPTERS_NAME} to contributors in ${packageJsonPath}.`);
-    changesMade = true;
+    if (packageJsonChanged) {
+        fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + '\n', 'utf8');
+    }
 }
 
 /**
@@ -260,10 +320,8 @@ function updateIoPackageJson() {
     for (let i = 0; i < ioPackage.common.authors.length; i++) {
         const author = ioPackage.common.authors[i];
         if (typeof author === 'object' && author !== null && author.name) {
-            // Convert object to string format
-            const authorString = author.email 
-                ? `${author.name} <${author.email}>`
-                : author.name;
+            // Convert object to string format using helper function
+            const authorString = personToString(author);
             ioPackage.common.authors[i] = authorString;
             console.log(`✔️ Converted author object to string: ${authorString}`);
             ioPackageChanged = true;
