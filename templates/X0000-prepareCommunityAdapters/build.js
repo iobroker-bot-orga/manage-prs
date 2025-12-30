@@ -17,6 +17,9 @@ const COPYRIGHT_LINE = `Copyright (c) ${COPYRIGHT_YEAR} ${COMMUNITY_ADAPTERS_NAM
 // Regex patterns for consistent matching
 const COPYRIGHT_REGEX = /^Copyright\s+\(c\)/mi;
 const WIP_HEADER_REGEX = /^\*\*WORK IN PROGRESS\*\*$/i;
+// Regex to detect if a copyright line for iobroker-community-adapters already exists
+// Matches: Copyright (c) YYYY[-YYYY] iobroker-community-adapters [<email>]
+const COMMUNITY_COPYRIGHT_REGEX = /Copyright\s+\(c\)\s+\d{4}(?:-\d{4})?\s+iobroker-community-adapters/i;
 
 // prepare standard parameters 
 const args = process.argv.slice(2);
@@ -48,7 +51,7 @@ function updateReadme() {
     let content = fs.readFileSync(readmePath, 'utf8');
     
     // Check if copyright line with iobroker-community-adapters already exists
-    if (content.includes(COMMUNITY_ADAPTERS_NAME)) {
+    if (COMMUNITY_COPYRIGHT_REGEX.test(content)) {
         console.log(`ⓘ Copyright line with ${COMMUNITY_ADAPTERS_NAME} already exists in ${readmePath}.`);
         return;
     }
@@ -108,7 +111,7 @@ function updateLicense() {
     let content = fs.readFileSync(licensePath, 'utf8');
     
     // Check if copyright line with iobroker-community-adapters already exists
-    if (content.includes(COMMUNITY_ADAPTERS_NAME)) {
+    if (COMMUNITY_COPYRIGHT_REGEX.test(content)) {
         console.log(`ⓘ Copyright line with ${COMMUNITY_ADAPTERS_NAME} already exists in ${licensePath}.`);
         return;
     }
