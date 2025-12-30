@@ -344,75 +344,86 @@ function updateIoPackageJson() {
         console.log(`ⓘ ${COMMUNITY_ADAPTERS_NAME} already exists in authors.`);
     }
     
+    // Check if common.onlyWWW is true - if so, skip dependency handling
+    const isOnlyWWW = ioPackage.common.onlyWWW === true;
+    
+    if (isOnlyWWW) {
+        console.log(`ⓘ common.onlyWWW is true, skipping js-controller and admin dependency handling.`);
+    }
+    
     // Handle js-controller dependency
     let jsControllerUpdated = false;
     
-    if (!ioPackage.common.dependencies) {
-        ioPackage.common.dependencies = [];
-        console.log(`ⓘ Created dependencies array in ${ioPackagePath}.`);
-    }
-    
-    // Find existing js-controller dependency
-    let jsControllerDep = ioPackage.common.dependencies.find(
-        dep => dep && typeof dep === 'object' && 'js-controller' in dep
-    );
-    
-    if (!jsControllerDep) {
-        // Add new js-controller dependency
-        ioPackage.common.dependencies.push({
-            'js-controller': `>=${JS_CONTROLLER_VERSION}`
-        });
-        console.log(`✔️ Added js-controller dependency with version ${JS_CONTROLLER_VERSION}.`);
-        jsControllerUpdated = true;
-        ioPackageChanged = true;
-        changesMade = true;
-    } else {
-        // Check if version needs updating
-        const currentVersion = extractVersion(jsControllerDep['js-controller']);
-        if (currentVersion && compareVersions(currentVersion, JS_CONTROLLER_VERSION) < 0) {
-            jsControllerDep['js-controller'] = `>=${JS_CONTROLLER_VERSION}`;
-            console.log(`✔️ Updated js-controller dependency from ${currentVersion} to ${JS_CONTROLLER_VERSION}.`);
+    if (!isOnlyWWW) {
+        if (!ioPackage.common.dependencies) {
+            ioPackage.common.dependencies = [];
+            console.log(`ⓘ Created dependencies array in ${ioPackagePath}.`);
+        }
+        
+        // Find existing js-controller dependency
+        let jsControllerDep = ioPackage.common.dependencies.find(
+            dep => dep && typeof dep === 'object' && 'js-controller' in dep
+        );
+        
+        if (!jsControllerDep) {
+            // Add new js-controller dependency
+            ioPackage.common.dependencies.push({
+                'js-controller': `>=${JS_CONTROLLER_VERSION}`
+            });
+            console.log(`✔️ Added js-controller dependency with version ${JS_CONTROLLER_VERSION}.`);
             jsControllerUpdated = true;
             ioPackageChanged = true;
             changesMade = true;
         } else {
-            console.log(`ⓘ js-controller dependency is already at version ${currentVersion || 'unknown'}, no update needed.`);
+            // Check if version needs updating
+            const currentVersion = extractVersion(jsControllerDep['js-controller']);
+            if (currentVersion && compareVersions(currentVersion, JS_CONTROLLER_VERSION) < 0) {
+                jsControllerDep['js-controller'] = `>=${JS_CONTROLLER_VERSION}`;
+                console.log(`✔️ Updated js-controller dependency from ${currentVersion} to ${JS_CONTROLLER_VERSION}.`);
+                jsControllerUpdated = true;
+                ioPackageChanged = true;
+                changesMade = true;
+            } else {
+                console.log(`ⓘ js-controller dependency is already at version ${currentVersion || 'unknown'}, no update needed.`);
+            }
         }
     }
     
     // Handle admin dependency
     let adminUpdated = false;
     
-    if (!ioPackage.common.globalDependencies) {
-        ioPackage.common.globalDependencies = [];
-        console.log(`ⓘ Created globalDependencies array in ${ioPackagePath}.`);
-    }
-    
-    // Find existing admin dependency
-    let adminDep = ioPackage.common.globalDependencies.find(
-        dep => dep && typeof dep === 'object' && 'admin' in dep
-    );
-    
-    if (!adminDep) {
-        // Add new admin dependency
-        ioPackage.common.globalDependencies.push({
-            'admin': `>=${ADMIN_VERSION}`
-        });
-        console.log(`✔️ Added admin dependency with version ${ADMIN_VERSION}.`);
-        adminUpdated = true;
-        ioPackageChanged = true;
-        changesMade = true;
-    } else {
-        // Check if version needs updating
-        const currentVersion = extractVersion(adminDep['admin']);
-        if (currentVersion && compareVersions(currentVersion, ADMIN_VERSION) < 0) {
-            adminDep['admin'] = `>=${ADMIN_VERSION}`;
-            console.log(`✔️ Updated admin dependency from ${currentVersion} to ${ADMIN_VERSION}.`);
+    if (!isOnlyWWW) {
+        if (!ioPackage.common.globalDependencies) {
+            ioPackage.common.globalDependencies = [];
+            console.log(`ⓘ Created globalDependencies array in ${ioPackagePath}.`);
+        }
+        
+        // Find existing admin dependency
+        let adminDep = ioPackage.common.globalDependencies.find(
+            dep => dep && typeof dep === 'object' && 'admin' in dep
+        );
+        
+        if (!adminDep) {
+            // Add new admin dependency
+            ioPackage.common.globalDependencies.push({
+                'admin': `>=${ADMIN_VERSION}`
+            });
+            console.log(`✔️ Added admin dependency with version ${ADMIN_VERSION}.`);
             adminUpdated = true;
             ioPackageChanged = true;
             changesMade = true;
         } else {
-            console.log(`ⓘ admin dependency is already at version ${currentVersion || 'unknown'}, no update needed.`);
+            // Check if version needs updating
+            const currentVersion = extractVersion(adminDep['admin']);
+            if (currentVersion && compareVersions(currentVersion, ADMIN_VERSION) < 0) {
+                adminDep['admin'] = `>=${ADMIN_VERSION}`;
+                console.log(`✔️ Updated admin dependency from ${currentVersion} to ${ADMIN_VERSION}.`);
+                adminUpdated = true;
+                ioPackageChanged = true;
+                changesMade = true;
+            } else {
+                console.log(`ⓘ admin dependency is already at version ${currentVersion || 'unknown'}, no update needed.`);
+            }
         }
     }
     
@@ -546,11 +557,31 @@ function updateReadmeChangelog(jsControllerUpdated, adminUpdated) {
     fs.writeFileSync(readmePath, updatedContent, 'utf8');
 }
 
+/**
+ * Create CHANGELOG_OLD.md if it doesn't exist
+ */
+function createChangelogOld() {
+    const changelogOldPath = './CHANGELOG_OLD.md';
+    
+    if (fs.existsSync(changelogOldPath)) {
+        console.log(`ⓘ ${changelogOldPath} already exists, skipping creation.`);
+        return;
+    }
+    
+    console.log(`✔️ ${changelogOldPath} does not exist, creating it.`);
+    
+    const content = '# Older changes\n';
+    fs.writeFileSync(changelogOldPath, content, 'utf8');
+    console.log(`✔️ Created ${changelogOldPath}.`);
+    changesMade = true;
+}
+
 // Execute all updates
 updateReadme();
 updateLicense();
 updatePackageJson();
 updateIoPackageJson();
+createChangelogOld();
 
 if (!changesMade) {
     console.log(`ⓘ No changes were made. All entries already exist.`);
