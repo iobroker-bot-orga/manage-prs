@@ -231,11 +231,13 @@ function updatePackageJson() {
     if (packageJsonChanged && packageJson.author) {
         const reordered = {};
         for (const key in packageJson) {
+            if (key === 'contributors') {
+                // Skip contributors here, we'll add it after 'author'
+                continue;
+            }
             reordered[key] = packageJson[key];
-            // After adding 'author', add 'contributors' if not already the next key
+            // After adding 'author', add 'contributors'
             if (key === 'author' && packageJson.contributors) {
-                // Remove contributors from its current position and add it here
-                delete reordered.contributors;
                 reordered.contributors = packageJson.contributors;
             }
         }
@@ -317,10 +319,8 @@ function updateIoPackageJson() {
     for (let i = 0; i < ioPackage.common.authors.length; i++) {
         const author = ioPackage.common.authors[i];
         if (typeof author === 'object' && author !== null && author.name) {
-            // Convert object to string format
-            const authorString = author.email 
-                ? `${author.name} <${author.email}>`
-                : author.name;
+            // Convert object to string format using helper function
+            const authorString = personToString(author);
             ioPackage.common.authors[i] = authorString;
             console.log(`✔️ Converted author object to string: ${authorString}`);
             ioPackageChanged = true;
