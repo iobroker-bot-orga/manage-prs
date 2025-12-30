@@ -5,6 +5,9 @@ const {parseArgs} = require('node:util');
 const { execSync } = require('child_process');
 const { getLatestRepo } = require('@iobroker-bot-orga/iobroker-lib');
 
+// Default configuration
+const DEFAULT_DELAY_SECONDS = 120;
+
 const opts = {
     dry: false,
     debug: false,
@@ -13,7 +16,7 @@ const opts = {
     parameter_data: '',
     pr_mode: 'recreate',
     filter: '',
-    delay: 120,
+    delay: DEFAULT_DELAY_SECONDS,
 }
 
 let checkScript;
@@ -246,7 +249,7 @@ async function main() {
     opts.parameter_data = values['parameter_data'] || '';
     opts.pr_mode = values['pr_mode'] || 'recreate';
     opts.filter = values['filter'] || '';
-    opts.delay = parseInt(values['delay'] || '120', 10);
+    opts.delay = parseInt(values['delay'] || String(DEFAULT_DELAY_SECONDS), 10);
 
     if (!opts.template) {
         console.error('❌ Template is required. Use --template=<template-name>');
