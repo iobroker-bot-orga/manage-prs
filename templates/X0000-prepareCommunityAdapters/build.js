@@ -228,6 +228,7 @@ function updatePackageJson() {
     }
     
     // Reorder keys to place 'contributors' right after 'author'
+    // Only reorder if author exists and changes were made
     if (packageJsonChanged && packageJson.author) {
         const reordered = {};
         for (const key in packageJson) {
