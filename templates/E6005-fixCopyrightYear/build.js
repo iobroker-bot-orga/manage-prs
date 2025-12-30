@@ -6,7 +6,7 @@
 const fs = require('node:fs');
 
 // Target year for copyright updates
-const TARGET_YEAR = 2025;
+const TARGET_YEAR = 2026;
 // Maximum allowed year - years beyond this will be corrected to TARGET_YEAR
 const MAX_YEAR = 2026;
 
