@@ -253,6 +253,12 @@ async function main() {
         process.exit(1);
     }
 
+    if (isNaN(opts.delay) || opts.delay <= 0) {
+        console.error(`❌ Invalid delay value: ${values['delay']}`);
+        console.error('   Delay must be a positive number');
+        process.exit(1);
+    }
+
     if (!validateFilterPattern(opts.filter)) {
         console.error(`❌ Invalid filter pattern: ${opts.filter}`);
         console.error('   Expected format: owner/repo');
@@ -280,7 +286,7 @@ async function main() {
     
     // Configuration constants
     const RESTART_AFTER_HOURS = 3; // Restart after 3 hours to avoid workflow timeout
-    const MAX_REPOS_BEFORE_RESTART = RESTART_AFTER_HOURS * 60 * (60 / opts.delay); // repos at configured delay
+    const MAX_REPOS_BEFORE_RESTART = RESTART_AFTER_HOURS * 60 * (60 / opts.delay); // Calculate max repos based on 3 hours with configured delay between repos
 
     console.log(`ⓘ Found ${total} repositories to process`);
     console.log(`ⓘ Delay between processing: ${opts.delay} seconds`);
