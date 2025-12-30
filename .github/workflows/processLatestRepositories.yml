@@ -44,6 +44,12 @@ on:
         required: false
         description: 'Resume processing from this adapter name (optional)'
 
+      delay:
+        type: string
+        required: false
+        default: '120'
+        description: 'Delay in seconds between processing each repository (default: 120)'
+
   #schedule:
     # * is a special character in YAML, so you have to quote this string
     # every friday at 1:00
@@ -74,6 +80,11 @@ jobs:
           FROM=$(echo "${{ github.event.inputs.from }}${{ github.event.client_payload.from }}" | xargs)
           FILTER=$(echo "${{ github.event.inputs.filter }}${{ github.event.client_payload.filter }}" | xargs)
           FLAGS=$(echo "${{ github.event.inputs.flags }}${{ github.event.client_payload.flags }}" | xargs)
+          DELAY=$(echo "${{ github.event.inputs.delay }}${{ github.event.client_payload.delay }}" | xargs)
+          # Set default delay if empty
+          if [ -z "$DELAY" ]; then
+            DELAY="120"
+          fi
           
           echo "template=$TEMPLATE" >> $GITHUB_OUTPUT
           echo "parameter_data=$PARAM_DATA" >> $GITHUB_OUTPUT
@@ -81,8 +92,9 @@ jobs:
           echo "from=$FROM" >> $GITHUB_OUTPUT
           echo "filter=$FILTER" >> $GITHUB_OUTPUT
           echo "flags=$FLAGS" >> $GITHUB_OUTPUT
+          echo "delay=$DELAY" >> $GITHUB_OUTPUT
       
       - name: Run processLatestRepositories.js
-        run: node ./processLatestRepositories.js --template="${{ steps.trim_params.outputs.template }}" --parameter_data="${{ steps.trim_params.outputs.parameter_data }}" --pr_mode="${{ steps.trim_params.outputs.pr_mode }}" --from="${{ steps.trim_params.outputs.from }}" --filter="${{ steps.trim_params.outputs.filter }}" ${{ steps.trim_params.outputs.flags }}
+        run: node ./processLatestRepositories.js --template="${{ steps.trim_params.outputs.template }}" --parameter_data="${{ steps.trim_params.outputs.parameter_data }}" --pr_mode="${{ steps.trim_params.outputs.pr_mode }}" --from="${{ steps.trim_params.outputs.from }}" --filter="${{ steps.trim_params.outputs.filter }}" --delay="${{ steps.trim_params.outputs.delay }}" ${{ steps.trim_params.outputs.flags }}
         env:
           GH_TOKEN: ${{ secrets.IOBBOT_GITHUB_TOKEN_WITH_WF }}

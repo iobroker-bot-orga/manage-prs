@@ -13,6 +13,7 @@ const opts = {
     parameter_data: '',
     pr_mode: 'recreate',
     filter: '',
+    delay: 120,
 }
 
 let checkScript;
@@ -195,7 +196,7 @@ function triggerRestart(adapter) {
             flags = `--field client_payload[flags]='${flags}'`;
         };
 
-        const cmd = `gh api repos/iobroker-bot-orga/manage-prs/dispatches --method POST --field event_type='process-latest-restart' --field client_payload[template]='${opts.template}' --field client_payload[parameter_data]='${opts.parameter_data}' --field client_payload[pr_mode]='${opts.pr_mode}' --field client_payload[from]='${adapter}' --field client_payload[filter]='${opts.filter}' ${flags}`;
+        const cmd = `gh api repos/iobroker-bot-orga/manage-prs/dispatches --method POST --field event_type='process-latest-restart' --field client_payload[template]='${opts.template}' --field client_payload[parameter_data]='${opts.parameter_data}' --field client_payload[pr_mode]='${opts.pr_mode}' --field client_payload[from]='${adapter}' --field client_payload[filter]='${opts.filter}' --field client_payload[delay]='${opts.delay}' ${flags}`;
         
         executeGhCommand(cmd);
         console.log(`ⓘ ✔️ Restart triggered successfully`);
@@ -228,6 +229,9 @@ async function main() {
         'filter': {
             type: 'string',
         },
+        'delay': {
+            type: 'string',
+        },
     };
 
     const {
@@ -242,6 +246,7 @@ async function main() {
     opts.parameter_data = values['parameter_data'] || '';
     opts.pr_mode = values['pr_mode'] || 'recreate';
     opts.filter = values['filter'] || '';
+    opts.delay = parseInt(values['delay'] || '120', 10);
 
     if (!opts.template) {
         console.error('❌ Template is required. Use --template=<template-name>');
@@ -266,6 +271,7 @@ async function main() {
     console.log(`ⓘ PR Mode: ${opts.pr_mode}`);
     console.log(`ⓘ From: ${opts.from || '(start from beginning)'}`);
     console.log(`ⓘ Filter: ${opts.filter || '(none - process all repositories)'}`);
+    console.log(`ⓘ Delay: ${opts.delay} seconds`);
     console.log(`ⓘ Dry Run: ${opts.dry}`);
     console.log('ⓘ ===================================================================');
 
@@ -273,12 +279,11 @@ async function main() {
     const total = Object.keys(latestRepo).filter(k => !k.startsWith('_')).length;
     
     // Configuration constants
-    const DELAY_BETWEEN_REPOS_SECONDS = 120; // 2 minutes between repository processing
     const RESTART_AFTER_HOURS = 3; // Restart after 3 hours to avoid workflow timeout
-    const MAX_REPOS_BEFORE_RESTART = RESTART_AFTER_HOURS * 60 * (60 / DELAY_BETWEEN_REPOS_SECONDS); // ~90 repos at 2min each
+    const MAX_REPOS_BEFORE_RESTART = RESTART_AFTER_HOURS * 60 * (60 / opts.delay); // repos at configured delay
 
     console.log(`ⓘ Found ${total} repositories to process`);
-    console.log(`ⓘ Delay between processing: ${DELAY_BETWEEN_REPOS_SECONDS} seconds`);
+    console.log(`ⓘ Delay between processing: ${opts.delay} seconds`);
     console.log(`ⓘ Will restart after ${RESTART_AFTER_HOURS}h (${MAX_REPOS_BEFORE_RESTART} repositories)`);
 
     context.template = opts.template;
@@ -343,11 +348,11 @@ async function main() {
 
         counter = counter - 1;
         if (counter) {
-            console.log(`ⓘ Will restart after ${counter} more repositories, sleeping (${DELAY_BETWEEN_REPOS_SECONDS}s) ...`);
+            console.log(`ⓘ Will restart after ${counter} more repositories, sleeping (${opts.delay}s) ...`);
         } else {
-            console.log(`ⓘ Will restart after delay, sleeping (${DELAY_BETWEEN_REPOS_SECONDS}s) ...`);            
+            console.log(`ⓘ Will restart after delay, sleeping (${opts.delay}s) ...`);            
         }
-        await sleep(opts.dry?1000:DELAY_BETWEEN_REPOS_SECONDS * 1000);
+        await sleep(opts.dry?1000:opts.delay * 1000);
     }
 
     if (checkScript && checkScript.finalize) {
