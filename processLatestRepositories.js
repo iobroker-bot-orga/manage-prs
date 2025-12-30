@@ -230,7 +230,7 @@ async function main() {
             type: 'string',
         },
         'delay': {
-            type: 'string',
+            type: 'string', // String type for consistency with other numeric inputs from CLI/workflow
         },
     };
 
@@ -254,8 +254,8 @@ async function main() {
     }
 
     if (isNaN(opts.delay) || opts.delay <= 0) {
-        console.error(`❌ Invalid delay value: ${values['delay']}`);
-        console.error('   Delay must be a positive number');
+        console.error(`❌ Invalid delay value: ${values['delay'] || '(not provided)'}`);
+        console.error('   Delay must be a positive number (in seconds)');
         process.exit(1);
     }
 
