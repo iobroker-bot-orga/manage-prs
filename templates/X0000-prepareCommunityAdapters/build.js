@@ -139,6 +139,23 @@ function updateLicense() {
 }
 
 /**
+ * Convert person object to string format
+ * @param {Object|string} person - Person object or string
+ * @returns {string} - Person string in format "Name <email>" or "Name"
+ */
+function personToString(person) {
+    if (typeof person === 'string') {
+        return person;
+    }
+    if (typeof person === 'object' && person !== null && person.name) {
+        return person.email 
+            ? `${person.name} <${person.email}>`
+            : person.name;
+    }
+    return String(person);
+}
+
+/**
  * Update package.json contributors
  */
 function updatePackageJson() {
@@ -161,10 +178,33 @@ function updatePackageJson() {
         process.exit(1);
     }
     
+    let packageJsonChanged = false;
+    
+    // Convert 'author' to string format if it's an object
+    if (packageJson.author && typeof packageJson.author === 'object') {
+        const authorString = personToString(packageJson.author);
+        packageJson.author = authorString;
+        console.log(`✔️ Converted author object to string: ${authorString}`);
+        packageJsonChanged = true;
+        changesMade = true;
+    }
+    
     // Ensure contributors array exists
     if (!packageJson.contributors) {
         packageJson.contributors = [];
         console.log(`ⓘ Created contributors array in ${packageJsonPath}.`);
+    }
+    
+    // Convert contributor objects to single-line string format
+    for (let i = 0; i < packageJson.contributors.length; i++) {
+        const contributor = packageJson.contributors[i];
+        if (typeof contributor === 'object' && contributor !== null && contributor.name) {
+            const contributorString = personToString(contributor);
+            packageJson.contributors[i] = contributorString;
+            console.log(`✔️ Converted contributor object to string: ${contributorString}`);
+            packageJsonChanged = true;
+            changesMade = true;
+        }
     }
     
     // Check if iobroker-community-adapters is already in contributors
@@ -177,21 +217,35 @@ function updatePackageJson() {
         }
     );
     
-    if (hasContributor) {
+    if (!hasContributor) {
+        // Add contributor as string format
+        packageJson.contributors.push(`${COMMUNITY_ADAPTERS_NAME} <${COMMUNITY_ADAPTERS_EMAIL}>`);
+        console.log(`✔️ Added ${COMMUNITY_ADAPTERS_NAME} to contributors in ${packageJsonPath}.`);
+        packageJsonChanged = true;
+        changesMade = true;
+    } else {
         console.log(`ⓘ ${COMMUNITY_ADAPTERS_NAME} already exists in contributors.`);
-        return;
     }
     
-    // Add contributor
-    packageJson.contributors.push({
-        name: COMMUNITY_ADAPTERS_NAME,
-        email: COMMUNITY_ADAPTERS_EMAIL
-    });
+    // Reorder keys to place 'contributors' right after 'author'
+    if (packageJsonChanged && packageJson.author) {
+        const reordered = {};
+        for (const key in packageJson) {
+            reordered[key] = packageJson[key];
+            // After adding 'author', add 'contributors' if not already the next key
+            if (key === 'author' && packageJson.contributors) {
+                // Remove contributors from its current position and add it here
+                delete reordered.contributors;
+                reordered.contributors = packageJson.contributors;
+            }
+        }
+        packageJson = reordered;
+    }
     
     // Write back with proper formatting (2 spaces indentation)
-    fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + '\n', 'utf8');
-    console.log(`✔️ Added ${COMMUNITY_ADAPTERS_NAME} to contributors in ${packageJsonPath}.`);
-    changesMade = true;
+    if (packageJsonChanged) {
+        fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + '\n', 'utf8');
+    }
 }
 
 /**
