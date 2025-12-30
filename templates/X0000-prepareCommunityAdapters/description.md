@@ -41,7 +41,15 @@ The PR ensures that the adapter specifies minimum version requirements for js-co
 - **js-controller dependency**: Sets or updates the minimum required js-controller version in `io-package.json` under `common.dependencies`
 - **admin dependency**: Sets or updates the minimum required admin version in `io-package.json` under `common.globalDependencies`
 
+**Note**: If `common.onlyWWW` is set to `true` in `io-package.json`, the script will skip adding or updating js-controller and admin dependencies, as these adapters don't require the backend components.
+
 If any dependency requirements are added or updated, corresponding entries are added to the changelog in README.md under a "WORK IN PROGRESS" section, informing users about the new minimum requirements.
+
+### Changelog Management
+
+The PR ensures proper changelog management:
+
+- **CHANGELOG_OLD.md**: If the file `CHANGELOG_OLD.md` does not exist at the repository root, it will be created with the header `# Older changes` to prepare for moving older changelog entries.
 
 ### Why These Changes
 
@@ -92,7 +100,15 @@ Der PR stellt sicher, dass der Adapter Mindestversionsanforderungen für js-cont
 - **js-controller Abhängigkeit**: Setzt oder aktualisiert die erforderliche Mindestversion von js-controller in der `io-package.json` unter `common.dependencies`
 - **admin Abhängigkeit**: Setzt oder aktualisiert die erforderliche Mindestversion von admin in der `io-package.json` unter `common.globalDependencies`
 
+**Hinweis**: Wenn `common.onlyWWW` in der `io-package.json` auf `true` gesetzt ist, überspringt das Skript das Hinzufügen oder Aktualisieren von js-controller- und admin-Abhängigkeiten, da diese Adapter die Backend-Komponenten nicht benötigen.
+
 Falls Abhängigkeitsanforderungen hinzugefügt oder aktualisiert werden, werden entsprechende Einträge zum Changelog in der README.md unter einem "WORK IN PROGRESS" Abschnitt hinzugefügt, um Benutzer über die neuen Mindestanforderungen zu informieren.
+
+### Changelog-Verwaltung
+
+Der PR stellt eine ordnungsgemäße Changelog-Verwaltung sicher:
+
+- **CHANGELOG_OLD.md**: Wenn die Datei `CHANGELOG_OLD.md` nicht im Repository-Root existiert, wird sie mit der Überschrift `# Older changes` erstellt, um das Verschieben älterer Changelog-Einträge vorzubereiten.
 
 ### Warum diese Änderungen
 
