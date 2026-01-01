@@ -7,6 +7,7 @@ const { getLatestRepo } = require('@iobroker-bot-orga/iobroker-lib');
 
 // Default configuration
 const DEFAULT_DELAY_SECONDS = 120;
+const MIN_DELAY_SECONDS = 60;
 
 const opts = {
     dry: false,
@@ -263,9 +264,9 @@ async function main() {
     }
 
     // Ensure minimum delay of 60 seconds
-    if (opts.delay < 60) {
-        console.log(`⚠️ Delay of ${opts.delay}s is too short, setting to minimum of 60s`);
-        opts.delay = 60;
+    if (opts.delay < MIN_DELAY_SECONDS) {
+        console.log(`⚠️ Delay of ${opts.delay}s is too short, setting to minimum of ${MIN_DELAY_SECONDS}s`);
+        opts.delay = MIN_DELAY_SECONDS;
     }
 
     if (!validateFilterPattern(opts.filter)) {
@@ -295,7 +296,7 @@ async function main() {
     
     // Configuration constants
     const RESTART_AFTER_HOURS = 3; // Restart after 3 hours to avoid workflow timeout
-    const MAX_REPOS_BEFORE_RESTART = Math.ceil(RESTART_AFTER_HOURS * 60 * (60 / opts.delay)); // Calculate max repos based on 3 hours with configured delay between repos, rounded up to ensure at least 1
+    const MAX_REPOS_BEFORE_RESTART = Math.ceil(RESTART_AFTER_HOURS * 60 * (60 / opts.delay)); // Calculate max repos based on 3 hours with configured delay between repos. Math.ceil() ensures the result is a full integer (at least 1) even when the calculation yields a fractional value.
 
     console.log(`ⓘ Found ${total} repositories to process`);
     console.log(`ⓘ Delay between processing: ${opts.delay} seconds`);
