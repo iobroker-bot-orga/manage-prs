@@ -262,6 +262,12 @@ async function main() {
         process.exit(1);
     }
 
+    // Ensure minimum delay of 60 seconds
+    if (opts.delay < 60) {
+        console.log(`⚠️ Delay of ${opts.delay}s is too short, setting to minimum of 60s`);
+        opts.delay = 60;
+    }
+
     if (!validateFilterPattern(opts.filter)) {
         console.error(`❌ Invalid filter pattern: ${opts.filter}`);
         console.error('   Expected format: owner/repo');
@@ -289,7 +295,7 @@ async function main() {
     
     // Configuration constants
     const RESTART_AFTER_HOURS = 3; // Restart after 3 hours to avoid workflow timeout
-    const MAX_REPOS_BEFORE_RESTART = RESTART_AFTER_HOURS * 60 * (60 / opts.delay); // Calculate max repos based on 3 hours with configured delay between repos
+    const MAX_REPOS_BEFORE_RESTART = Math.ceil(RESTART_AFTER_HOURS * 60 * (60 / opts.delay)); // Calculate max repos based on 3 hours with configured delay between repos, rounded up to ensure at least 1
 
     console.log(`ⓘ Found ${total} repositories to process`);
     console.log(`ⓘ Delay between processing: ${opts.delay} seconds`);
@@ -304,7 +310,7 @@ async function main() {
     if (skip) console.log (`ⓘ --from set to "${opts.from}" - searching for first adapter to process ...`);
     
     for (const adapter in latestRepo) {
-        if (!counter) {
+        if (counter <= 0) {
             console.log(`ⓘ Restart limit reached, will restart from adapter: ${adapter}`);
             triggerRestart(adapter);
             break;
