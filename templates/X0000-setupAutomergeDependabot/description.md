@@ -1,4 +1,4 @@
-Setup Auto-Merge for Dependabot PRs
+Setup Auto-Merge for Dependabot PRs  
 [German description can be found below](#deutsche-beschreibung) | [Deutsche Beschreibung weiter unten](#deutsche-beschreibung)
 
 ## General information 
