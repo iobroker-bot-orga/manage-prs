@@ -45,7 +45,7 @@ for (const oldPath of oldWorkflowPaths) {
   }
 }
 
-// Create new automerge-dependabot.yml workflow
+// Create or update automerge-dependabot.yml workflow
 const workflowContent = `# Workflow for auto-merging Dependabot PRs
 # This workflow uses the action-automerge-dependabot action to automatically merge
 # Dependabot PRs based on the rules defined in .github/auto-merge.yml
@@ -83,9 +83,21 @@ jobs:
           # max-wait-time: '3600'
 `;
 
-fs.writeFileSync(newWorkflowPath, workflowContent, 'utf8');
-console.log(`✔️ Created workflow: ${newWorkflowPath}`);
-changesMade = true;
+// Check if workflow already exists and compare content
+if (fs.existsSync(newWorkflowPath)) {
+  const existingContent = fs.readFileSync(newWorkflowPath, 'utf8');
+  if (existingContent !== workflowContent) {
+    fs.writeFileSync(newWorkflowPath, workflowContent, 'utf8');
+    console.log(`✔️ Updated workflow: ${newWorkflowPath}`);
+    changesMade = true;
+  } else {
+    console.log(`ⓘ ${newWorkflowPath} already exists and is up to date.`);
+  }
+} else {
+  fs.writeFileSync(newWorkflowPath, workflowContent, 'utf8');
+  console.log(`✔️ Created workflow: ${newWorkflowPath}`);
+  changesMade = true;
+}
 
 // Create auto-merge.yml configuration if it doesn't exist
 if (!fs.existsSync(autoMergeConfigPath)) {
