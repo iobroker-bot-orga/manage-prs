@@ -56,7 +56,7 @@ Please refer to the comments in the `.github/auto-merge.yml` file for more confi
 
 ### References
 
-- [GitHub Announcement about Dependabot command deprecation](https://github.blog/changelog/2024-09-11-dependabot-merge-comment-command-deprecation/)
+- [GitHub Announcement about Dependabot command deprecation](https://github.blog/changelog/2025-10-06-upcoming-changes-to-github-dependabot-pull-request-comment-commands/)
 - [action-automerge-dependabot repository](https://github.com/iobroker-bot-orga/action-automerge-dependabot)
 
 ---
@@ -102,5 +102,5 @@ Bitte die Kommentare in der `.github/auto-merge.yml`-Datei für weitere Konfigur
 
 ### Referenzen
 
-- [GitHub-Ankündigung zur Dependabot-Befehlsabschaffung](https://github.blog/changelog/2024-09-11-dependabot-merge-comment-command-deprecation/)
+- [GitHub-Ankündigung zur Dependabot-Befehlsabschaffung](https://github.blog/changelog/2025-10-06-upcoming-changes-to-github-dependabot-pull-request-comment-commands/)
 - [action-automerge-dependabot Repository](https://github.com/iobroker-bot-orga/action-automerge-dependabot)
