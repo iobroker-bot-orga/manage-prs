@@ -21,7 +21,7 @@ This PR sets up automatic merging for Dependabot pull requests using a new GitHu
 
 ### Background
 
-GitHub has announced that they will discontinue processing Dependabot merge commands on **January 20, 2026**. The old approach of using comment commands like `@dependabot merge` will no longer work after this date.
+GitHub has announced that they will discontinue processing Dependabot merge commands on **January 27, 2026**. The old approach of using comment commands like `@dependabot merge` will no longer work after this date.
 
 ### What this PR does
 
@@ -67,7 +67,7 @@ Diese PR richtet das automatische Mergen von Dependabot-Pull-Requests mithilfe e
 
 ### Hintergrund
 
-GitHub hat angekündigt, dass die Verarbeitung von Dependabot-Merge-Befehlen am **20. Januar 2026** eingestellt wird. Der alte Ansatz mit Kommentar-Befehlen wie `@dependabot merge` wird nach diesem Datum nicht mehr funktionieren.
+GitHub hat angekündigt, dass die Verarbeitung von Dependabot-Merge-Befehlen am **27. Januar 2026** eingestellt wird. Der alte Ansatz mit Kommentar-Befehlen wie `@dependabot merge` wird nach diesem Datum nicht mehr funktionieren.
 
 ### Was diese PR macht
 
