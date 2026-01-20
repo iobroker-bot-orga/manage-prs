@@ -37,7 +37,7 @@ This PR replaces the current setup for auto-merging Dependabot PRs with a new wo
 
 ### Important notes
 
-**This PR is not mandatory.** It is up to the developer to review and decide whether to merge this PR. The existing approach will continue to work until January 20, 2026. However, it is recommended to migrate to the new approach before this deadline.
+**This PR is not mandatory.** It is up to the developer to review and decide whether to merge this PR. The existing approach will continue to work until January 27, 2026. However, it is recommended to migrate to the new approach before this deadline.
 
 The new workflow will:
 - Only run for Dependabot PRs
@@ -83,7 +83,7 @@ Diese PR ersetzt die aktuelle Einrichtung zum automatischen Mergen von Dependabo
 
 ### Wichtige Hinweise
 
-**Diese PR ist nicht verpflichtend.** Es liegt am Entwickler, diese PR zu prüfen und zu entscheiden, ob sie gemergt werden soll. Der bestehende Ansatz wird weiterhin bis zum 20. Januar 2026 funktionieren. Es wird jedoch empfohlen, vor diesem Termin auf den neuen Ansatz zu migrieren.
+**Diese PR ist nicht verpflichtend.** Es liegt am Entwickler, diese PR zu prüfen und zu entscheiden, ob sie gemergt werden soll. Der bestehende Ansatz wird weiterhin bis zum 27. Januar 2026 funktionieren. Es wird jedoch empfohlen, vor diesem Termin auf den neuen Ansatz zu migrieren.
 
 Der neue Workflow wird:
 - Nur für Dependabot-PRs ausgeführt
