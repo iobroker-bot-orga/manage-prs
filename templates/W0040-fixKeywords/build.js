@@ -22,6 +22,18 @@ const ioPackageJsonPath = './io-package.json';
 
 let changesMade = false;
 
+// Constants for regex patterns
+const TRAILING_BRACKET_PATTERN = /^(\]\s*,?\s*\n)/;
+
+/**
+ * Escape special regex characters in a string
+ * @param {string} str - The string to escape
+ * @returns {string} - The escaped string
+ */
+function escapeRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 /**
  * Find the keywords array in JSON content and return its start and end positions
  * @param {string} content - The JSON file content
@@ -35,7 +47,8 @@ function findKeywordsArray(content, keyPath) {
     
     // Navigate through nested objects if needed
     for (let i = 0; i < keys.length - 1; i++) {
-        const keyPattern = new RegExp(`"${keys[i]}"\\s*:\\s*\\{`);
+        const escapedKey = escapeRegex(keys[i]);
+        const keyPattern = new RegExp(`"${escapedKey}"\\s*:\\s*\\{`);
         const match = searchContent.match(keyPattern);
         if (!match) return null;
         
@@ -46,7 +59,8 @@ function findKeywordsArray(content, keyPath) {
     
     // Find the keywords array
     const lastKey = keys[keys.length - 1];
-    const keywordsPattern = new RegExp(`(\\s*)"${lastKey}"\\s*:\\s*\\[`);
+    const escapedLastKey = escapeRegex(lastKey);
+    const keywordsPattern = new RegExp(`(\\s*)"${escapedLastKey}"\\s*:\\s*\\[`);
     const match = searchContent.match(keywordsPattern);
     
     if (!match) return null;
@@ -167,12 +181,23 @@ function formatKeywordsArray(keywords, baseIndent, sampleContent) {
     const baseSpaces = baseIndent.replace(/^\n/, '');
     
     // Detect indentation style from sample content
+    // Look for indentation of array items in the sample
     let itemIndent = '    '; // default to 4 spaces
     
-    // Try to detect existing indentation in the array
     const indentMatch = sampleContent.match(/\n(\s+)"/);
     if (indentMatch) {
         itemIndent = indentMatch[1];
+    } else {
+        // Fallback: detect indentation from the base indentation
+        // Assume array items are indented one level deeper than the property
+        // Detect if using tabs or spaces
+        if (baseSpaces.includes('\t')) {
+            itemIndent = baseSpaces + '\t';
+        } else {
+            // Count spaces and add same amount
+            const spaceCount = baseSpaces.length;
+            itemIndent = baseSpaces + ' '.repeat(spaceCount || 2);
+        }
     }
     
     const lines = keywords.map((kw, idx) => {
@@ -181,6 +206,33 @@ function formatKeywordsArray(keywords, baseIndent, sampleContent) {
     });
     
     return lines.join('') + `\n${baseSpaces}`;
+}
+
+/**
+ * Replace keywords array in JSON content while preserving formatting
+ * @param {string} content - Original JSON content
+ * @param {object} arrayInfo - Information about the array location
+ * @param {string} arrayContent - Original array content for indentation detection
+ * @param {Array} newKeywords - New keywords to write
+ * @returns {string} - Updated JSON content
+ */
+function replaceKeywordsArray(content, arrayInfo, arrayContent, newKeywords) {
+    const formattedArrayContent = formatKeywordsArray(newKeywords, arrayInfo.indentation, arrayContent);
+    
+    // Get what comes after the closing bracket (], comma, whitespace, newline)
+    const afterBracket = content.slice(arrayInfo.arrayEnd);
+    const trailingMatch = afterBracket.match(TRAILING_BRACKET_PATTERN);
+    const trailing = trailingMatch ? trailingMatch[1] : ']';
+    
+    // Replace from start of property definition to end of array content
+    const beforeProperty = content.slice(0, arrayInfo.start);
+    const afterProperty = content.slice(arrayInfo.end);
+    
+    // Get the property name and opening bracket (e.g., '\n  "keywords": [')
+    const propertyPrefix = content.slice(arrayInfo.start, arrayInfo.arrayStart);
+    
+    // Reconstruct: before + "keywords": [ + array content + ] + after
+    return beforeProperty + propertyPrefix + formattedArrayContent + trailing + afterProperty;
 }
 
 // Verify that package.json exists and is valid JSON
@@ -316,22 +368,7 @@ if (!packageJson.keywords) {
     // Write package.json if modified
     if (packageJsonModified) {
         try {
-            const formattedArrayContent = formatKeywordsArray(newKeywords, arrayInfo.indentation, arrayContent);
-            
-            // Get what comes after the closing bracket (], comma, whitespace, newline)
-            const afterBracket = packageJsonContent.slice(arrayInfo.arrayEnd);
-            const trailingMatch = afterBracket.match(/^(\]\s*,?\s*\n)/);
-            const trailing = trailingMatch ? trailingMatch[1] : ']';
-            
-            // Replace from start of property definition to end of array content
-            const beforeProperty = packageJsonContent.slice(0, arrayInfo.start);
-            const afterProperty = packageJsonContent.slice(arrayInfo.end);
-            
-            // Get the property name and opening bracket (e.g., '\n  "keywords": [')
-            const propertyPrefix = packageJsonContent.slice(arrayInfo.start, arrayInfo.arrayStart);
-            
-            // Reconstruct: before + "keywords": [ + array content + ] + after
-            const newContent = beforeProperty + propertyPrefix + formattedArrayContent + trailing + afterProperty;
+            const newContent = replaceKeywordsArray(packageJsonContent, arrayInfo, arrayContent, newKeywords);
             
             // Validate the new content is valid JSON
             JSON.parse(newContent);
@@ -395,22 +432,7 @@ if (!ioPackageJson.common.keywords) {
     // Write io-package.json if modified
     if (ioPackageJsonModified) {
         try {
-            const formattedArrayContent = formatKeywordsArray(newKeywords, arrayInfo.indentation, arrayContent);
-            
-            // Get what comes after the closing bracket (], comma, whitespace, newline)
-            const afterBracket = ioPackageJsonContent.slice(arrayInfo.arrayEnd);
-            const trailingMatch = afterBracket.match(/^(\]\s*,?\s*\n)/);
-            const trailing = trailingMatch ? trailingMatch[1] : ']';
-            
-            // Replace from start of property definition to end of array content
-            const beforeProperty = ioPackageJsonContent.slice(0, arrayInfo.start);
-            const afterProperty = ioPackageJsonContent.slice(arrayInfo.end);
-            
-            // Get the property name and opening bracket
-            const propertyPrefix = ioPackageJsonContent.slice(arrayInfo.start, arrayInfo.arrayStart);
-            
-            // Reconstruct: before + "keywords": [ + array content + ] + after
-            const newContent = beforeProperty + propertyPrefix + formattedArrayContent + trailing + afterProperty;
+            const newContent = replaceKeywordsArray(ioPackageJsonContent, arrayInfo, arrayContent, newKeywords);
             
             // Validate the new content is valid JSON
             JSON.parse(newContent);
