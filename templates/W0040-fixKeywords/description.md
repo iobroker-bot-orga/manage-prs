@@ -43,7 +43,14 @@ This PR performs the following modifications:
 - Ensures the "common.keywords" array exists
 - Removes generic keywords that match "iobroker", "adapter" or "smart home" (case-insensitive)
 
-The script minimizes changes by only modifying files when necessary and preserving the existing JSON formatting when no changes are needed.
+**Formatting Preservation:**
+The script uses string-based manipulation to preserve the original JSON formatting:
+- Maintains original indentation (spaces or tabs)
+- Preserves property order
+- Only modifies the keywords array content
+- Keeps trailing commas and other formatting details unchanged
+
+This ensures minimal, surgical changes to your files, making diffs easy to review and avoiding unnecessary formatting changes.
 
 ---
 
@@ -89,4 +96,11 @@ Dieser PR führt folgende Änderungen durch:
 - Stellt sicher, dass das "common.keywords"-Array existiert
 - Entfernt generische Keywords, die "iobroker", "adapter" oder "smart home" entsprechen (groß-/kleinschreibungsunabhängig)
 
-Das Skript minimiert Änderungen, indem Dateien nur bei Bedarf geändert werden und die vorhandene JSON-Formatierung beibehalten wird, wenn keine Änderungen erforderlich sind.
+**Formatierungserhaltung:**
+Das Skript verwendet stringbasierte Manipulation, um die ursprüngliche JSON-Formatierung zu erhalten:
+- Behält die ursprüngliche Einrückung bei (Leerzeichen oder Tabs)
+- Bewahrt die Eigenschaftsreihenfolge
+- Ändert nur den Inhalt des Keywords-Arrays
+- Behält nachgestellte Kommas und andere Formatierungsdetails unverändert
+
+Dies gewährleistet minimale, chirurgische Änderungen an den Dateien, sodass Diffs leicht zu überprüfen sind und unnötige Formatierungsänderungen vermieden werden.
