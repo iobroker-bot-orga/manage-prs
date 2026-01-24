@@ -75,7 +75,6 @@ if (!Array.isArray(packageJson.keywords)) {
 }
 
 // Check for case-insensitive matches of "iobroker" that are not exactly "ioBroker"
-const originalKeywordsCount = packageJson.keywords.length;
 packageJson.keywords = packageJson.keywords.filter(keyword => {
     if (typeof keyword !== 'string') return true;
     const lowerKeyword = keyword.toLowerCase();
@@ -133,7 +132,6 @@ if (!Array.isArray(ioPackageJson.common.keywords)) {
 
 // Remove case-insensitive matches of "iobroker", "adapter", or "smart home"
 const forbiddenKeywords = ['iobroker', 'adapter', 'smart home'];
-const originalIoKeywordsCount = ioPackageJson.common.keywords.length;
 ioPackageJson.common.keywords = ioPackageJson.common.keywords.filter(keyword => {
     if (typeof keyword !== 'string') return true;
     const lowerKeyword = keyword.toLowerCase();
