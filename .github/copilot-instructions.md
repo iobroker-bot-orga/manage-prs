@@ -1,9 +1,28 @@
 # GitHub Actions Workflow Management with GitHub Copilot
 
-**Version:** 0.4.2
+**Version:** 0.5.7
 **Template Source:** https://github.com/DrozmotiX/ioBroker-Copilot-Instructions
 
 This file contains instructions and best practices for GitHub Copilot when working on this GitHub Actions workflow management repository.
+
+---
+
+## 📑 Table of Contents
+
+1. [Project Context](#project-context)
+2. [Key Components](#key-components)
+3. [Development Guidelines](#development-guidelines)
+4. [Code Quality & Standards](#code-quality--standards)
+5. [Testing and Validation](#testing-and-validation)
+6. [Code Style](#code-style)
+7. [Repository-Specific Patterns](#repository-specific-patterns)
+8. [Extending Functionality](#extending-functionality)
+9. [Common Tasks](#common-tasks)
+10. [CI/CD & GitHub Actions](#cicd--github-actions)
+11. [Security Considerations](#security-considerations)
+12. [Related Resources](#related-resources)
+
+---
 
 ## Project Context
 
@@ -86,6 +105,78 @@ try {
   process.exit(1);
 }
 ```
+
+## Code Quality & Standards
+
+### ESLint Configuration
+
+**CRITICAL:** ESLint validation must run FIRST in your CI/CD pipeline, before any other tests. This "lint-first" approach catches code quality issues early.
+
+#### Setup
+```bash
+npm install --save-dev eslint
+```
+
+#### Package.json Scripts
+```json
+{
+  "scripts": {
+    "lint": "eslint --max-warnings 0 .",
+    "lint:fix": "eslint . --fix"
+  }
+}
+```
+
+#### Best Practices
+1. ✅ Run ESLint before committing — fix ALL warnings, not just errors
+2. ✅ Use `lint:fix` for auto-fixable issues
+3. ✅ Don't disable rules without documentation
+4. ✅ Lint all relevant files (main code, scripts, build files)
+5. ✅ **ESLint warnings are treated as errors in CI** (`--max-warnings 0`)
+
+#### Common Issues
+- **Unused variables**: Remove or prefix with underscore (`_variable`)
+- **Missing semicolons**: Run `npm run lint:fix`
+- **Indentation**: Use consistent spacing (2 spaces for YAML, 4 spaces for JS)
+- **console.log**: Acceptable in scripts, but prefer descriptive log messages
+
+### Dependency Management
+
+- Always use `npm` for dependency management
+- Use `npm ci` for installing existing dependencies (respects package-lock.json)
+- Use `npm install` only when adding or updating dependencies
+- Keep dependencies minimal and focused
+- Only update dependencies in separate Pull Requests
+
+**When modifying package.json:**
+1. Run `npm install` to sync package-lock.json
+2. Commit both package.json and package-lock.json together
+
+**Best Practices:**
+- Prefer built-in Node.js modules when possible
+- Avoid deprecated packages
+- Document specific version requirements
+
+### HTTP Client Libraries
+
+- **Preferred:** Use native `fetch` API (Node.js 20+ required)
+- **Avoid:** `axios` unless specific features are required
+
+**Example with fetch:**
+```javascript
+try {
+  const response = await fetch('https://api.example.com/data');
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+  const data = await response.json();
+} catch (error) {
+  console.error(`API request failed: ${error.message}`);
+  process.exit(1);
+}
+```
+
+---
 
 ## Testing and Validation
 
@@ -189,6 +280,70 @@ fi
 3. Update console logging for debugging
 4. Test with sample repository data
 5. Update documentation if needed
+
+## CI/CD & GitHub Actions
+
+### Workflow Configuration
+
+#### GitHub Actions Best Practices
+
+- Use latest action versions (`actions/checkout@v4`, `actions/setup-node@v4`)
+- Test on Node.js 20.x, 22.x where applicable
+- Use `ubuntu-22.04` as the runner platform
+- Configure Node.js with npm caching for faster runs
+
+#### Critical: Lint-First Validation Workflow
+
+**ALWAYS run ESLint checks BEFORE other tests.** Benefits:
+- Catches code quality issues immediately
+- Prevents wasting CI resources on tests that would fail due to linting errors
+- Provides faster feedback to developers
+- Enforces consistent code quality
+
+**Workflow Dependency Configuration:**
+```yaml
+jobs:
+  check-and-lint:
+    # Runs ESLint and script validation first
+
+  adapter-tests:
+    needs: [check-and-lint]  # Wait for linting to pass
+
+  integration-tests:
+    needs: [check-and-lint, adapter-tests]  # Wait for both
+```
+
+**Key Points:**
+- The `check-and-lint` job has NO dependencies — runs first
+- ALL other test jobs MUST list `check-and-lint` in their `needs` array
+- If linting fails, no other tests run, saving time
+- Fix all ESLint errors before proceeding
+
+### Documentation Standards
+
+#### Required Sections for Scripts and Workflows
+1. **Purpose** — Clear description of what the workflow/script does
+2. **Inputs** — All required and optional inputs documented
+3. **Usage** — Practical examples
+4. **Error Handling** — Known failure modes and how they're handled
+
+#### Mandatory README Updates for PRs
+
+For **every PR or new feature**, add a user-friendly entry to README.md:
+
+- Add entries under `## **WORK IN PROGRESS**` section
+- Use format: `* (author) **TYPE**: Description of user-visible change`
+- Types: **NEW** (features), **FIXED** (bugs), **ENHANCED** (improvements), **CI/CD** (automation)
+
+**Example:**
+```markdown
+## **WORK IN PROGRESS**
+
+* (author) **FIXED**: Workflow now correctly handles repositories with special characters in names
+* (author) **NEW**: Added support for processing repositories in batches
+```
+
+---
 
 ## Security Considerations
 
