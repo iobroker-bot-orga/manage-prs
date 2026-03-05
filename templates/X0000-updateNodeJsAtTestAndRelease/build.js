@@ -177,9 +177,14 @@ if (checkActionLine === -1) {
             if (line.trim() && lineIndent <= withIndent) break; // left the with block
             if (line.trim().startsWith('node-version:')) {
                 const indentStr = ' '.repeat(lineIndent);
-                lines[i] = `${indentStr}node-version: '${DEFAULT_NODEJS}.x'`;
-                console.log(`✔️ Updated node-version in 'ioBroker/testing-action-check@v1' to '${DEFAULT_NODEJS}.x'.`);
-                modified = true;
+                const newLine = `${indentStr}node-version: '${DEFAULT_NODEJS}.x'`;
+                if (lines[i] !== newLine) {
+                    lines[i] = newLine;
+                    console.log(`✔️ Updated node-version in 'ioBroker/testing-action-check@v1' to '${DEFAULT_NODEJS}.x'.`);
+                    modified = true;
+                } else {
+                    console.log(`ⓘ node-version in 'ioBroker/testing-action-check@v1' is already '${DEFAULT_NODEJS}.x', no change needed.`);
+                }
                 foundNodeVersion = true;
                 break;
             }
@@ -216,9 +221,14 @@ if (adapterTestsJobLine === -1) {
                 if (line.trim() && lineIndent <= matrixIndent) break; // left the matrix block
                 if (line.trim().startsWith('node-version:')) {
                     const indentStr = ' '.repeat(lineIndent);
-                    lines[i] = `${indentStr}node-version: [${MATRIX_NODEJS.join(', ')}]`;
-                    console.log(`✔️ Updated node-version matrix in 'adapter-tests' to [${MATRIX_NODEJS.join(', ')}].`);
-                    modified = true;
+                    const newLine = `${indentStr}node-version: [${MATRIX_NODEJS.join(', ')}]`;
+                    if (lines[i] !== newLine) {
+                        lines[i] = newLine;
+                        console.log(`✔️ Updated node-version matrix in 'adapter-tests' to [${MATRIX_NODEJS.join(', ')}].`);
+                        modified = true;
+                    } else {
+                        console.log(`ⓘ node-version matrix in 'adapter-tests' is already [${MATRIX_NODEJS.join(', ')}], no change needed.`);
+                    }
                     foundMatrix = true;
                     break;
                 }
@@ -254,7 +264,6 @@ if (adapterTestsJobLine === -1) {
         }
         lines.splice(insertAt, 0, needsEntry);
         console.log(`✔️ Added 'needs: [check-and-lint]' to 'adapter-tests' job.`);
-        modified = true;
     } else {
         console.log(`ⓘ 'adapter-tests' job already has a 'needs' element, skipping.`);
     }
@@ -297,7 +306,6 @@ if (deployJobLine === -1) {
         }
         lines.splice(insertAt, 0, needsEntry);
         console.log(`✔️ Added 'needs: [check-and-lint, adapter-tests]' to 'deploy' job.`);
-        modified = true;
     } else {
         console.log(`ⓘ 'deploy' job already has a 'needs' element, skipping.`);
     }
@@ -325,9 +333,14 @@ if (deployJobLine === -1) {
                 if (line.trim() && lineIndent <= withIndent) break; // left the with block
                 if (line.trim().startsWith('node-version:')) {
                     const indentStr = ' '.repeat(lineIndent);
-                    lines[i] = `${indentStr}node-version: '${DEFAULT_NODEJS}.x'`;
-                    console.log(`✔️ Updated node-version in 'ioBroker/testing-action-deploy@v1' to '${DEFAULT_NODEJS}.x'.`);
-                    modified = true;
+                    const newLine = `${indentStr}node-version: '${DEFAULT_NODEJS}.x'`;
+                    if (lines[i] !== newLine) {
+                        lines[i] = newLine;
+                        console.log(`✔️ Updated node-version in 'ioBroker/testing-action-deploy@v1' to '${DEFAULT_NODEJS}.x'.`);
+                        modified = true;
+                    } else {
+                        console.log(`ⓘ node-version in 'ioBroker/testing-action-deploy@v1' is already '${DEFAULT_NODEJS}.x', no change needed.`);
+                    }
                     foundNodeVersion = true;
                     break;
                 }
