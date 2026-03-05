@@ -449,6 +449,7 @@ const prBodyFile = path.join(process.cwd(), '.iobroker-pr-body.tmp');
 if (fs.existsSync(prBodyFile)) {
     let prBody = fs.readFileSync(prBodyFile, 'utf8');
     prBody = prBody.replaceAll('__MIN_NODEJS__', MIN_NODEJS.toString());
+    prBody = prBody.replaceAll('__DEFAULT_NODEJS__', DEFAULT_NODEJS.toString());
     prBody = prBody.replaceAll('__MATRIX_NODEJS__', MATRIX_NODEJS.join(', '));
     fs.writeFileSync(prBodyFile, prBody);
     console.log(`✔️ Updated PR body file with Node.js version information.`);
