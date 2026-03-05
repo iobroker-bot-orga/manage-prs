@@ -31,7 +31,7 @@ This PR updates the Node.js versions used in the `.github/workflows/test-and-rel
 
 2. **Check-and-lint Node.js version updated**: The Node.js version used in the `check-and-lint` job has been set to `__DEFAULT_NODEJS__`.
 
-3. **Deploy Node.js version updated** (if applicable): The Node.js version used in the `deploy` job has been set to `__MIN_NODEJS__`. This change is only applied if the deploy step is present and not commented out.
+3. **Deploy Node.js version updated** (if applicable): The Node.js version used in the `deploy` job has been set to `__DEFAULT_NODEJS__`. This change is only applied if the deploy step is present and not commented out.
 
 4. **Minimum Node.js requirement updated** (if required): The `engines.node` field in `package.json` has been updated to require at least Node.js `__MIN_NODEJS__`. This change is only applied if the currently specified minimum version is lower than `__MIN_NODEJS__`.
 
