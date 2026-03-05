@@ -127,6 +127,17 @@ function findJobEnd(lines, jobStart) {
 }
 
 /**
+ * Create a version of content with HTML comments replaced by spaces for searching.
+ * This is used ONLY for finding headers – the original content with comments is preserved.
+ * Replacing by spaces maintains character positions so indices can be used on the original.
+ * @param {string} content - The content to process
+ * @returns {string} - Content with comments replaced by spaces (maintaining character positions)
+ */
+function createSearchableContent(content) {
+    return content.replace(/<!--[\s\S]*?-->/g, (match) => ' '.repeat(match.length));
+}
+
+/**
  * Find the line index of a top-level job definition (e.g. "  deploy:").
  * @param {string[]} lines
  * @param {string} jobName
@@ -216,6 +227,36 @@ if (adapterTestsJobLine === -1) {
                 console.log(`ⓘ Could not find 'node-version:' in matrix of 'adapter-tests', skipping.`);
             }
         }
+    }
+
+    // Add 'needs: [check-and-lint]' to adapter-tests if missing
+    // Recalculate end in case lines were modified above
+    const adapterTestsEndAfterMatrix = findJobEnd(lines, adapterTestsJobLine);
+    const adapterTestsNeedsLine = findKey(lines, 'needs', adapterTestsJobLine + 1, adapterTestsEndAfterMatrix);
+    if (adapterTestsNeedsLine === -1) {
+        // Detect property indentation inside the adapter-tests job
+        const jobIndent = getIndent(lines[adapterTestsJobLine]);
+        let propIndentSize = jobIndent + 4;
+        for (let i = adapterTestsJobLine + 1; i < adapterTestsEndAfterMatrix; i++) {
+            const line = lines[i];
+            if (isCommented(line)) continue;
+            if (line.trim() && getIndent(line) > jobIndent) {
+                propIndentSize = getIndent(line);
+                break;
+            }
+        }
+        const propIndent = ' '.repeat(propIndentSize);
+        const needsEntry = `${propIndent}needs: [check-and-lint]`;
+
+        let insertAt = adapterTestsJobLine + 1;
+        while (insertAt < adapterTestsEndAfterMatrix && lines[insertAt].trim() === '') {
+            insertAt++;
+        }
+        lines.splice(insertAt, 0, needsEntry);
+        console.log(`✔️ Added 'needs: [check-and-lint]' to 'adapter-tests' job.`);
+        modified = true;
+    } else {
+        console.log(`ⓘ 'adapter-tests' job already has a 'needs' element, skipping.`);
     }
 }
 
@@ -368,28 +409,37 @@ if (packageJsonModified) {
         const changelogEntry = `* (iobroker-bot) Updated minimum required Node.js version to ${MIN_NODEJS}`;
         const workInProgressHeader = '### **WORK IN PROGRESS**';
 
-        if (readmeContent.includes(workInProgressHeader)) {
-            // Insert entry on the line directly after the WORK IN PROGRESS header
-            readmeContent = readmeContent.replace(
-                workInProgressHeader,
-                `${workInProgressHeader}\n${changelogEntry}`,
-            );
-            console.log(`✔️ Added changelog entry below existing '${workInProgressHeader}' header in ${readmePath}.`);
+        // Use searchable content (HTML comments masked) to avoid inserting into the template section
+        const searchableReadme = createSearchableContent(readmeContent);
+
+        // Find ## Changelog section outside of HTML comments
+        const changelogRegex = /^## Changelog/m;
+        const changelogMatch = searchableReadme.match(changelogRegex);
+        if (!changelogMatch) {
+            console.log(`ⓘ Could not find '## Changelog' section in ${readmePath}, skipping changelog update.`);
         } else {
-            // Add the WORK IN PROGRESS header + entry after the ## Changelog header
-            const changelogRegex = /^## Changelog/m;
-            const changelogMatch = readmeContent.match(changelogRegex);
-            if (changelogMatch) {
+            const changelogStart = changelogMatch.index + changelogMatch[0].length;
+            const afterChangelogSearchable = searchableReadme.substring(changelogStart);
+
+            // Find WIP header after Changelog section (outside HTML comments)
+            const wipHeaderRegex = /^### \*\*WORK IN PROGRESS\*\*/m;
+            const wipMatch = afterChangelogSearchable.match(wipHeaderRegex);
+
+            if (wipMatch) {
+                // WIP header exists outside comments — insert entry immediately after it
+                const insertPos = changelogStart + wipMatch.index + wipMatch[0].length;
+                readmeContent = readmeContent.slice(0, insertPos) + `\n${changelogEntry}` + readmeContent.slice(insertPos);
+                console.log(`✔️ Added changelog entry below existing '${workInProgressHeader}' header in ${readmePath}.`);
+            } else {
+                // No WIP header outside comments — add it right after the ## Changelog header
                 const insertPos = changelogMatch.index + changelogMatch[0].length;
                 const newEntry = `\n\n${workInProgressHeader}\n${changelogEntry}`;
                 readmeContent = readmeContent.slice(0, insertPos) + newEntry + readmeContent.slice(insertPos);
                 console.log(`✔️ Added '${workInProgressHeader}' header and changelog entry to ${readmePath}.`);
-            } else {
-                console.log(`ⓘ Could not find '## Changelog' section in ${readmePath}, skipping changelog update.`);
             }
-        }
 
-        fs.writeFileSync(readmePath, readmeContent, 'utf8');
+            fs.writeFileSync(readmePath, readmeContent, 'utf8');
+        }
     }
 }
 
