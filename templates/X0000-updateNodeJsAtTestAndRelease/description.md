@@ -72,9 +72,9 @@ Dieser PR aktualisiert die Node.js-Versionen im `.github/workflows/test-and-rele
 
 1. **Test-Matrix aktualisiert**: Die für Tests verwendeten Node.js-Versionen im `adapter-tests`-Job wurden auf `__MATRIX_NODEJS__` aktualisiert.
 
-2. **Node.js-Version für Check-and-Lint aktualisiert**: Die im `check-and-lint`-Job verwendete Node.js-Version wurde auf `__MIN_NODEJS__.x` gesetzt.
+2. **Node.js-Version für Check-and-Lint aktualisiert**: Die im `check-and-lint`-Job verwendete Node.js-Version wurde auf `__DEFAULT_NODEJS__.x` gesetzt.
 
-3. **Node.js-Version für Deployment aktualisiert** (falls zutreffend): Die im `deploy`-Job verwendete Node.js-Version wurde auf `__MIN_NODEJS__.x` gesetzt. Diese Änderung wird nur angewendet, wenn der Deploy-Schritt vorhanden und nicht auskommentiert ist.
+3. **Node.js-Version für Deployment aktualisiert** (falls zutreffend): Die im `deploy`-Job verwendete Node.js-Version wurde auf `__DEFAULT_NODEJS__.x` gesetzt. Diese Änderung wird nur angewendet, wenn der Deploy-Schritt vorhanden und nicht auskommentiert ist.
 
 4. **Mindest-Node.js-Anforderung aktualisiert** (falls erforderlich): Das Feld `engines.node` in der `package.json` wurde aktualisiert, um mindestens Node.js `__MIN_NODEJS__` zu erfordern. Diese Änderung wird nur angewendet, wenn die aktuell angegebene Mindestversion unter `__MIN_NODEJS__` liegt.
 
