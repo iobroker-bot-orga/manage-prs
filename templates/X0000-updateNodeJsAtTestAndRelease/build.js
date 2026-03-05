@@ -406,7 +406,7 @@ if (packageJsonModified) {
         console.log(`ⓘ ${readmePath} does not exist, skipping changelog update.`);
     } else {
         let readmeContent = fs.readFileSync(readmePath, 'utf8');
-        const changelogEntry = `* (iobroker-bot) Updated minimum required Node.js version to ${MIN_NODEJS}`;
+        const changelogEntry = `- (iobroker-bot) Adapter requires node.js >= ${MIN_NODEJS} now.`;
         const workInProgressHeader = '### **WORK IN PROGRESS**';
 
         // Use searchable content (HTML comments masked) to avoid inserting into the template section
