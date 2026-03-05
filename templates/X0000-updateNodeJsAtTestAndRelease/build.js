@@ -327,7 +327,7 @@ if (deployJobLine === -1) {
                     const indentStr = ' '.repeat(lineIndent);
                     lines[i] = `${indentStr}node-version: '${DEFAULT_NODEJS}.x'`;
                     console.log(`✔️ Updated node-version in 'ioBroker/testing-action-deploy@v1' to '${DEFAULT_NODEJS}.x'.`);
-                    // modified = true; - do NOT set modified to avoid creating a PR solely because of this change
+                    modified = true;
                     foundNodeVersion = true;
                     break;
                 }
