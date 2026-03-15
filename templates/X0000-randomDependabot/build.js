@@ -60,6 +60,7 @@ if (hasMultiplePackageJson) {
 }
 
 let changesMade = false;
+let forceWrite = false;
 
 // Check if there's exactly one npm block for multi-directory handling
 const npmBlocks = dependabotConfig.updates.filter(u => u['package-ecosystem'] === 'npm');
@@ -71,13 +72,9 @@ dependabotConfig.updates.forEach((update, index) => {
   
   // Check and update schedule
   if (update.schedule) {
-    // Remove day attribute if present
-    if (update.schedule.day !== undefined) {
-      console.log(`✔️ Removing day attribute from ${update['package-ecosystem']} schedule`);
-      delete update.schedule.day;
-      changesMade = true;
-    }
-    
+    const wasMonthly = update.schedule.interval === 'monthly';
+    const isAlreadyCron = update.schedule.interval === 'cron';
+
     // Ensure timezone is set to Europe/Berlin
     if (update.schedule.timezone !== 'Europe/Berlin') {
       console.log(`✔️ Setting timezone to Europe/Berlin`);
@@ -85,8 +82,8 @@ dependabotConfig.updates.forEach((update, index) => {
       changesMade = true;
     }
     
-    // Convert monthly interval to cron
-    if (update.schedule.interval === 'monthly') {
+    // If schedule.interval is 'monthly', perform migration as currently implemented
+    if (wasMonthly) {
       console.log(`✔️ Converting monthly schedule to cron`);
       update.schedule.interval = 'cron';
       
@@ -100,6 +97,26 @@ dependabotConfig.updates.forEach((update, index) => {
       update.schedule.cronjob = cronExpression;
       console.log(`✔️ Added cronjob expression: ${cronExpression}`);
       changesMade = true;
+    }
+
+    // If interval has been changed (monthly->cron) or is already 'cron':
+    // - remove 'day' and 'time' attributes if present
+    // - always write new file as quoting might have changed
+    if (wasMonthly || isAlreadyCron) {
+      if (update.schedule.day !== undefined) {
+        console.log(`✔️ Removing day attribute from ${update['package-ecosystem']} schedule`);
+        delete update.schedule.day;
+        changesMade = true;
+      }
+
+      if (update.schedule.time !== undefined) {
+        console.log(`✔️ Removing time attribute from ${update['package-ecosystem']} schedule`);
+        delete update.schedule.time;
+        changesMade = true;
+      }
+
+      // Always write for cron schedules (single-quote formatting may have changed)
+      forceWrite = true;
     }
   }
   
@@ -130,8 +147,9 @@ dependabotConfig.updates.forEach((update, index) => {
   }
 });
 
-// Write updated dependabot.yml if changes were made
-if (changesMade) {
+// Write updated dependabot.yml if changes were made or if forceWrite is set
+// (forceWrite is set for cron schedules because single-quote formatting may have changed)
+if (changesMade || forceWrite) {
   const updatedYaml = yaml.dump(dependabotConfig, {
     indent: 2,
     lineWidth: -1,
