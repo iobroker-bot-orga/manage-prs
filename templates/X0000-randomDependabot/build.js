@@ -28,12 +28,10 @@ if (!fs.existsSync(dependabotPath)) {
 
 console.log(`✔️ ${dependabotPath} exists.`);
 
-// Calculate deterministic random day-of-month (2-28) and random time (1:00-4:00) based on repository name
-// This ensures the same repository always gets the same schedule
-const hash = simpleHash(repositoryName);
-const randomDay = (hash % 27) + 2; // 2 to 28
-const randomHour = ((hash >> 8) % 3) + 1; // 1 to 3
-const randomMinute = (hash >> 16) % 60; // 0 to 59
+// Calculate random day-of-month (2-28) and random time (1:00-3:59)
+const randomDay = Math.floor(Math.random() * 27) + 2; // 2 to 28
+const randomHour = Math.floor(Math.random() * 3) + 1; // 1 to 3
+const randomMinute = Math.floor(Math.random() * 60); // 0 to 59
 const cronExpression = `${randomMinute} ${randomHour} ${randomDay} * *`;
 
 console.log(`ⓘ Generated random schedule: Day ${randomDay}, Time ${randomHour}:${randomMinute.toString().padStart(2, '0')}`);
@@ -73,6 +71,13 @@ dependabotConfig.updates.forEach((update, index) => {
   
   // Check and update schedule
   if (update.schedule) {
+    // Remove day attribute if present
+    if (update.schedule.day !== undefined) {
+      console.log(`✔️ Removing day attribute from ${update['package-ecosystem']} schedule`);
+      delete update.schedule.day;
+      changesMade = true;
+    }
+    
     // Ensure timezone is set to Europe/Berlin
     if (update.schedule.timezone !== 'Europe/Berlin') {
       console.log(`✔️ Setting timezone to Europe/Berlin`);
@@ -131,7 +136,7 @@ if (changesMade) {
     indent: 2,
     lineWidth: -1,
     noRefs: true,
-    quotingType: '"',
+    quotingType: "'",
     forceQuotes: true
   });
   
@@ -155,21 +160,6 @@ if (changesMade) {
 console.log(`\n✔️ processing completed`);
 
 process.exit(0);
-
-/**
- * Simple hash function for strings
- * @param {string} str - String to hash
- * @returns {number} - Hash value
- */
-function simpleHash(str) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32-bit integer
-  }
-  return Math.abs(hash);
-}
 
 /**
  * Recursively find all package.json files in a directory
