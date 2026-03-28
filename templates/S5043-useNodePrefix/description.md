@@ -19,7 +19,7 @@ And **THANKS A LOT** for maintaining this adapter from me and all users.
 
 ## Changes provided by this PR
 
-This PR fixes the warning **[S5043] Node.js built-in modules should be required/imported using the node: prefix** reported by the ioBroker repository checker.
+This PR fixes the suggestion **[S5043] Node.js built-in modules should be required/imported using the node: prefix** reported by the ioBroker repository checker.
 
 ### Background
 
@@ -64,7 +64,7 @@ Und **VIELEN DANK** für die Pflege dieses Adapters von mir und allen Nutzern.
 
 ## Durch diesen PR bereitgestellte Änderungen
 
-Dieser PR behebt die Warnung **[S5043] Node.js-interne Module sollten mit dem node: Präfix eingebunden werden**, die vom ioBroker Repository Checker gemeldet wurde.
+Dieser PR behebt die Anregung **[S5043] Node.js-interne Module sollten mit dem node: Präfix eingebunden werden**, die vom ioBroker Repository Checker gemeldet wurde.
 
 ### Hintergrund
 
