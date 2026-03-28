@@ -112,24 +112,11 @@ function getCurrentUser() {
  * @returns {Array} Array of PR objects with number, state, merged status, and closed_by
  */
 function findPRsByTitle(title) {
-  // Escape the title for use within double quotes in the search query
-  // Escape backslashes first, then double quotes, then dollar signs and backticks
-  const escapedTitle = title
-    .replace(/\\/g, '\\\\')
-    .replace(/"/g, '\\"')
-    .replace(/\$/g, '\\$')
-    .replace(/`/g, '\\`');
-  
-  // Search for PRs with exact title match created by current user (iobroker-bot)
-  // Use query string format with all qualifiers in the search query
-  // The search query is wrapped in single quotes, and the title is in double quotes within it
-  const searchQuery = `"${escapedTitle}" in:title`;
-  
-  // Replace single quotes in searchQuery with '\'' for safe bash execution
-  const safeSearchQuery = searchQuery.replace(/'/g, "'\\''");
-  
+  // Use gh pr list instead of gh search prs to avoid GitHub Search API treating
+  // special tokens like "node:" as search qualifiers, which causes invalid query errors.
+  // Exact title matching is done locally after retrieving all PRs.
   const output = executeGhCommand(
-    `gh search prs --json number,title --limit 100 --repo ${repositoryName} --author @me '${safeSearchQuery}'`,
+    `gh pr list --json number,title --limit 100 --repo ${repositoryName} --author @me --state all`,
   );
 
   const prs = JSON.parse(output);
