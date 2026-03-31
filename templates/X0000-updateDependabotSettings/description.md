@@ -49,13 +49,13 @@ That said, it is entirely up to the developer to review the changes and decide w
 
 ## Deutsche Beschreibung
 
-Diese PR aktualisiert die Dependabot-Konfiguration in `.github/dependabot.yml`, um die Sicherheit durch eine Cooldown-Phase für npm-Abhängigkeits-Updates zu verbessern.
+Dieser PR aktualisiert die Dependabot-Konfiguration in `.github/dependabot.yml`, um die Sicherheit durch eine Cooldown-Phase für npm-Abhängigkeits-Updates zu verbessern.
 
 ### Warum das Mergen dieser PR sehr empfohlen wird
 
-Das Mergen dieser PR ist **sehr empfohlen**. Das Hinzufügen einer Cooldown-Phase von sieben Tagen zur Dependabot-Konfiguration verringert deutlich die Chance, dass Zero-Day-Schwachstellen und kompromittierte npm-Pakete automatisch von Dependabot bereitgestellt und letztendlich gemergt werden. Eine kurze Verzögerung gibt der Sicherheits-Community Zeit, bösartige oder anfällige Pakete zu erkennen und zu melden, bevor sie das Projekt erreichen.
+Das Mergen dieses PRs ist **sehr empfohlen**. Das Hinzufügen einer Cooldown-Phase von sieben Tagen zur Dependabot-Konfiguration verringert deutlich die Chance, dass Zero-Day-Schwachstellen und kompromittierte npm-Pakete automatisch von Dependabot bereitgestellt und letztendlich gemergt werden. Eine kurze Verzögerung gibt der Sicherheits-Community Zeit, bösartige oder anfällige Pakete zu erkennen und zu melden, bevor sie das Projekt erreichen.
 
-Es liegt jedoch letztendlich beim Entwickler, die Änderungen zu prüfen und zu entscheiden, ob diese PR gemergt werden soll.
+Es liegt jedoch letztendlich beim Entwickler, die Änderungen zu prüfen und zu entscheiden, ob dieser PR gemergt werden soll.
 
 ### Was diese PR macht
 
