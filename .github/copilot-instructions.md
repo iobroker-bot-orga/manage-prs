@@ -132,7 +132,8 @@ npm install --save-dev eslint
 2. ✅ Use `lint:fix` for auto-fixable issues
 3. ✅ Don't disable rules without documentation
 4. ✅ Lint all relevant files (main code, scripts, build files)
-5. ✅ **ESLint warnings are treated as errors in CI** (`--max-warnings 0`)
+5. ✅ Keep eslint config up to date
+6. ✅ **ESLint warnings are treated as errors in CI** (`--max-warnings 0`). The `lint` script above already includes this flag — run `npm run lint` to match CI behavior locally
 
 #### Common Issues
 - **Unused variables**: Remove or prefix with underscore (`_variable`)
@@ -288,7 +289,7 @@ fi
 #### GitHub Actions Best Practices
 
 - Use latest action versions (`actions/checkout@v4`, `actions/setup-node@v4`)
-- Test on Node.js 20.x, 22.x where applicable
+- Test on Node.js 20.x, 22.x, 24.x where applicable
 - Use `ubuntu-22.04` as the runner platform
 - Configure Node.js with npm caching for faster runs
 
