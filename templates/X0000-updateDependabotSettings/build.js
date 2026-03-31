@@ -64,7 +64,7 @@ dependabotConfig.updates.forEach((update, index) => {
         const hasCorrectCooldown =
             existingCooldown &&
             typeof existingCooldown === 'object' &&
-            existingCooldown['default-days'] === 7;
+            existingCooldown['default-days'] > 0;
 
         if (!hasCorrectCooldown) {
             update.cooldown = { 'default-days': 7 };
@@ -77,31 +77,27 @@ dependabotConfig.updates.forEach((update, index) => {
 });
 
 // Write updated dependabot.yml if changes were made
-if (changesMade) {
-    const updatedYaml = yaml.dump(dependabotConfig, {
-        indent: 2,
-        lineWidth: -1,
-        noRefs: true,
-        quotingType: "'",
-        forceQuotes: true,
-    });
+const updatedYaml = yaml.dump(dependabotConfig, {
+    indent: 2,
+    lineWidth: -1,
+    noRefs: true,
+    quotingType: "'",
+    forceQuotes: true,
+});
 
-    // Add empty line before each '- package-ecosystem:' for better readability
-    const formattedYaml = updatedYaml.replace(/(\n)(  - package-ecosystem:)/g, '\n\n$2');
+// Add empty line before each '- package-ecosystem:' for better readability
+const formattedYaml = updatedYaml.replace(/(\n)(  - package-ecosystem:)/g, '\n\n$2');
 
-    const header =
-        '# Dependabot configuration\n' +
-        '# Cooldown delays updating normal npm dependencies by 7 days but allows security updates to be processed immediately.\n' +
-        '# Note: Cooldown is not supported for the github-actions ecosystem.\n' +
-        '# Reference: https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference\n';
+const header =
+    '# Dependabot configuration\n' +
+    '# Cooldown delays updating normal npm dependencies by 7 days but allows security updates to be processed immediately.\n' +
+    '# Note: Cooldown is not supported for the github-actions ecosystem.\n' +
+    '# Reference: https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference\n';
 
-    const finalYaml = header + formattedYaml;
+const finalYaml = header + formattedYaml;
 
-    fs.writeFileSync(dependabotPath, finalYaml, 'utf8');
-    console.log(`\n✔️ ${dependabotPath} updated successfully.`);
-} else {
-    console.log(`\nⓘ No changes were made to ${dependabotPath}.`);
-}
+fs.writeFileSync(dependabotPath, finalYaml, 'utf8');
+console.log(`\n✔️ ${dependabotPath} updated successfully.`);
 
 console.log(`\n✔️ processing completed (template: ${templateName}, repository: ${repositoryName})`);
 
