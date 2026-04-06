@@ -613,8 +613,8 @@ if (fs.existsSync(prBodyFile)) {
     let importantNote = '';
     if (changeLog.deployNodeVersion && changeLog.deployNodeVersion.changed) {
         importantNote = `> [!IMPORTANT]\n` +
-            `> This PR changes Node.js for deploy to ${DEFAULT_NODEJS}.x to fix a problem caused by npm when using trusted publishing  \n`+
-            `>  `+
+            `> This PR changes Node.js for deploy to ${DEFAULT_NODEJS}.x to fix a problem caused by npm when using trusted publishing  \n` +
+            `>  \n` +
             `> Dieser PR ändert Node.js für die Bereitstellung auf ${DEFAULT_NODEJS}.x, um ein Problem zu beheben, das durch npm bei der Verwendung von Trusted Publishing ausgelöst wird.\n\n`;
     }
     prBody = prBody.replaceAll('__IMPORTANT_NOTE__', importantNote);
