@@ -181,7 +181,8 @@ if (fs.existsSync('./package.json')) {
             }
         }
     } catch (_e) {
-        // Ignore, use MIN_NODEJS
+        // Ignore, use MIN_NODEJS as default
+        console.log(`ⓘ Could not read package.json for pre-calculation of effective minimum version, using MIN_NODEJS (${MIN_NODEJS}) as default.`);
     }
 }
 console.log(`ⓘ Effective minimum Node.js version (after potential engines update): ${effectiveMinVersion}`);
@@ -611,7 +612,7 @@ if (fs.existsSync(prBodyFile)) {
     // Build IMPORTANT note — only included when the deploy node-version is actually being updated
     let importantNote = '';
     if (changeLog.deployNodeVersion && changeLog.deployNodeVersion.changed) {
-        importantNote = `> [!IMPORTANT]\n> This PR changes node.js for deploy to ${DEFAULT_NODEJS}.x to fix a problem caused by npm when using trusted publishing\n\n`;
+        importantNote = `> [!IMPORTANT]\n> This PR changes Node.js for deploy to ${DEFAULT_NODEJS}.x to fix a problem caused by npm when using trusted publishing\n\n`;
     }
     prBody = prBody.replaceAll('__IMPORTANT_NOTE__', importantNote);
 
