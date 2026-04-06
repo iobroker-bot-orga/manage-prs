@@ -17,10 +17,17 @@ on:
         required: false
         type: string
       pr_mode:
-        description: 'PR mode for handling existing PRs (force creation | recreate | skip if existing | skip if closed | skip if merged | REVOKE)'
+        description: 'PR mode for handling existing PRs'
         required: false
-        type: string
+        type: choice
         default: 'recreate'
+        options:
+          - 'force creation'
+          - 'recreate'
+          - 'skip if existing'
+          - 'skip if closed'
+          - 'skip if merged'
+          - 'REVOKE'
 
 jobs:
   process-repository:
