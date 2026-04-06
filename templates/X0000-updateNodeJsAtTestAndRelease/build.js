@@ -10,7 +10,7 @@ const path = require('node:path');
 const yaml = require('js-yaml');
 
 // Constants for Node.js versions
-const DEFAULT_NODEJS = 22;
+const DEFAULT_NODEJS = 24;
 const MATRIX_NODEJS = ['20.x', '22.x', '24.x'];
 const MIN_NODEJS = 20;
 
@@ -156,6 +156,44 @@ function findJob(lines, jobName) {
     return -1;
 }
 
+/**
+ * Parse the major Node.js version number from strings like '20.x', '22', '>= 20.0.0', etc.
+ * @param {string} versionStr
+ * @returns {number|null}
+ */
+function parseNodeMajorVersion(versionStr) {
+    const str = versionStr.replace(/^['"]|['"]$/g, '').trim();
+    const match = str.match(/(\d+)/);
+    return match ? parseInt(match[1], 10) : null;
+}
+
+// Pre-calculate the effective minimum Node.js version (what engines.node will be after update)
+let effectiveMinVersion = MIN_NODEJS;
+if (fs.existsSync('./package.json')) {
+    try {
+        const pkgPreCalc = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
+        const enginesPreCalc = pkgPreCalc.engines?.node;
+        if (enginesPreCalc) {
+            const m = enginesPreCalc.match(/(\d+)/);
+            if (m) {
+                // After the update: if current < MIN_NODEJS it becomes MIN_NODEJS, otherwise stays
+                effectiveMinVersion = Math.max(parseInt(m[1], 10), MIN_NODEJS);
+            }
+        }
+    } catch (_e) {
+        // Ignore, use MIN_NODEJS
+    }
+}
+console.log(`ⓘ Effective minimum Node.js version (after potential engines update): ${effectiveMinVersion}`);
+
+// Track actual changes made, for use in the PR body
+const changeLog = {
+    checkNodeVersion: null,  // null = not found; { changed, from?, to?, current? }
+    deployNodeVersion: null, // null = not found; { changed, from?, to?, current? }
+    enginesNode: null,       // null = not applicable; { changed, from?, to?, current? }
+    testMatrix: null,        // null = not found; { changed, from?, to?, current? }
+};
+
 // ── Step 3: Update node-version in ioBroker/testing-action-check@v1 ──────────
 
 const checkActionLine = findLine(lines, 'ioBroker/testing-action-check@v1');
@@ -176,10 +214,19 @@ if (checkActionLine === -1) {
             const lineIndent = getIndent(line);
             if (line.trim() && lineIndent <= withIndent) break; // left the with block
             if (line.trim().startsWith('node-version:')) {
-                const indentStr = ' '.repeat(lineIndent);
-                lines[i] = `${indentStr}node-version: '${DEFAULT_NODEJS}.x'`;
-                console.log(`✔️ Updated node-version in 'ioBroker/testing-action-check@v1' to '${DEFAULT_NODEJS}.x'.`);
-                modified = true;
+                const versionMatch = line.match(/node-version:\s*['"]?(\d+)/);
+                const currentVersion = versionMatch ? parseInt(versionMatch[1], 10) : 0;
+                if (currentVersion < DEFAULT_NODEJS) {
+                    const oldVersion = currentVersion ? `${currentVersion}.x` : 'unknown';
+                    const indentStr = ' '.repeat(lineIndent);
+                    lines[i] = `${indentStr}node-version: '${DEFAULT_NODEJS}.x'`;
+                    console.log(`✔️ Updated node-version in 'ioBroker/testing-action-check@v1' from '${oldVersion}' to '${DEFAULT_NODEJS}.x'.`);
+                    modified = true;
+                    changeLog.checkNodeVersion = { changed: true, from: oldVersion, to: `${DEFAULT_NODEJS}.x` };
+                } else {
+                    console.log(`ⓘ node-version in 'ioBroker/testing-action-check@v1' is already '${currentVersion}.x' (>= DEFAULT_NODEJS=${DEFAULT_NODEJS}), skipping.`);
+                    changeLog.checkNodeVersion = { changed: false, current: `${currentVersion}.x` };
+                }
                 foundNodeVersion = true;
                 break;
             }
@@ -215,10 +262,48 @@ if (adapterTestsJobLine === -1) {
                 const lineIndent = getIndent(line);
                 if (line.trim() && lineIndent <= matrixIndent) break; // left the matrix block
                 if (line.trim().startsWith('node-version:')) {
-                    const indentStr = ' '.repeat(lineIndent);
-                    lines[i] = `${indentStr}node-version: [${MATRIX_NODEJS.join(', ')}]`;
-                    console.log(`✔️ Updated node-version matrix in 'adapter-tests' to [${MATRIX_NODEJS.join(', ')}].`);
-                    modified = true;
+                    // Parse existing matrix versions (strip quotes)
+                    const matrixMatch = line.match(/node-version:\s*\[([^\]]+)\]/);
+                    let existingVersions = [];
+                    if (matrixMatch) {
+                        existingVersions = matrixMatch[1]
+                            .split(',')
+                            .map(v => v.trim().replace(/^['"]|['"]$/g, ''))
+                            .filter(v => v.length > 0);
+                    }
+
+                    // All MATRIX_NODEJS versions that meet the effective minimum
+                    const requiredVersions = MATRIX_NODEJS.filter(v => {
+                        const major = parseNodeMajorVersion(v);
+                        return major !== null && major >= effectiveMinVersion;
+                    });
+
+                    // Additional existing versions >= effectiveMinVersion not already in MATRIX_NODEJS
+                    const additionalVersions = existingVersions.filter(v => {
+                        const major = parseNodeMajorVersion(v);
+                        return major !== null && major >= effectiveMinVersion && !MATRIX_NODEJS.includes(v);
+                    });
+
+                    // Combined, deduplicated, sorted ascending
+                    const newVersions = [...new Set([...requiredVersions, ...additionalVersions])];
+                    newVersions.sort((a, b) => (parseNodeMajorVersion(a) || 0) - (parseNodeMajorVersion(b) || 0));
+
+                    // Check whether an update is actually needed
+                    const needsUpdate =
+                        existingVersions.length !== newVersions.length ||
+                        !newVersions.every(v => existingVersions.includes(v)) ||
+                        !existingVersions.every(v => newVersions.includes(v));
+
+                    if (needsUpdate) {
+                        const indentStr = ' '.repeat(lineIndent);
+                        lines[i] = `${indentStr}node-version: [${newVersions.join(', ')}]`;
+                        console.log(`✔️ Updated node-version matrix in 'adapter-tests' from [${existingVersions.join(', ')}] to [${newVersions.join(', ')}].`);
+                        modified = true;
+                        changeLog.testMatrix = { changed: true, from: existingVersions, to: newVersions };
+                    } else {
+                        console.log(`ⓘ node-version matrix in 'adapter-tests' already contains correct versions [${existingVersions.join(', ')}], no update needed.`);
+                        changeLog.testMatrix = { changed: false, current: existingVersions };
+                    }
                     foundMatrix = true;
                     break;
                 }
@@ -262,9 +347,10 @@ if (adapterTestsJobLine === -1) {
 
 // ── Step 5: Add needs + update node-version in deploy job ────────────────────
 
+// Part 5a: Add 'needs' to the (non-commented) deploy job
 const deployJobLine = findJob(lines, 'deploy');
 if (deployJobLine === -1) {
-    console.log(`ⓘ Could not find 'deploy' job, skipping.`);
+    console.log(`ⓘ Could not find 'deploy' job, skipping needs update.`);
 } else {
     console.log(`✔️ Found 'deploy' job at line ${deployJobLine + 1}.`);
     const deployEnd = findJobEnd(lines, deployJobLine);
@@ -301,40 +387,66 @@ if (deployJobLine === -1) {
     } else {
         console.log(`ⓘ 'deploy' job already has a 'needs' element, skipping.`);
     }
+}
 
-    // Recalculate deployEnd after potential splice
-    const deployEndUpdated = findJobEnd(lines, deployJobLine);
+// Part 5b: Update node-version in ioBroker/testing-action-deploy@v1
+// Search the ENTIRE file (including commented lines) so commented-out deploy sections are also updated
+let deployActionLineAll = -1;
+for (let i = 0; i < lines.length; i++) {
+    if (lines[i].includes('ioBroker/testing-action-deploy@v1')) {
+        deployActionLineAll = i;
+        break;
+    }
+}
 
-    // Update node-version in ioBroker/testing-action-deploy@v1 (skip if commented)
-    const deployActionLine = findLine(lines, 'ioBroker/testing-action-deploy@v1', deployJobLine, deployEndUpdated);
-    if (deployActionLine === -1) {
-        console.log(`ⓘ 'ioBroker/testing-action-deploy@v1' not found or commented out in 'deploy' job, skipping node-version update.`);
+if (deployActionLineAll === -1) {
+    console.log(`ⓘ 'ioBroker/testing-action-deploy@v1' not found in workflow, skipping node-version update.`);
+} else {
+    const isDeployActionCommented = lines[deployActionLineAll].trimStart().startsWith('#');
+    console.log(`✔️ Found 'ioBroker/testing-action-deploy@v1' at line ${deployActionLineAll + 1}${isDeployActionCommented ? ' (commented out)' : ''}.`);
+
+    // Find 'with:' within 20 lines (including commented lines, stripping # prefix for comparison)
+    let withLineAll = -1;
+    for (let i = deployActionLineAll + 1; i < Math.min(deployActionLineAll + 20, lines.length); i++) {
+        const stripped = lines[i].replace(/^\s*#\s?/, '').trimStart();
+        if (stripped === 'with:' || stripped.startsWith('with:')) {
+            withLineAll = i;
+            break;
+        }
+    }
+
+    if (withLineAll === -1) {
+        console.log(`ⓘ Could not find 'with:' for 'ioBroker/testing-action-deploy@v1', skipping.`);
     } else {
-        console.log(`✔️ Found 'ioBroker/testing-action-deploy@v1' at line ${deployActionLine + 1}.`);
-
-        const withLine = findKey(lines, 'with', deployActionLine + 1, deployActionLine + 20);
-        if (withLine === -1) {
-            console.log(`ⓘ Could not find 'with:' for 'ioBroker/testing-action-deploy@v1', skipping.`);
-        } else {
-            const withIndent = getIndent(lines[withLine]);
-            let foundNodeVersion = false;
-            for (let i = withLine + 1; i < lines.length; i++) {
-                const line = lines[i];
-                if (isCommented(line)) continue;
-                const lineIndent = getIndent(line);
-                if (line.trim() && lineIndent <= withIndent) break; // left the with block
-                if (line.trim().startsWith('node-version:')) {
-                    const indentStr = ' '.repeat(lineIndent);
-                    lines[i] = `${indentStr}node-version: '${DEFAULT_NODEJS}.x'`;
-                    console.log(`✔️ Updated node-version in 'ioBroker/testing-action-deploy@v1' to '${DEFAULT_NODEJS}.x'.`);
-                    modified = true;
-                    foundNodeVersion = true;
-                    break;
+        // Find 'node-version:' within 20 lines after 'with:' (including commented lines)
+        let foundDeployNodeVersion = false;
+        for (let i = withLineAll + 1; i < Math.min(withLineAll + 20, lines.length); i++) {
+            const stripped = lines[i].replace(/^\s*#\s?/, '').trimStart();
+            if (stripped.startsWith('node-version:')) {
+                const versionMatch = stripped.match(/node-version:\s*['"]?(\d+)/);
+                if (versionMatch) {
+                    const currentVersion = parseInt(versionMatch[1], 10);
+                    if (currentVersion < DEFAULT_NODEJS) {
+                        const oldVersion = `${currentVersion}.x`;
+                        // Replace version in-line, preserving comment markers and indentation
+                        lines[i] = lines[i].replace(
+                            /node-version:\s*['"]?[\d.x*]+['"]?/,
+                            `node-version: '${DEFAULT_NODEJS}.x'`,
+                        );
+                        console.log(`✔️ Updated node-version in 'ioBroker/testing-action-deploy@v1' from '${oldVersion}' to '${DEFAULT_NODEJS}.x'${isDeployActionCommented ? ' (kept commented)' : ''}.`);
+                        modified = true;
+                        changeLog.deployNodeVersion = { changed: true, from: oldVersion, to: `${DEFAULT_NODEJS}.x` };
+                    } else {
+                        console.log(`ⓘ node-version in 'ioBroker/testing-action-deploy@v1' is already '${currentVersion}.x' (>= DEFAULT_NODEJS=${DEFAULT_NODEJS}), skipping.`);
+                        changeLog.deployNodeVersion = { changed: false, current: `${currentVersion}.x` };
+                    }
+                    foundDeployNodeVersion = true;
                 }
+                break;
             }
-            if (!foundNodeVersion) {
-                console.log(`ⓘ Could not find 'node-version:' in 'with:' of 'ioBroker/testing-action-deploy@v1', skipping.`);
-            }
+        }
+        if (!foundDeployNodeVersion) {
+            console.log(`ⓘ Could not find 'node-version:' in 'with:' of 'ioBroker/testing-action-deploy@v1', skipping.`);
         }
     }
 }
@@ -389,8 +501,10 @@ if (!fs.existsSync(packageJsonPath)) {
                 fs.writeFileSync(packageJsonPath, updatedContent, 'utf8');
                 console.log(`✔️ Updated engines.node from '${enginesNode}' to '${newEnginesNode}' in ${packageJsonPath}.`);
                 packageJsonModified = true;
+                changeLog.enginesNode = { changed: true, from: enginesNode, to: newEnginesNode };
             } else {
                 console.log(`✔️ engines.node '${enginesNode}' already meets minimum Node.js ${MIN_NODEJS}, no update needed.`);
+                changeLog.enginesNode = { changed: false, current: enginesNode };
             }
         } else {
             console.log(`ⓘ Could not parse version from engines.node '${enginesNode}', skipping.`);
@@ -451,6 +565,56 @@ if (fs.existsSync(prBodyFile)) {
     prBody = prBody.replaceAll('__MIN_NODEJS__', MIN_NODEJS.toString());
     prBody = prBody.replaceAll('__DEFAULT_NODEJS__', DEFAULT_NODEJS.toString());
     prBody = prBody.replaceAll('__MATRIX_NODEJS__', MATRIX_NODEJS.join(', '));
+
+    // Build dynamic changes summary
+    const changesSummaryLines = [];
+
+    if (changeLog.checkNodeVersion !== null) {
+        if (changeLog.checkNodeVersion.changed) {
+            changesSummaryLines.push(`- node-version in check-and-lint will be updated from \`${changeLog.checkNodeVersion.from}\` to \`${changeLog.checkNodeVersion.to}\``);
+        } else {
+            changesSummaryLines.push(`- node-version in check-and-lint will not be changed (already \`${changeLog.checkNodeVersion.current}\`)`);
+        }
+    }
+
+    if (changeLog.deployNodeVersion !== null) {
+        if (changeLog.deployNodeVersion.changed) {
+            changesSummaryLines.push(`- node-version in deploy will be updated from \`${changeLog.deployNodeVersion.from}\` to \`${changeLog.deployNodeVersion.to}\``);
+        } else {
+            changesSummaryLines.push(`- node-version in deploy will not be changed (already \`${changeLog.deployNodeVersion.current}\`)`);
+        }
+    }
+
+    if (changeLog.testMatrix !== null) {
+        if (changeLog.testMatrix.changed) {
+            changesSummaryLines.push(`- testing matrix in test-and-release.yml will be updated to \`[${changeLog.testMatrix.to.join(', ')}]\``);
+        } else {
+            changesSummaryLines.push(`- testing matrix in test-and-release.yml will not be changed (already \`[${changeLog.testMatrix.current.join(', ')}]\`)`);
+        }
+    }
+
+    if (changeLog.enginesNode !== null) {
+        if (changeLog.enginesNode.changed) {
+            changesSummaryLines.push(`- engines clause at package.json will be updated from \`${changeLog.enginesNode.from}\` to \`${changeLog.enginesNode.to}\``);
+        } else {
+            changesSummaryLines.push(`- engines clause at package.json will not be changed (already \`${changeLog.enginesNode.current}\`)`);
+        }
+    } else {
+        changesSummaryLines.push(`- engines clause at package.json: not applicable (field not found or package.json missing)`);
+    }
+
+    const changesSummary = changesSummaryLines.length > 0
+        ? changesSummaryLines.join('\n')
+        : '- No changes detected';
+    prBody = prBody.replaceAll('__CHANGES_SUMMARY__', changesSummary);
+
+    // Build IMPORTANT note — only included when the deploy node-version is actually being updated
+    let importantNote = '';
+    if (changeLog.deployNodeVersion && changeLog.deployNodeVersion.changed) {
+        importantNote = `> [!IMPORTANT]\n> This PR changes node.js for deploy to ${DEFAULT_NODEJS}.x to fix a problem caused by npm when using trusted publishing\n\n`;
+    }
+    prBody = prBody.replaceAll('__IMPORTANT_NOTE__', importantNote);
+
     fs.writeFileSync(prBodyFile, prBody);
     console.log(`✔️ Updated PR body file with Node.js version information.`);
 }
