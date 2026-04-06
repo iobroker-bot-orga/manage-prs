@@ -164,7 +164,7 @@ function triggerRepoProcessing(owner, adapter) {
 
     debug(`trigger repository processing for ${repoUrl}`);
 
-    console.log(`    ⏳ Triggering workflow for ${repoUrl}`);
+    console.log(`    ⏳ Triggering workflow for ${repoUrl} (pr_mode: ${opts.pr_mode})`);
     
     try {
         // Build the gh workflow run command
@@ -172,7 +172,7 @@ function triggerRepoProcessing(owner, adapter) {
         debug(cmd);
 
         executeGhCommand(cmd);
-        console.log(`    ✔️ Workflow triggered successfully`);
+        console.log(`    ✔️ Workflow triggered successfully (pr_mode: ${opts.pr_mode})`);
     } catch (e) {
         console.error(`    ❌ Failed to trigger workflow: ${e.message}`);
     }
@@ -254,6 +254,13 @@ async function main() {
 
     if (!opts.template) {
         console.error('❌ Template is required. Use --template=<template-name>');
+        process.exit(1);
+    }
+
+    const validPrModes = ['force creation', 'recreate', 'skip if existing', 'skip if closed', 'skip if merged', 'REVOKE'];
+    if (!validPrModes.includes(opts.pr_mode)) {
+        console.error(`❌ Invalid pr_mode value: "${opts.pr_mode}"`);
+        console.error(`   Valid values: ${validPrModes.join(', ')}`);
         process.exit(1);
     }
 
@@ -358,7 +365,7 @@ async function main() {
             if (! opts.dry) {
                 triggerRepoProcessing(owner, adapter);
             } else {
-                console.log (`🧪 Would trigger processing for ${owner}/${repoName}`)
+                console.log(`🧪 Would trigger processing for ${owner}/${repoName} with pr_mode="${opts.pr_mode}"`);
             }
         }
 
