@@ -31,6 +31,7 @@ const changeLog = {
     enginesNpm: null,   // null = not present; { removed: true, was } or { removed: false }
     jobNodeVersion: null, // null = not found; { changed: true, jobs } or { changed: false }
     matrixNode: null,   // null = not found; { changed: true, from, to } or { changed: false, current }
+    readmeNode: null,   // null = not processed; { changed: true, addedWip } or { changed: false } or { skipped: true, reason }
 };
 
 // ── Step 1: Verify package.json ───────────────────────────────────────────────
@@ -317,7 +318,127 @@ if (!fs.existsSync(workflowPath)) {
     }
 }
 
-// ── Step 5: Replace placeholders in PR body file ──────────────────────────────
+// ── Step 5: Update README.md changelog if engines.node was changed ────────────
+
+const readmePath = './README.md';
+
+if (changeLog.enginesNode?.changed === true) {
+    if (!fs.existsSync(readmePath)) {
+        console.log(`ⓘ ${readmePath} does not exist, skipping README update.`);
+        changeLog.readmeNode = { skipped: true, reason: 'file not found' };
+    } else {
+        const readmeContent = fs.readFileSync(readmePath, 'utf8');
+        const readmeLines = readmeContent.split('\n');
+
+        // Find the ## Changelog section header
+        let changelogLineIdx = -1;
+        for (let i = 0; i < readmeLines.length; i++) {
+            if (/^##\s+Changelog/.test(readmeLines[i])) {
+                changelogLineIdx = i;
+                break;
+            }
+        }
+
+        if (changelogLineIdx === -1) {
+            console.log(`ⓘ No '## Changelog' section found in ${readmePath}, skipping README update.`);
+            changeLog.readmeNode = { skipped: true, reason: 'no Changelog section' };
+        } else {
+            // Determine insertion point: after ## Changelog header, past any HTML comment block
+            let insertIdx = changelogLineIdx + 1;
+
+            // Skip blank lines immediately after ## Changelog
+            while (insertIdx < readmeLines.length && readmeLines[insertIdx].trim() === '') {
+                insertIdx++;
+            }
+
+            // Skip an HTML comment block if present (<!-- ... -->)
+            if (insertIdx < readmeLines.length && readmeLines[insertIdx].trim().startsWith('<!--')) {
+                if (readmeLines[insertIdx].includes('-->')) {
+                    // Single-line comment
+                    insertIdx++;
+                } else {
+                    // Multi-line comment — advance until we find the closing -->
+                    while (insertIdx < readmeLines.length && !readmeLines[insertIdx].includes('-->')) {
+                        insertIdx++;
+                    }
+                    insertIdx++; // move past the line containing '-->'
+                }
+                // Skip blank lines after the comment block
+                while (insertIdx < readmeLines.length && readmeLines[insertIdx].trim() === '') {
+                    insertIdx++;
+                }
+            }
+
+            const wipHeader = '### **WORK IN PROGRESS**';
+            const newEntry = `* Adapter requires node.js >= ${MIN_NODE_VERSION} now`;
+
+            // Search for an existing ### **WORK IN PROGRESS** header inside the Changelog section
+            // Skip content inside HTML comment blocks during the search
+            let wipLineIdx = -1;
+            let inHtmlComment = false;
+            for (let i = changelogLineIdx + 1; i < readmeLines.length; i++) {
+                // Stop at the next ## heading (new top-level section)
+                if (i > changelogLineIdx && /^##\s/.test(readmeLines[i])) {
+                    break;
+                }
+                // Track HTML comment blocks so we don't match a WIP header inside a comment
+                if (!inHtmlComment && readmeLines[i].trim().startsWith('<!--')) {
+                    if (!readmeLines[i].includes('-->')) {
+                        inHtmlComment = true;
+                    }
+                    continue;
+                }
+                if (inHtmlComment) {
+                    if (readmeLines[i].includes('-->')) {
+                        inHtmlComment = false;
+                    }
+                    continue;
+                }
+                // Use exact match (no leading whitespace) to avoid accidentally matching a WIP
+                // header inside an HTML comment block (those are typically indented with spaces)
+                if (readmeLines[i] === wipHeader) {
+                    wipLineIdx = i;
+                    break;
+                }
+            }
+
+            if (wipLineIdx === -1) {
+                // No WORK IN PROGRESS section — insert header + entry at insertIdx
+                readmeLines.splice(insertIdx, 0, wipHeader, newEntry, '');
+                console.log(`✔️ Added '${wipHeader}' section with entry to ${readmePath}.`);
+                fs.writeFileSync(readmePath, readmeLines.join('\n'), 'utf8');
+                changeLog.readmeNode = { changed: true, addedWip: true };
+            } else {
+                // WORK IN PROGRESS section exists — check if entry is already present
+                let alreadyHasEntry = false;
+                for (let i = wipLineIdx + 1; i < readmeLines.length; i++) {
+                    if (/^###\s/.test(readmeLines[i]) || /^##\s/.test(readmeLines[i])) {
+                        break;
+                    }
+                    if (readmeLines[i].trim() === newEntry) {
+                        alreadyHasEntry = true;
+                        break;
+                    }
+                }
+
+                if (alreadyHasEntry) {
+                    console.log(`ⓘ Entry '${newEntry}' already exists in '${wipHeader}' section of ${readmePath}.`);
+                    changeLog.readmeNode = { changed: false };
+                } else {
+                    // Insert entry right after the WIP header line
+                    readmeLines.splice(wipLineIdx + 1, 0, newEntry);
+                    console.log(`✔️ Added entry '${newEntry}' to existing '${wipHeader}' section in ${readmePath}.`);
+                    fs.writeFileSync(readmePath, readmeLines.join('\n'), 'utf8');
+                    changeLog.readmeNode = { changed: true, addedWip: false };
+                }
+            }
+        }
+    }
+} else {
+    console.log(`ⓘ engines.node was not changed — skipping README.md changelog update.`);
+}
+
+// ── Step 6: Replace placeholders in PR body file ──────────────────────────────
 
 const prBodyFile = path.join(process.cwd(), '.iobroker-pr-body.tmp');
 if (fs.existsSync(prBodyFile)) {
@@ -377,6 +498,25 @@ if (fs.existsSync(prBodyFile)) {
         germanLines.push(`- Keine Node.js-Versionsmatrix in \`test-and-release.yml\` gefunden — Matrixprüfung übersprungen.`);
     }
 
+    // README.md changelog update
+    if (changeLog.readmeNode !== null) {
+        if (changeLog.readmeNode.skipped) {
+            englishLines.push(`- \`README.md\` changelog update skipped (${changeLog.readmeNode.reason}).`);
+            germanLines.push(`- Aktualisierung des \`README.md\`-Changelogs übersprungen (${changeLog.readmeNode.reason}).`);
+        } else if (changeLog.readmeNode.changed) {
+            if (changeLog.readmeNode.addedWip) {
+                englishLines.push(`- Added \`### **WORK IN PROGRESS**\` section with node.js >= ${MIN_NODE_VERSION} requirement notice to \`README.md\` changelog.`);
+                germanLines.push(`- Abschnitt \`### **WORK IN PROGRESS**\` mit Hinweis auf node.js >= ${MIN_NODE_VERSION}-Anforderung in \`README.md\`-Changelog hinzugefügt.`);
+            } else {
+                englishLines.push(`- Added node.js >= ${MIN_NODE_VERSION} requirement notice to existing \`### **WORK IN PROGRESS**\` section in \`README.md\` changelog.`);
+                germanLines.push(`- Hinweis auf node.js >= ${MIN_NODE_VERSION}-Anforderung in vorhandenem \`### **WORK IN PROGRESS**\`-Abschnitt in \`README.md\`-Changelog hinzugefügt.`);
+            }
+        } else {
+            englishLines.push(`- \`README.md\` changelog already contains the node.js >= ${MIN_NODE_VERSION} requirement notice — no change needed.`);
+            germanLines.push(`- \`README.md\`-Changelog enthält den Hinweis auf node.js >= ${MIN_NODE_VERSION}-Anforderung bereits — keine Änderung erforderlich.`);
+        }
+    }
+
     const englishSummary = englishLines.join('\n');
     const germanSummary = germanLines.join('\n');
 
@@ -392,7 +532,8 @@ const anyChange =
     (changeLog.enginesNode && changeLog.enginesNode.changed) ||
     (changeLog.enginesNpm && changeLog.enginesNpm.removed) ||
     (changeLog.jobNodeVersion && changeLog.jobNodeVersion.changed) ||
-    (changeLog.matrixNode && changeLog.matrixNode.changed);
+    (changeLog.matrixNode && changeLog.matrixNode.changed) ||
+    (changeLog.readmeNode && changeLog.readmeNode.changed);
 
 if (!anyChange) {
     console.log(`ⓘ No changes were required for this repository — no PR will be created.`);
