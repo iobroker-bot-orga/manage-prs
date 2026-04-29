@@ -370,7 +370,7 @@ if (changeLog.enginesNode?.changed === true) {
             }
 
             const wipHeader = '### **WORK IN PROGRESS**';
-            const newEntry = `* Adapter requires node.js >= ${MIN_NODE_VERSION} now`;
+            const newEntry = `- (copilot) Adapter requires node.js >= ${MIN_NODE_VERSION} now`;
 
             // Search for an existing ### **WORK IN PROGRESS** header inside the Changelog section
             // Skip content inside HTML comment blocks during the search
