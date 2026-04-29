@@ -57,6 +57,15 @@ try {
 
 let packageJsonModified = false;
 
+/**
+ * Escape a string for use in a RegExp constructor.
+ * @param {string} str
+ * @returns {string}
+ */
+function escapeRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 // ── Step 2: Check/update engines.node ────────────────────────────────────────
 
 const enginesNode = packageJson.engines?.node;
@@ -69,7 +78,7 @@ if (!enginesNode) {
         if (currentMinVersion < MIN_NODE_VERSION) {
             // Replace the first major version number in the expression
             const newEnginesNode = enginesNode.replace(/(\d+)/, MIN_NODE_VERSION.toString());
-            const escapedOld = enginesNode.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const escapedOld = escapeRegex(enginesNode);
             packageJsonContent = packageJsonContent.replace(
                 new RegExp(`("node"\\s*:\\s*")${escapedOld}(")`),
                 `$1${newEnginesNode}$2`,
@@ -95,7 +104,7 @@ if (enginesNpm !== undefined) {
     // Remove the "npm": "..." entry from the JSON string while preserving formatting.
     // Handle three cases: value preceded by comma, value followed by comma, or standalone value.
 
-    const escapedNpm = enginesNpm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escapedNpm = escapeRegex(enginesNpm);
 
     // Case 1: comma before "npm" key (possibly across lines)
     const precedingCommaRegex = new RegExp(`,\\s*\\n?\\s*"npm"\\s*:\\s*"${escapedNpm}"`);
