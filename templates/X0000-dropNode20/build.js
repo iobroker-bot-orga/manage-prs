@@ -346,9 +346,6 @@ if (fs.existsSync(prBodyFile)) {
         if (changeLog.enginesNpm.removed) {
             englishLines.push(`- The \`engines.npm\` requirement (\`${changeLog.enginesNpm.was}\`) was removed from \`package.json\`.`);
             germanLines.push(`- Die \`engines.npm\`-Anforderung (\`${changeLog.enginesNpm.was}\`) wurde aus \`package.json\` entfernt.`);
-        } else {
-            englishLines.push(`- No \`engines.npm\` entry found in \`package.json\` — nothing to remove.`);
-            germanLines.push(`- Kein \`engines.npm\`-Eintrag in \`package.json\` gefunden — nichts zu entfernen.`);
         }
     }
 
