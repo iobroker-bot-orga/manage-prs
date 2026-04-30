@@ -6,7 +6,7 @@
 'use strict';
 
 const fs = require('node:fs');
-const yaml = require('js-yaml');
+const YAML = require('yaml');
 
 // prepare standard parameters
 const args = process.argv.slice(2);
@@ -29,99 +29,128 @@ if (!fs.existsSync(dependabotPath)) {
 
 console.log(`✔️ ${dependabotPath} exists.`);
 
-// Read and parse dependabot.yml
+// Read and parse dependabot.yml using parseDocument to preserve comments
 const dependabotContent = fs.readFileSync(dependabotPath, 'utf8');
-let dependabotConfig;
+let doc;
 
 try {
-    dependabotConfig = yaml.load(dependabotContent);
+    doc = YAML.parseDocument(dependabotContent);
 } catch (e) {
     console.error(`❌ Error parsing ${dependabotPath}: ${e.message}`);
     process.exit(1);
 }
 
-if (!dependabotConfig || !dependabotConfig.updates || !Array.isArray(dependabotConfig.updates)) {
+if (doc.errors && doc.errors.length > 0) {
+    console.error(`❌ Error parsing ${dependabotPath}: ${doc.errors[0].message}`);
+    process.exit(1);
+}
+
+const updatesNode = doc.get('updates', /* keepNode */ true);
+
+if (!updatesNode || !updatesNode.items) {
     console.log('ⓘ No updates section found in dependabot.yml - skipping');
     process.exit(0);
 }
 
 let changesMade = false;
 
+/**
+ * Converts a yaml node (e.g. YAMLSeq) or a plain JS value to a plain JS value.
+ * @param {*} node - The node or value to convert
+ * @param {*} defaultValue - Value to return when node is null/undefined
+ * @returns {*} Plain JS value
+ */
+function toPlainValue(node, defaultValue) {
+    if (node === null || node === undefined) {
+        return defaultValue;
+    }
+    return typeof node.toJSON === 'function' ? node.toJSON() : node;
+}
+
 // Process each update block
-dependabotConfig.updates.forEach((update, index) => {
+for (let index = 0; index < updatesNode.items.length; index++) {
+    const update = updatesNode.items[index];
+
     // Only process npm sections
-    if (update['package-ecosystem'] !== 'npm') {
-        return;
+    const ecosystem = update.get('package-ecosystem');
+    if (ecosystem !== 'npm') {
+        continue;
     }
 
     // Only process sections with directory: '/' or directories containing '**/*'
-    const hasRootDirectory = update.directory === '/';
-    const hasWildcardDirectories =
-        Array.isArray(update.directories) && update.directories.includes('**/*');
+    const directory = update.get('directory');
+    const directoriesVal = update.get('directories');
+    const hasRootDirectory = directory === '/';
+    const hasWildcardDirectories = Array.isArray(directoriesVal) && directoriesVal.includes('**/*');
 
     if (!hasRootDirectory && !hasWildcardDirectories) {
         console.log(`ⓘ npm block ${index + 1}: directory configuration does not match '/' or '**/*' - skipping`);
-        return;
+        continue;
     }
 
-    console.log(`\nⓘ Processing npm block ${index + 1} (directory: ${update.directory || JSON.stringify(update.directories)})`);
+    console.log(`\nⓘ Processing npm block ${index + 1} (directory: ${directory || JSON.stringify(directoriesVal)})`);
 
     // Check if block already has an @types/node ignore clause with semver-major or semver-minor
-    const ignoreList = update.ignore || [];
-    const typesNodeIgnore = ignoreList.find(item => item['dependency-name'] === '@types/node');
+    const ignoreNode = update.get('ignore', /* keepNode */ true);
+    let typesNodeEntry = null;
 
-    if (typesNodeIgnore) {
-        const updateTypes = typesNodeIgnore['update-types'] || [];
-        const hasMajor = updateTypes.includes('version-update:semver-major');
-        const hasMinor = updateTypes.includes('version-update:semver-minor');
+    if (ignoreNode && ignoreNode.items) {
+        for (const item of ignoreNode.items) {
+            if (item.get('dependency-name') === '@types/node') {
+                typesNodeEntry = item;
+                break;
+            }
+        }
+    }
+
+    if (typesNodeEntry) {
+        const updateTypes = toPlainValue(typesNodeEntry.get('update-types'), []);
+        const hasMajor = Array.isArray(updateTypes) && updateTypes.includes('version-update:semver-major');
+        const hasMinor = Array.isArray(updateTypes) && updateTypes.includes('version-update:semver-minor');
 
         if (hasMajor || hasMinor) {
             console.log(
                 `ⓘ npm block ${index + 1} already has an @types/node ignore clause with ` +
                 `${[hasMajor ? 'version-update:semver-major' : null, hasMinor ? 'version-update:semver-minor' : null].filter(Boolean).join(' and ')} - no changes needed`,
             );
-            return;
+            continue;
         }
 
         // Entry exists but lacks the required update-types — extend it
         console.log(`✔️ Extending existing @types/node ignore entry in npm block ${index + 1} with 'version-update:semver-major'`);
-        if (!typesNodeIgnore['update-types']) {
-            typesNodeIgnore['update-types'] = [];
+        const updateTypesNode = typesNodeEntry.get('update-types', /* keepNode */ true);
+        if (!updateTypesNode) {
+            typesNodeEntry.set('update-types', doc.createNode(['version-update:semver-major']));
+        } else {
+            updateTypesNode.add(doc.createNode('version-update:semver-major'));
         }
-        typesNodeIgnore['update-types'].push('version-update:semver-major');
         changesMade = true;
     } else {
         // No @types/node entry at all — add a new one
-        if (!update.ignore) {
-            update.ignore = [];
-        }
-        update.ignore.push({
+        const newEntry = doc.createNode({
             'dependency-name': '@types/node',
             'update-types': ['version-update:semver-major'],
         });
+        if (ignoreNode && ignoreNode.items) {
+            ignoreNode.add(newEntry);
+        } else {
+            update.set('ignore', doc.createNode([{
+                'dependency-name': '@types/node',
+                'update-types': ['version-update:semver-major'],
+            }]));
+        }
         console.log(`✔️ Added @types/node ignore clause to npm block ${index + 1}: update-types: ['version-update:semver-major']`);
         changesMade = true;
     }
-});
+}
 
 if (!changesMade) {
     console.log('\nⓘ No changes required - all relevant npm blocks already have the correct @types/node ignore configuration.');
     process.exit(0);
 }
 
-// Write updated dependabot.yml
-const updatedYaml = yaml.dump(dependabotConfig, {
-    indent: 2,
-    lineWidth: -1,
-    noRefs: true,
-    quotingType: '\'',
-    forceQuotes: true,
-});
-
-// Add empty line before each '- package-ecosystem:' for better readability
-const formattedYaml = updatedYaml.replace(/(\n)(  - package-ecosystem:)/g, '\n\n$2');
-
-fs.writeFileSync(dependabotPath, formattedYaml, 'utf8');
+// Write updated dependabot.yml — doc.toString() preserves all existing comments
+fs.writeFileSync(dependabotPath, doc.toString(), 'utf8');
 console.log(`\n✔️ ${dependabotPath} updated successfully.`);
 console.log(`\n✔️ processing completed (template: ${templateName}, repository: ${repositoryName})`);
 
