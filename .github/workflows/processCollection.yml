@@ -169,7 +169,7 @@ jobs:
 
             echo "    Found workflow run: $RUN_ID"
             echo "    Waiting for workflow run $RUN_ID to complete..."
-            gh run watch "$RUN_ID"-i 10 --repo "${{ github.repository }}" --exit-status
+            gh run watch "$RUN_ID" -i 10 --repo "${{ github.repository }}" --exit-status
             echo "✔️ Workflow run $RUN_ID completed successfully for template: $entry"
 
           done < /tmp/collection_entries.txt
