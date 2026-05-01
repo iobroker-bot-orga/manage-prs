@@ -1,0 +1,180 @@
+name: processCollection
+run-name: process collection (${{ inputs.template }} for ${{ inputs.repository_url }})
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository_url:
+        description: 'GitHub repository (formats: "owner/repo", "https://github.com/owner/repo", or "git@github.com:owner/repo")'
+        required: true
+        type: string
+      template:
+        description: 'Name of the collection template'
+        required: true
+        type: string
+      parameter_data:
+        description: 'Optional parameter data to pass to the template'
+        required: false
+        type: string
+      pr_mode:
+        description: 'PR mode for handling existing PRs'
+        required: false
+        type: choice
+        default: 'recreate'
+        options:
+          - 'force creation'
+          - 'recreate'
+          - 'skip if existing'
+          - 'skip if closed'
+          - 'skip if merged'
+          - 'REVOKE'
+
+jobs:
+  process-collection:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Trim workflow parameters
+        id: trim_params
+        run: |
+          # Trim all string input parameters to remove leading/trailing whitespace
+          REPO_URL=$(echo "${{ inputs.repository_url }}" | xargs)
+          TEMPLATE=$(echo "${{ inputs.template }}" | xargs)
+          PARAM_DATA=$(echo "${{ inputs.parameter_data }}" | xargs)
+          PR_MODE=$(echo "${{ inputs.pr_mode }}" | xargs)
+
+          echo "repository_url=$REPO_URL" >> $GITHUB_OUTPUT
+          echo "template=$TEMPLATE" >> $GITHUB_OUTPUT
+          echo "parameter_data=$PARAM_DATA" >> $GITHUB_OUTPUT
+          echo "pr_mode=$PR_MODE" >> $GITHUB_OUTPUT
+
+      - name: Log workflow parameters
+        run: |
+          echo "==================================================================="
+          echo "Workflow Parameters:"
+          echo "==================================================================="
+          echo "Repository URL: ${{ steps.trim_params.outputs.repository_url }}"
+          echo "Template: ${{ steps.trim_params.outputs.template }}"
+          echo "Parameter Data: ${{ steps.trim_params.outputs.parameter_data }}"
+          echo "PR Mode: ${{ steps.trim_params.outputs.pr_mode }}"
+          echo "==================================================================="
+
+      - name: Checkout this repository
+        uses: actions/checkout@v6
+
+      - name: Validate collection
+        run: |
+          TEMPLATE="${{ steps.trim_params.outputs.template }}"
+          COLLECTION_DIR="templates/$TEMPLATE"
+
+          if [ ! -d "$COLLECTION_DIR" ]; then
+            echo "❌ Error: Template directory '$COLLECTION_DIR' does not exist"
+            exit 1
+          fi
+
+          if [ ! -f "$COLLECTION_DIR/collection.json" ]; then
+            echo "❌ Error: collection.json not found in '$COLLECTION_DIR'"
+            exit 1
+          fi
+
+          # Validate JSON and check for required 'collection' array
+          node -e "
+            const fs = require('fs');
+            let data;
+            try {
+              data = JSON.parse(fs.readFileSync('$COLLECTION_DIR/collection.json', 'utf8'));
+            } catch (e) {
+              console.error('❌ Error: collection.json is not valid JSON: ' + e.message);
+              process.exit(1);
+            }
+            if (!data.collection || !Array.isArray(data.collection)) {
+              console.error('❌ Error: collection.json must contain an object with a \"collection\" array');
+              process.exit(1);
+            }
+            console.log('✔️ collection.json is valid with ' + data.collection.length + ' ' + (data.collection.length === 1 ? 'entry' : 'entries'));
+          "
+
+      - name: Process collection entries
+        env:
+          GH_TOKEN: ${{ secrets.IOBBOT_GITHUB_TOKEN_WITH_WF }}
+        run: |
+          TEMPLATE="${{ steps.trim_params.outputs.template }}"
+          COLLECTION_DIR="templates/$TEMPLATE"
+
+          # Extract collection entries to a temp file
+          node -e "
+            const fs = require('fs');
+            const data = JSON.parse(fs.readFileSync('$COLLECTION_DIR/collection.json', 'utf8'));
+            process.stdout.write(data.collection.join('\n') + '\n');
+          " > /tmp/collection_entries.txt
+
+          echo "==================================================================="
+          echo "Collection entries to process:"
+          cat /tmp/collection_entries.txt
+          echo "==================================================================="
+
+          while IFS= read -r entry; do
+            [ -z "$entry" ] && continue
+
+            echo ""
+            echo "==================================================================="
+            echo "Processing template: $entry"
+            echo "==================================================================="
+
+            # Check if template directory exists
+            if [ ! -d "templates/$entry" ]; then
+              echo "❌ Error: Template '$entry' does not exist, skipping"
+              continue
+            fi
+
+            echo "✔️ Template '$entry' exists"
+
+            # Record time before triggering to identify the run afterwards
+            TRIGGER_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+            echo "    Triggering processRepository workflow for template: $entry"
+            gh workflow run processRepository.yml \
+              --repo "${{ github.repository }}" \
+              --field "repository_url=${{ steps.trim_params.outputs.repository_url }}" \
+              --field "template=$entry" \
+              --field "parameter_data=${{ steps.trim_params.outputs.parameter_data }}" \
+              --field "pr_mode=${{ steps.trim_params.outputs.pr_mode }}"
+
+            echo "    Waiting for workflow run to be registered..."
+            sleep 15
+
+            # Find the workflow run ID created after TRIGGER_TIME
+            RUN_ID=""
+            MAX_RETRIES=180 // 30 min total
+            RETRY_DELAY=10
+            for i in $(seq 1 $MAX_RETRIES); do
+              RUN_ID=$(gh run list \
+                --workflow=processRepository.yml \
+                --repo "${{ github.repository }}" \
+                --limit=10 \
+                --json databaseId,createdAt \
+                --jq "[.[] | select(.createdAt >= \"$TRIGGER_TIME\")] | .[0].databaseId // empty")
+              if [ -n "$RUN_ID" ]; then
+                break
+              fi
+              echo "    Waiting for run to appear (attempt $i/$MAX_RETRIES)..."
+              sleep $RETRY_DELAY
+            done
+
+            if [ -z "$RUN_ID" ]; then
+              echo "❌ Error: Could not find workflow run for template '$entry'"
+              exit 1
+            fi
+
+            echo "    Found workflow run: $RUN_ID"
+            echo "    Waiting for workflow run $RUN_ID to complete..."
+            gh run watch "$RUN_ID" --repo "${{ github.repository }}" --exit-status
+            echo "✔️ Workflow run $RUN_ID completed successfully for template: $entry"
+
+          done < /tmp/collection_entries.txt
+
+          echo ""
+          echo "==================================================================="
+          echo "Collection processing completed"
+          echo "==================================================================="
