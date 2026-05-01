@@ -12,10 +12,6 @@ This repository provides GitHub Actions workflows and Node.js scripts to automat
 - **Template Application**: Apply centralized template changes to any repository
 - **GitHub Copilot Integration**: Enhanced with AI-powered code assistance through GitHub Copilot instructions
 
-## **WORK IN PROGRESS**
-
-* (copilot) **FIXED**: processCollection workflow no longer fails due to a bash comment parsing error
-
 ## Usage
 
 ### Creating a PR from a Template
