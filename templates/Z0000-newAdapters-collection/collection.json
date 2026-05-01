@@ -1,6 +1,19 @@
 {
   "collection": [
-    "X0000_dropNode20",
-    "W8917-addDependabot-ignoreTypesNode"
+    "E40xx-fixSchemaLinkForVsCode",
+    "S5043-useNodePrefix",
+    "S9006-blockCommitInfo",
+    "W0040-fixKeywords",
+    "W1035-addTier",
+    "W1081-addLicenseInformation",
+    "W1084-removeCommonInstalledFrom",
+    "W1084-removeCommonMain",
+    "W1084-removeCommonTitle",
+    "W8917-addDependabot-ignoreTypesNode",
+    "X0000-dropNode20",
+    "X0000-randomDependabot",
+    "X0000-setupAutomergeDependabot",
+    "X0000-updateDependabotSettings",
+    "X0000-updateNodeJsAtTestAndRelease"
   ]
 }
