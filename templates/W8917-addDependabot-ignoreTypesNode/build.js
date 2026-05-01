@@ -149,6 +149,17 @@ if (!changesMade) {
     process.exit(0);
 }
 
+// Convert double-quoted strings to single-quoted, and ensure new value scalars also use single quotes
+YAML.visit(doc, {
+    Scalar(key, node) {
+        if (node.type === 'QUOTE_DOUBLE') {
+            node.type = 'QUOTE_SINGLE';
+        } else if ((node.type === undefined || node.type === null) && key !== 'key') {
+            node.type = 'QUOTE_SINGLE';
+        }
+    },
+});
+
 // Write updated dependabot.yml — doc.toString() preserves all existing comments
 fs.writeFileSync(dependabotPath, doc.toString(), 'utf8');
 console.log(`\n✔️ ${dependabotPath} updated successfully.`);
