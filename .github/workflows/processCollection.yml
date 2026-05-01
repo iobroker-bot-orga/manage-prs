@@ -146,7 +146,7 @@ jobs:
 
             # Find the workflow run ID created after TRIGGER_TIME
             RUN_ID=""
-            MAX_RETRIES=10
+            MAX_RETRIES=180 // 30 min total
             RETRY_DELAY=10
             for i in $(seq 1 $MAX_RETRIES); do
               RUN_ID=$(gh run list \
