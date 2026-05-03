@@ -19,7 +19,7 @@ And **THANKS A LOT** for maintaining this adapter from me and all users.
 
 ## Changes provided by this PR
 
-This PR addresses the warning **[W6019] README.md contains too many changelog entries. Consider adding CHANGELOG_OLD.md file supported by @alcalzone/releasescript** and the suggestion **[S6020] Consider adding a CHANGELOG_OLD.md file to store older changelog entries** reported by the ioBroker repository checker.
+This PR addresses the warning **[W6019] README.md contains too many changelog entries. Consider adding CHANGELOG_OLD.md file supported by @alcalzone/release-script** and the suggestion **[S6020] Consider adding a CHANGELOG_OLD.md file to store older changelog entries** reported by the ioBroker repository checker.
 
 ### Background
 
@@ -52,7 +52,7 @@ Und **VIELEN DANK** für die Pflege dieses Adapters von mir und allen Nutzern.
 
 ## Durch diesen PR bereitgestellte Änderungen
 
-Dieser PR behebt die Warnung **[W6019] README.md enthält zu viele Changelog-Einträge. Bitte die von @alcalzone/releasescript unterstützte CHANGELOG_OLD.md-Datei in Betracht ziehen** sowie den Hinweis **[S6020] Bitte eine CHANGELOG_OLD.md-Datei zum Speichern älterer Changelog-Einträge in Betracht ziehen**, die vom ioBroker Repository Checker gemeldet werden.
+Dieser PR behebt die Warnung **[W6019] README.md enthält zu viele Changelog-Einträge. Bitte die von @alcalzone/release-script unterstützte CHANGELOG_OLD.md-Datei in Betracht ziehen** sowie den Hinweis **[S6020] Bitte eine CHANGELOG_OLD.md-Datei zum Speichern älterer Changelog-Einträge in Betracht ziehen**, die vom ioBroker Repository Checker gemeldet werden.
 
 ### Hintergrund
 

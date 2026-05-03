@@ -18,7 +18,7 @@ if (args.length < 2) {
 
 const templateName = args[0];
 const repositoryName = args[1];
-const parameterData = args[2] || '';
+const parameterData = args[2] || ''; // reserved for future use
 
 const changelogOldPath = path.join('.', 'CHANGELOG_OLD.md');
 const readmePath = path.join('.', 'README.md');
