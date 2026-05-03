@@ -7,7 +7,7 @@ const { getLatestRepo } = require('@iobroker-bot-orga/iobroker-lib');
 
 // Default configuration
 const DEFAULT_DELAY_SECONDS = 120;
-const MIN_DELAY_SECONDS = 60;
+const MIN_DELAY_SECONDS = 30;
 
 const opts = {
     dry: false,
