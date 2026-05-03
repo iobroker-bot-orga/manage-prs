@@ -58,8 +58,8 @@ try {
 
 const changelogLink = '[Older changelogs can be found there](CHANGELOG_OLD.md)';
 
-// Check if the link already exists
-if (readmeContent.includes(changelogLink) || readmeContent.includes('CHANGELOG_OLD.md')) {
+// Check if the link already exists (check for the specific markdown link)
+if (readmeContent.includes(changelogLink)) {
     console.log('ⓘ Link to CHANGELOG_OLD.md already exists in README.md, skipping.');
 
     if (!changelogOldCreated) {
