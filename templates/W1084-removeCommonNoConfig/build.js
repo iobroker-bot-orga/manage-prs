@@ -1,7 +1,7 @@
 // This script implements the required changes for a PR
 // The working directory is set to the root of the repository.
 // The script must exit with status 0 if everything is ok.
-// If no change is to be applied for any reason the script must not change any files. This will prohibit creation of a PR.
+// If no changes are needed (e.g., common.noConfig is absent), the script exits without modifying files, preventing PR creation.
 
 const fs = require('node:fs');
 
