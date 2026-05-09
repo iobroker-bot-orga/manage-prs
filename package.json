@@ -4,7 +4,7 @@
     "comment-json": "^4.6.2",
     "js-yaml": "^4.1.1",
     "json5": "^2.2.3",
-    "yaml": "^2.8.3"
+    "yaml": "^2.8.4"
   },
   "devDependencies": {
     "@iobroker/eslint-config": "^2.2.0"
