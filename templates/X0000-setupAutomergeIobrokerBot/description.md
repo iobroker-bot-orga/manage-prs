@@ -2,6 +2,8 @@ Setup Auto-Merge for ioBroker-Bot PRs
 [German description can be found below](#deutsche-beschreibung)
 [Deutsche Beschreibung weiter unten](#deutsche-beschreibung)
 
+**Note:** do not automerge
+
 ## General information 
 
 This PR has been created by iobroker-bot. Please review the changes carefully and merge the PR if review is ok.
