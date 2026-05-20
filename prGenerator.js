@@ -194,6 +194,9 @@ async function main() {
     // Build PR body with template body, template name, and parameter data
     let prBody = templateData.body;
     prBody += '\n\n---\n\n';
+    prBody += 'You my recreate this PR by adding the following comment:\n';
+    prBody += '    @iobroker-bot recreate\n';
+    prBody += '\n\n---\n\n';
     prBody += `**Template**: ${templateName}\n`;
     if (parameterData) {
       prBody += `**Parameters**: ${parameterData}\n`;
