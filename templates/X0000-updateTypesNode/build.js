@@ -92,7 +92,7 @@ function getLatestTypesNodeVersionForMajor(majorVersion) {
             return latestDirect;
         }
     } catch (error) {
-        console.log(`ⓘ Direct npm query for @types/node@${majorVersion} did not return a usable version: ${error.message}`);
+        console.log(`ⓘ Direct npm query for @types/node@${majorVersion} failed. Falling back to full version list lookup: ${error.message}`);
     }
 
     const allVersionsResult = execSync('npm view @types/node versions --json', {
@@ -115,7 +115,7 @@ function getLatestTypesNodeVersionForMajor(majorVersion) {
     return sortedMatches[sortedMatches.length - 1] || null;
 }
 
-function updatePrBody(changesSummary, minNodeMajor, targetVersion) {
+function updatePrBody(changesSummary, targetVersion) {
     const prBodyFile = path.join(process.cwd(), '.iobroker-pr-body.tmp');
 
     if (!fs.existsSync(prBodyFile)) {
@@ -123,7 +123,6 @@ function updatePrBody(changesSummary, minNodeMajor, targetVersion) {
     }
 
     let prBody = fs.readFileSync(prBodyFile, 'utf8');
-    prBody = prBody.replaceAll('__MIN_SUPPORTED_NODE_MAJOR__', String(minNodeMajor));
     prBody = prBody.replaceAll('__TARGET_TYPES_NODE_VERSION__', targetVersion);
     prBody = prBody.replaceAll('__CHANGES_SUMMARY__', changesSummary);
     fs.writeFileSync(prBodyFile, prBody, 'utf8');
@@ -225,7 +224,7 @@ try {
     process.exit(1);
 }
 
-updatePrBody(changesSummaryLines.join('\n'), minSupportedNodeMajor, targetTypesNodeVersion);
+updatePrBody(changesSummaryLines.join('\n'), targetTypesNodeVersion);
 
 console.log(`✔️ processing completed (template: ${templateName}, repository: ${repositoryName})`);
 process.exit(0);
