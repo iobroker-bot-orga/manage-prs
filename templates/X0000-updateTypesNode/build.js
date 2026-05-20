@@ -76,7 +76,7 @@ function extractLatestVersion(value) {
 }
 
 function getLatestTypesNodeVersionForMajor(majorVersion) {
-    if (!Number.isSafeInteger(majorVersion) || majorVersion <= 0) {
+    if (!Number.isSafeInteger(majorVersion) || majorVersion < 0) {
         return null;
     }
 
@@ -123,8 +123,8 @@ function updatePrBody(changesSummary, targetVersion) {
     }
 
     let prBody = fs.readFileSync(prBodyFile, 'utf8');
-    prBody = prBody.replaceAll('__TARGET_TYPES_NODE_VERSION__', targetVersion);
-    prBody = prBody.replaceAll('__CHANGES_SUMMARY__', changesSummary);
+    prBody = prBody.replace(/__TARGET_TYPES_NODE_VERSION__/g, targetVersion);
+    prBody = prBody.replace(/__CHANGES_SUMMARY__/g, changesSummary);
     fs.writeFileSync(prBodyFile, prBody, 'utf8');
 
     console.log('✔️ Updated PR body placeholders.');
