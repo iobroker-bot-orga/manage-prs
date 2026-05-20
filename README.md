@@ -12,6 +12,10 @@ This repository provides GitHub Actions workflows and Node.js scripts to automat
 - **Template Application**: Apply centralized template changes to any repository
 - **GitHub Copilot Integration**: Enhanced with AI-powered code assistance through GitHub Copilot instructions
 
+## **WORK IN PROGRESS**
+
+* (@copilot) **NEW**: Added template `X0000-updateDependency-jsController` to update js-controller dependency requirements, changelog entries, and PR body version text.
+
 ## Usage
 
 ### Creating a PR from a Template
