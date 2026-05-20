@@ -207,11 +207,6 @@ for (const occurrence of dependencyOccurrences) {
     }
 }
 
-if (changesSummaryLines.length === 0) {
-    console.log('ⓘ No effective package.json changes required after evaluation.');
-    process.exit(0);
-}
-
 fs.writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`, 'utf8');
 console.log(`✔️ Updated ${packageJsonPath}.`);
 
