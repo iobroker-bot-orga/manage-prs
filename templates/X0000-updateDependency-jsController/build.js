@@ -215,7 +215,7 @@ if (dependenciesChanged) {
   fs.writeFileSync(ioPackagePath, `${JSON.stringify(ioPackage, null, 2)}\n`, 'utf8');
   console.log(`✔️ Updated ${ioPackagePath}.`);
 
-  const changelogEntry = `- (copilot) Adapter requires js-controller >= ${DESIRED_JS_CONTROLLER_VERSION} now.`;
+  const changelogEntry = `- (ioBroker-Bot) Adapter requires js-controller >= ${DESIRED_JS_CONTROLLER_VERSION} now.`;
   updateReadmeChangelog(changelogEntry);
   updatePrBodyPlaceholders();
 } else {
