@@ -80,6 +80,13 @@ function isRequirementAtLeastMinimum(requirement, minimumVersion) {
   }
 }
 
+/**
+ * Replace HTML comments with spaces so header matching keeps exact positions
+ * while avoiding accidental matches inside comments.
+ *
+ * @param {string} content - README content
+ * @returns {string} Content safe for header searches
+ */
 function createSearchableContent(content) {
   return content.replace(/<!--[\s\S]*?-->/g, match => ' '.repeat(match.length));
 }

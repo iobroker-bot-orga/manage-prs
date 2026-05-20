@@ -27,7 +27,7 @@ Please plan the next release as at least a minor version update because of this 
 
 ## Deutsche Beschreibung
 
-## Allgemeine Informationen
+### Allgemeine Informationen
 
 Dieser PR wurde durch iobroker-bot erstellt. Bitte die Änderungen sorgfältig prüfen und den PR bei erfolgreicher Prüfung zusammenführen.
 
@@ -41,7 +41,7 @@ Und **VIELEN DANK** für die Wartung dieses Adapters von mir und allen Nutzenden
 
 @mcm1957 zum Nachweis
 
-## Durch diesen PR bereitgestellte Änderungen
+### Durch diesen PR bereitgestellte Änderungen
 
 Dieser PR passt die `js-controller`-Abhängigkeit in `io-package.json` an.
 Nach dem Zusammenführen dieses PR benötigt der Adapter `js-controller >= __DESIRED_JS_CONTROLLER_VERSION__`.
