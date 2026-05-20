@@ -143,8 +143,9 @@ function updateReadmeChangelog(entry) {
   }
 
   let readmeContent = fs.readFileSync(readmePath, 'utf8');
+  const readmeContentLowerCase = readmeContent.toLowerCase();
 
-  if (readmeContent.toLowerCase().includes(entry.toLowerCase())) {
+  if (readmeContentLowerCase.includes(entry.toLowerCase())) {
     console.log(`ⓘ Changelog entry already exists in ${readmePath}.`);
     return false;
   }
@@ -198,8 +199,9 @@ function updatePrBodyPlaceholders() {
     return;
   }
 
+  const placeholderPattern = new RegExp(PR_BODY_VERSION_PLACEHOLDER, 'g');
   let prBody = fs.readFileSync(prBodyPath, 'utf8');
-  prBody = prBody.replaceAll(PR_BODY_VERSION_PLACEHOLDER, DESIRED_ADMIN_VERSION);
+  prBody = prBody.replace(placeholderPattern, DESIRED_ADMIN_VERSION);
   fs.writeFileSync(prBodyPath, prBody, 'utf8');
   console.log(`✔️ Updated PR body with admin version ${DESIRED_ADMIN_VERSION}.`);
 }
