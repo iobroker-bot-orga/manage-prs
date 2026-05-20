@@ -6,7 +6,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const MINIMUM_REQUIRED_ADMIN_VERSION = '7.7.31';
+const MINIMUM_REQUIRED_ADMIN_VERSION = '7.7.22';
 const DESIRED_ADMIN_VERSION = '7.8.23';
 const PR_BODY_VERSION_PLACEHOLDER = '__DESIRED_ADMIN_VERSION__';
 
