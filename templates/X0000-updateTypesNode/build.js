@@ -64,7 +64,7 @@ function extractLatestVersion(value) {
         if (value.length === 0) {
             return null;
         }
-        const sortedValues = value.slice().sort(compareSemver);
+        const sortedValues = value.slice().sort((versionA, versionB) => compareSemver(versionA, versionB));
         return sortedValues[sortedValues.length - 1] || null;
     }
 
@@ -111,7 +111,7 @@ function getLatestTypesNodeVersionForMajor(majorVersion) {
         return null;
     }
 
-    const sortedMatches = matchingVersions.sort(compareSemver);
+    const sortedMatches = matchingVersions.slice().sort((versionA, versionB) => compareSemver(versionA, versionB));
     return sortedMatches[sortedMatches.length - 1] || null;
 }
 
