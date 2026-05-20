@@ -21,9 +21,8 @@ if (args.length < 2) {
 
 const templateName = args[0];
 const repositoryName = args[1];
-const parameterData = args[2] || '';
 
-function parseMajorVersion(value) {
+function extractMajorVersion(value) {
     if (typeof value !== 'string') {
         return null;
     }
@@ -32,7 +31,17 @@ function parseMajorVersion(value) {
     return match ? parseInt(match[1], 10) : null;
 }
 
+/**
+ * Compare two semver-like versions (major.minor.patch).
+ * @param {string} versionA
+ * @param {string} versionB
+ * @returns {number}
+ */
 function compareSemver(versionA, versionB) {
+    if (typeof versionA !== 'string' || typeof versionB !== 'string') {
+        return 0;
+    }
+
     const partsA = versionA.split('.').map(part => parseInt(part, 10) || 0);
     const partsB = versionB.split('.').map(part => parseInt(part, 10) || 0);
 
@@ -55,7 +64,8 @@ function extractLatestVersion(value) {
         if (value.length === 0) {
             return null;
         }
-        return value.slice().sort(compareSemver).at(-1);
+        const sortedValues = value.slice().sort(compareSemver);
+        return sortedValues[sortedValues.length - 1] || null;
     }
 
     if (typeof value === 'string' && value.trim()) {
@@ -66,6 +76,10 @@ function extractLatestVersion(value) {
 }
 
 function getLatestTypesNodeVersionForMajor(majorVersion) {
+    if (!Number.isSafeInteger(majorVersion) || majorVersion <= 0) {
+        return null;
+    }
+
     try {
         const directResult = execSync(`npm view @types/node@${majorVersion} version --json`, {
             stdio: ['pipe', 'pipe', 'pipe'],
@@ -91,13 +105,14 @@ function getLatestTypesNodeVersionForMajor(majorVersion) {
         return null;
     }
 
-    const matchingVersions = allVersions.filter(version => parseMajorVersion(version) === majorVersion);
+    const matchingVersions = allVersions.filter(version => extractMajorVersion(version) === majorVersion);
 
     if (matchingVersions.length === 0) {
         return null;
     }
 
-    return matchingVersions.sort(compareSemver).at(-1) || null;
+    const sortedMatches = matchingVersions.sort(compareSemver);
+    return sortedMatches[sortedMatches.length - 1] || null;
 }
 
 function updatePrBody(changesSummary, minNodeMajor, targetVersion) {
@@ -133,7 +148,7 @@ try {
 }
 
 const enginesNode = packageJson.engines?.node;
-const minSupportedNodeMajor = parseMajorVersion(enginesNode);
+const minSupportedNodeMajor = extractMajorVersion(enginesNode);
 
 if (minSupportedNodeMajor === null) {
     console.log('ⓘ Could not determine minimum supported Node.js major version from package.json engines.node - skipping repository.');
@@ -160,7 +175,7 @@ if (dependencyOccurrences.length === 0) {
 
 let majorMismatchFound = false;
 for (const occurrence of dependencyOccurrences) {
-    const currentMajor = parseMajorVersion(occurrence.currentValue);
+    const currentMajor = extractMajorVersion(occurrence.currentValue);
     occurrence.currentMajor = currentMajor;
 
     if (currentMajor !== minSupportedNodeMajor) {
