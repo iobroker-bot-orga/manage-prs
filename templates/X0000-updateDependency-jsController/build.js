@@ -8,6 +8,7 @@ const path = require('node:path');
 
 const MINIMUM_REQUIRED_JS_CONTROLLER_VERSION = '6.0.11';
 const DESIRED_JS_CONTROLLER_VERSION = '6.0.11';
+const PR_BODY_VERSION_PLACEHOLDER = '__DESIRED_JS_CONTROLLER_VERSION__';
 
 // prepare standard parameters
 const args = process.argv.slice(2);
@@ -157,7 +158,7 @@ function updatePrBodyPlaceholders() {
   }
 
   let prBody = fs.readFileSync(prBodyPath, 'utf8');
-  prBody = prBody.replaceAll('__DESIRED_JS_CONTROLLER_VERSION__', DESIRED_JS_CONTROLLER_VERSION);
+  prBody = prBody.replaceAll(PR_BODY_VERSION_PLACEHOLDER, DESIRED_JS_CONTROLLER_VERSION);
   fs.writeFileSync(prBodyPath, prBody, 'utf8');
   console.log(`✔️ Updated PR body with js-controller version ${DESIRED_JS_CONTROLLER_VERSION}.`);
 }
@@ -197,7 +198,7 @@ const desiredRequirement = `>=${DESIRED_JS_CONTROLLER_VERSION}`;
 let dependenciesChanged = false;
 
 const jsControllerDependency = ioPackage.common.dependencies.find(
-  dependency => dependency && typeof dependency === 'object' && Object.hasOwn(dependency, 'js-controller')
+  dependency => dependency && typeof dependency === 'object' && 'js-controller' in dependency
 );
 
 if (!jsControllerDependency) {
