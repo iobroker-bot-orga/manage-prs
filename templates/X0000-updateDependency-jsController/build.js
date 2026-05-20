@@ -22,7 +22,7 @@ const repositoryName = args[1];
 const parameterData = args[2] || '';
 
 function parseVersion(versionString) {
-  return versionString.split('.').map(part => Number.parseInt(part, 10) || 0);
+  return versionString.split('.').map(part => parseInt(part, 10) || 0);
 }
 
 function compareVersions(versionA, versionB) {
@@ -190,7 +190,7 @@ const desiredRequirement = `>=${DESIRED_JS_CONTROLLER_VERSION}`;
 let dependenciesChanged = false;
 
 const jsControllerDependency = ioPackage.common.dependencies.find(
-  dependency => dependency && typeof dependency === 'object' && Object.prototype.hasOwnProperty.call(dependency, 'js-controller')
+  dependency => dependency && typeof dependency === 'object' && Object.hasOwn(dependency, 'js-controller')
 );
 
 if (!jsControllerDependency) {
