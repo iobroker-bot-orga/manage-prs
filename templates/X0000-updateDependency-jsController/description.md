@@ -21,7 +21,6 @@ And **THANKS A LOT** for maintaining this adapter from me and all users.
 
 This PR adapts the `js-controller` dependency in `io-package.json`.
 After merging this PR, the adapter requires `js-controller >= __DESIRED_JS_CONTROLLER_VERSION__`.
-If required, a changelog entry is added under `### **WORK IN PROGRESS**` in `README.md`.
 
 Please plan the next release as at least a minor version update because of this dependency requirement change.
 
@@ -45,6 +44,5 @@ Und **VIELEN DANK** für die Wartung dieses Adapters von mir und allen Nutzenden
 
 Dieser PR passt die `js-controller`-Abhängigkeit in `io-package.json` an.
 Nach dem Zusammenführen dieses PR benötigt der Adapter `js-controller >= __DESIRED_JS_CONTROLLER_VERSION__`.
-Falls erforderlich, wird im `README.md` unter `### **WORK IN PROGRESS**` ein Changelog-Eintrag ergänzt.
 
 Bitte den nächsten Release mindestens als Minor-Update planen, da sich diese Abhängigkeitsanforderung ändert.
