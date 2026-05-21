@@ -138,7 +138,10 @@ function updateReadmeChangelog(entry) {
 
   let readmeContent = fs.readFileSync(readmePath, 'utf8');
 
-  if (readmeContent.toLowerCase().includes(entry.toLowerCase())) {
+  const readmeContentLower = readmeContent.toLowerCase();
+  const entryLower = entry.toLowerCase();
+
+  if (readmeContentLower.includes(entryLower)) {
     console.log(`ⓘ Changelog entry already exists in ${readmePath}.`);
     return false;
   }
@@ -274,6 +277,7 @@ if (noConfigValue === false) {
   } else {
     if (!Array.isArray(ioPackage.common.dependencies)) {
       ioPackage.common.dependencies = [];
+      console.log('ⓘ common.dependencies did not exist and has been initialized.');
     }
 
     const desiredRequirement = `>=${DESIRED_JS_CONTROLLER_VERSION}`;
