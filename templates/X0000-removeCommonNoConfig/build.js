@@ -1,7 +1,11 @@
-// This script implements the required changes for a PR
-// The working directory is set to the root of the repository.
-// The script must exit with status 0 if everything is ok.
-// if no change is to be applied for any reason the script must not change any files. This will prohibit creation of a PR.
+// This template script updates io-package metadata for removing common.noConfig.
+// Required CLI inputs: templateName, repositoryName, optional parameterData.
+// Behavior:
+// - Exit without file changes when common.noConfig does not exist.
+// - Remove common.noConfig when present.
+// - For noConfig !== false, align common.adminUI.config and js-controller dependency.
+// - Update README changelog and PR body placeholders when required.
+// The script must exit with status 0 if processing is successful.
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -60,6 +64,8 @@ function compareVersions(versionA, versionB) {
  * Parse a dependency requirement.
  *
  * @param {unknown} requirement - Requirement string like ">=5.0.0"
+ * Notes: partial versions like "5" or "5.0" are accepted and normalized during comparison.
+ *
  * @returns {{operator: string, version: string} | null} Parsed requirement or null
  */
 function parseDependencyRequirement(requirement) {
