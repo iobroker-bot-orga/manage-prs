@@ -15,7 +15,7 @@ And **THANKS A LOT** for maintaining this adapter from me and all users.
 *your*
 *ioBroker Check and Service Bot*
 
-@mcm1957 for evidence
+@mcm1957 for verification
 
 ## Changes provided by this PR
 
@@ -41,7 +41,7 @@ Und **VIELEN DANK** für die Wartung dieses Adapters von mir und allen Nutzenden
 *Euer*
 *ioBroker Check and Service Bot*
 
-@mcm1957 zum Nachweis
+@mcm1957 zur Überprüfung
 
 ### Durch diesen PR bereitgestellte Änderungen
 
