@@ -14,6 +14,7 @@ This repository provides GitHub Actions workflows and Node.js scripts to automat
 
 ## **WORK IN PROGRESS**
 
+* (@copilot) **NEW**: Added template `X0000-removeCommonNoConfig` to remove deprecated `common.noConfig`, align `common.adminUI.config`, and adjust js-controller dependency handling.
 * (@copilot) **NEW**: Added template `X0000-updateDependency-jsController` to update js-controller dependency requirements, changelog entries, and PR body version text.
 * (@copilot) **NEW**: Added template `X0000-updateDependency-Admin` to update admin dependency requirements, changelog entries, and PR body version text.
 
