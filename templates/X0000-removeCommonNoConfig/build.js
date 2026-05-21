@@ -25,10 +25,23 @@ const templateName = args[0];
 const repositoryName = args[1];
 const parameterData = args[2] || '';
 
+/**
+ * Parse a version string into numeric parts.
+ *
+ * @param {string} versionString - Version string such as "6.0.11"
+ * @returns {number[]} Parsed version parts
+ */
 function parseVersion(versionString) {
   return versionString.split('.').map(part => parseInt(part, 10) || 0);
 }
 
+/**
+ * Compare two version strings.
+ *
+ * @param {string} versionA - First version to compare
+ * @param {string} versionB - Second version to compare
+ * @returns {number} -1 if A < B, 1 if A > B, otherwise 0
+ */
 function compareVersions(versionA, versionB) {
   const partsA = parseVersion(versionA);
   const partsB = parseVersion(versionB);
@@ -43,6 +56,12 @@ function compareVersions(versionA, versionB) {
   return 0;
 }
 
+/**
+ * Parse a dependency requirement.
+ *
+ * @param {unknown} requirement - Requirement string like ">=5.0.0"
+ * @returns {{operator: string, version: string} | null} Parsed requirement or null
+ */
 function parseDependencyRequirement(requirement) {
   if (typeof requirement !== 'string') {
     return null;
@@ -61,6 +80,13 @@ function parseDependencyRequirement(requirement) {
   };
 }
 
+/**
+ * Check whether a dependency requirement satisfies a minimum version.
+ *
+ * @param {unknown} requirement - Requirement string such as ">=5.0.0", "^6.1.0"
+ * @param {string} minimumVersion - Minimum version to require
+ * @returns {boolean} True if requirement already satisfies the minimum version
+ */
 function isRequirementAtLeastMinimum(requirement, minimumVersion) {
   const parsedRequirement = parseDependencyRequirement(requirement);
 
@@ -95,6 +121,12 @@ function createSearchableContent(content) {
   return content.replace(/<!--[\s\S]*?-->/g, match => ' '.repeat(match.length));
 }
 
+/**
+ * Add a changelog entry to README.md below the WORK IN PROGRESS section.
+ *
+ * @param {string} entry - Changelog line to insert
+ * @returns {boolean} True if README.md was modified
+ */
 function updateReadmeChangelog(entry) {
   const readmePath = './README.md';
   const wipHeader = '### **WORK IN PROGRESS**';
@@ -153,6 +185,11 @@ function updateReadmeChangelog(entry) {
   return true;
 }
 
+/**
+ * Replace PR body placeholders with runtime messages.
+ *
+ * @param {{adminUiEn: string, dependencyEn: string, adminUiDe: string, dependencyDe: string}} messages - Replacement messages
+ */
 function updatePrBodyPlaceholders(messages) {
   const prBodyPath = path.join(process.cwd(), '.iobroker-pr-body.tmp');
 
@@ -274,7 +311,7 @@ fs.writeFileSync(ioPackagePath, `${JSON.stringify(ioPackage, null, 2)}\n`, 'utf8
 console.log(`✔️ Updated ${ioPackagePath}.`);
 
 if (dependencyChanged) {
-  const changelogEntry = '- (ioBroker-Bot) Adapter requires js-controller >= 6.0.11 now.';
+  const changelogEntry = `- (ioBroker-Bot) Adapter requires js-controller >= ${DESIRED_JS_CONTROLLER_VERSION} now.`;
   updateReadmeChangelog(changelogEntry);
 }
 
