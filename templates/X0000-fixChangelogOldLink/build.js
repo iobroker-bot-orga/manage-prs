@@ -16,6 +16,11 @@ if (args.length < 2) {
   process.exit(1);
 }
 
+const templateName = args[0];
+const repositoryName = args[1];
+
+console.log(`ⓘ Running template ${templateName} for ${repositoryName}.`);
+
 const readmePath = path.join('.', 'README.md');
 const changelogOldPath = path.join('.', 'CHANGELOG_OLD.md');
 const changelogOldLinkReference = '(CHANGELOG_OLD.md)';
