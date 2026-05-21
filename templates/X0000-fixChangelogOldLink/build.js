@@ -94,7 +94,7 @@ try {
 try {
   const changelogOldContent = fs.readFileSync(changelogOldPath, 'utf8');
   const cleanedChangelogOldContent = changelogOldContent.replace(
-    /^.*Older changelogs can be found there.*(?:\r?\n)?/gmi,
+    /^.*Older changelogs can be found there.*(?:\r?\n)?/gm,
     '',
   );
 
