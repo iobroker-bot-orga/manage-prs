@@ -161,16 +161,17 @@ let tsconfigChangeDe = '- Es wurden keine Änderungen an `tsconfig.json` vorgeno
 
 if (fs.existsSync(tsconfigPath)) {
     const tsconfigContent = fs.readFileSync(tsconfigPath, 'utf8');
-    const extendsMatch = tsconfigContent.match(/"extends"\s*:\s*"([^"]+)"/);
+    const extendsPattern = /(["'])extends\1(\s*:\s*)(["'])([^"']+)\3/;
+    const extendsMatch = tsconfigContent.match(extendsPattern);
 
     if (extendsMatch) {
-        const extendsValue = extendsMatch[1];
+        const extendsValue = extendsMatch[4];
         if (/^@tsconfig\/node\d{2}\//.test(extendsValue)) {
             const desiredExtendsValue = extendsValue.replace(/^@tsconfig\/node\d{2}/, targetTsconfigNodePackage);
 
             if (desiredExtendsValue !== extendsValue) {
-                const escapedOld = escapeRegExp(`"extends": "${extendsValue}"`);
-                const updatedContent = tsconfigContent.replace(new RegExp(escapedOld), `"extends": "${desiredExtendsValue}"`);
+                const replacement = `${extendsMatch[1]}extends${extendsMatch[1]}${extendsMatch[2]}${extendsMatch[3]}${desiredExtendsValue}${extendsMatch[3]}`;
+                const updatedContent = tsconfigContent.replace(extendsPattern, replacement);
                 fs.writeFileSync(tsconfigPath, updatedContent, 'utf8');
                 tsconfigChanged = true;
                 tsconfigChangeEn = `- The PR updates \`tsconfig.json\` extends from \`${extendsValue}\` to \`${desiredExtendsValue}\`.`;
