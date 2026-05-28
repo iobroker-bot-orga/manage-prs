@@ -23,6 +23,7 @@ const repositoryName = args[1];
 const packageJsonPath = './package.json';
 const tsconfigPath = './tsconfig.json';
 const tsconfigNodePackagePattern = /^@tsconfig\/node(\d{2})$/;
+const MIN_SUPPORTED_NODE_MAJOR = 20;
 
 /**
  * Escape a string for regular expression usage.
@@ -100,7 +101,6 @@ if (!Number.isInteger(minSupportedNodeMajor)) {
 console.log(`✔️ engines.node is '${enginesNodeRange}'.`);
 console.log(`✔️ Minimum supported Node.js major version detected: ${minSupportedNodeMajor}`);
 
-const MIN_SUPPORTED_NODE_MAJOR = 20;
 if (minSupportedNodeMajor < MIN_SUPPORTED_NODE_MAJOR) {
     console.error(`❌ Minimum supported Node.js major version (${minSupportedNodeMajor}) is lower than ${MIN_SUPPORTED_NODE_MAJOR}. Skipping repository.`);
     process.exit(0);
