@@ -8,6 +8,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { execSync } = require('node:child_process');
+const semver = require('semver');
 
 const args = process.argv.slice(2);
 
@@ -42,12 +43,12 @@ function extractMinimumNodeMajor(nodeRange) {
         return null;
     }
 
-    const matches = [...nodeRange.matchAll(/(\d+)/g)].map(match => parseInt(match[1], 10)).filter(Number.isFinite);
-    if (matches.length === 0) {
+    const minVersion = semver.minVersion(nodeRange);
+    if (!minVersion) {
         return null;
     }
 
-    return Math.min(...matches);
+    return minVersion.major;
 }
 
 /**
@@ -98,6 +99,12 @@ if (!Number.isInteger(minSupportedNodeMajor)) {
 
 console.log(`✔️ engines.node is '${enginesNodeRange}'.`);
 console.log(`✔️ Minimum supported Node.js major version detected: ${minSupportedNodeMajor}`);
+
+const MIN_SUPPORTED_NODE_MAJOR = 20;
+if (minSupportedNodeMajor < MIN_SUPPORTED_NODE_MAJOR) {
+    console.error(`❌ Minimum supported Node.js major version (${minSupportedNodeMajor}) is lower than ${MIN_SUPPORTED_NODE_MAJOR}. Skipping repository.`);
+    process.exit(0);
+}
 
 const targetTsconfigNodePackage = `@tsconfig/node${minSupportedNodeMajor}`;
 
