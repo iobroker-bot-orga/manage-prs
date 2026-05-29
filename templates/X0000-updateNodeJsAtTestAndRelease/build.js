@@ -200,6 +200,8 @@ if (fs.existsSync('./package.json')) {
         if (minSupportedNodeVersion) {
             // After the update: if current < MIN_NODEJS it becomes MIN_NODEJS, otherwise stays
             effectiveMinVersion = Math.max(minSupportedNodeVersion.major, MIN_NODEJS);
+        } else if (enginesPreCalc) {
+            console.log(`ⓘ Could not parse engines.node '${enginesPreCalc}' for pre-calculation, using MIN_NODEJS (${MIN_NODEJS}) as default.`);
         }
     } catch (_e) {
         // Ignore, use MIN_NODEJS as default
@@ -523,10 +525,10 @@ if (!fs.existsSync(packageJsonPath)) {
                 // range (for example ">=18.20.0"), and fall back to major-only replacement for
                 // shorter forms such as ">=18" or "^18".
                 if (enginesNode.includes(currentMinVersionString)) {
-                    newEnginesNode = enginesNode.replace(currentMinVersionString, `${MIN_NODEJS}.0.0`);
+                    newEnginesNode = enginesNode.replaceAll(currentMinVersionString, `${MIN_NODEJS}.0.0`);
                 } else {
                     newEnginesNode = enginesNode.replace(
-                        new RegExp(`\\b${currentMinVersion}\\b`),
+                        new RegExp(`\\b${currentMinVersion}\\b`, 'g'),
                         MIN_NODEJS.toString(),
                     );
                 }
