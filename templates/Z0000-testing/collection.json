@@ -1,0 +1,7 @@
+{
+  "collection": [
+    "E40xx-fixSchemaLinkForVsCode",
+    "E1084-removeCommonInstalledFrom",
+    "E6005-fixCopyrightYear",
+  ]
+}
