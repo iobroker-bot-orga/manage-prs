@@ -62,7 +62,9 @@ function isCommented(line) {
  * @returns {string} normalized value
  */
 function stripQuotes(value) {
-    return String(value).trim().replace(/^['"]|['"]$/g, '');
+    const trimmedValue = String(value).trim();
+    const quotedValueMatch = trimmedValue.match(/^(['"])(.*)\1$/);
+    return quotedValueMatch ? quotedValueMatch[2] : trimmedValue;
 }
 
 /**
@@ -311,7 +313,8 @@ function ensureNeeds(lines, jobBlock, requiredDependencies) {
         }
 
         if (addedDependencies.length > 0) {
-            const newSequence = existingDependencies.join(', ');
+            const separatorMatch = sequenceContent.match(/,\s*/);
+            const newSequence = existingDependencies.join(separatorMatch ? separatorMatch[0] : ', ');
             lines[needsIndex] = `${needsLine.slice(0, sequenceStart + 1)}${newSequence}${needsLine.slice(sequenceEnd)}`;
         }
 
