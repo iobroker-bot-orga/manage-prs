@@ -6,8 +6,11 @@ const { execSync } = require('child_process');
 const { getLatestRepo } = require('@iobroker-bot-orga/iobroker-lib');
 
 // Default configuration
-const DEFAULT_DELAY_SECONDS = 120;
-const MIN_DELAY_SECONDS = 30;
+const DEFAULT_DELAY_SECONDS = 60;
+const MIN_DELAY_SECONDS = 5;
+const INITIAL_RUN_REGISTRATION_DELAY_MS = 15000;
+const MAX_RUN_DISCOVERY_RETRIES = 180;
+const RUN_DISCOVERY_RETRY_DELAY_MS = 10000;
 
 const opts = {
     dry: false,
@@ -158,8 +161,9 @@ async function checkProcessing(context){
  * Trigger processRepository workflow for a specific repository
  * @param {string} owner - Repository owner
  * @param {string} adapter - Adapter name
+ * @returns {Promise<number>} Number of templates processed by the workflow (minimum 1)
  */
-function triggerRepoProcessing(owner, adapter) {
+async function triggerRepoProcessing(owner, adapter) {
     const repoUrl = `https://github.com/${owner}/ioBroker.${adapter}`;
 
     debug(`trigger repository processing for ${repoUrl}`);
@@ -167,14 +171,54 @@ function triggerRepoProcessing(owner, adapter) {
     console.log(`    ⏳ Triggering workflow for ${repoUrl} (pr_mode: ${opts.pr_mode})`);
     
     try {
+        const triggerTime = new Date().toISOString();
+
         // Build the gh workflow run command
         const cmd = `gh workflow run processRepository.yml --repo iobroker-bot-orga/manage-prs --field repository_url="${repoUrl}" --field template="${opts.template}" --field parameter_data="${opts.parameter_data}" --field pr_mode="${opts.pr_mode}"`;
         debug(cmd);
 
         executeGhCommand(cmd);
         console.log(`    ✔️ Workflow triggered successfully (pr_mode: ${opts.pr_mode})`);
+
+        console.log(`    ⏳ Waiting for workflow run to be registered...`);
+        await sleep(INITIAL_RUN_REGISTRATION_DELAY_MS);
+
+        let runId = '';
+        for (let attempt = 1; attempt <= MAX_RUN_DISCOVERY_RETRIES; attempt++) {
+            const runListCmd = `gh run list --workflow=processRepository.yml --repo iobroker-bot-orga/manage-prs --limit=10 --json databaseId,createdAt --jq "[.[] | select(.createdAt >= \\"${triggerTime}\\")] | .[0].databaseId // empty"`;
+            runId = executeGhCommand(runListCmd).trim();
+            if (runId) {
+                break;
+            }
+            console.log(`    ⏳ Waiting for workflow run to appear (attempt ${attempt}/${MAX_RUN_DISCOVERY_RETRIES})...`);
+            await sleep(RUN_DISCOVERY_RETRY_DELAY_MS);
+        }
+
+        if (!runId) {
+            console.log(`    ⚠️ Could not find workflow run ID, assuming templates processed: 1`);
+            return 1;
+        }
+
+        console.log(`    ✔️ Found workflow run: ${runId}`);
+        console.log(`    ⏳ Waiting for workflow run ${runId} to complete...`);
+        executeGhCommand(`gh run watch "${runId}" -i 10 --repo iobroker-bot-orga/manage-prs --exit-status`);
+
+        // Parse TEMPLATES_COUNT marker from logs (reported by processRepository workflow)
+        let logOutput = '';
+        try {
+            logOutput = executeGhCommand(`gh run view "${runId}" --log --repo iobroker-bot-orga/manage-prs`);
+        } catch (logError) {
+            console.log(`    ⚠️ Could not retrieve logs for run ${runId}, assuming templates processed: 1 (${logError.message})`);
+        }
+        const countMatches = [...logOutput.matchAll(/TEMPLATES_COUNT=(\d+)/g)];
+        const templatesCount = parseInt(countMatches.at(-1)?.[1] || '1', 10);
+        const normalizedCount = Number.isFinite(templatesCount) && templatesCount > 0 ? templatesCount : 1;
+
+        console.log(`    ✔️ Retrieved templates processed by processRepository: ${normalizedCount}`);
+        return normalizedCount;
     } catch (e) {
-        console.error(`    ❌ Failed to trigger workflow: ${e.message}`);
+        console.error(`    ❌ Failed while triggering or monitoring workflow: ${e.message}`);
+        return 1;
     }
 }
 
@@ -270,7 +314,7 @@ async function main() {
         process.exit(1);
     }
 
-    // Ensure minimum delay of 60 seconds
+    // Ensure minimum delay of 5 seconds
     if (opts.delay < MIN_DELAY_SECONDS) {
         console.log(`⚠️ Delay of ${opts.delay}s is too short, setting to minimum of ${MIN_DELAY_SECONDS}s`);
         opts.delay = MIN_DELAY_SECONDS;
@@ -362,20 +406,24 @@ async function main() {
         if ( ! await checkProcessing(context)) {
             console.log(`ⓘ SKIPPING ${owner}/${repoName} (check failed)`);
         } else {
+            let templatesProcessed = 1;
             if (! opts.dry) {
-                triggerRepoProcessing(owner, adapter);
+                templatesProcessed = await triggerRepoProcessing(owner, adapter);
             } else {
                 console.log(`🧪 Would trigger processing for ${owner}/${repoName} with pr_mode="${opts.pr_mode}"`);
             }
-        }
 
-        counter = counter - 1;
-        if (counter) {
-            console.log(`ⓘ Will restart after ${counter} more repositories, sleeping (${opts.delay}s) ...`);
-        } else {
-            console.log(`ⓘ Will restart after delay, sleeping (${opts.delay}s) ...`);            
+            const counterReduction = templatesProcessed;
+            counter = counter - counterReduction;
+            console.log(`ⓘ Retrieved templates processed: ${templatesProcessed} (counter reduced by ${counterReduction})`);
+
+            if (counter) {
+                console.log(`ⓘ Will restart after ${counter} more repositories, sleeping (${opts.delay}s) ...`);
+            } else {
+                console.log(`ⓘ Will restart after delay, sleeping (${opts.delay}s) ...`);
+            }
+            await sleep(opts.dry?1000:opts.delay * 1000);
         }
-        await sleep(opts.dry?1000:opts.delay * 1000);
     }
 
     if (checkScript && checkScript.finalize) {
