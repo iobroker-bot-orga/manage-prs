@@ -47,8 +47,8 @@ on:
       delay:
         type: string
         required: false
-        default: '120'
-        description: 'Delay in seconds between processing each repository (default: 120)'
+        default: '60'
+        description: 'Delay in seconds between processing each repository (default: 60)'
 
   #schedule:
     # * is a special character in YAML, so you have to quote this string
@@ -83,7 +83,7 @@ jobs:
           DELAY=$(echo "${{ github.event.inputs.delay }}${{ github.event.client_payload.delay }}" | xargs)
           # Set default delay if empty
           if [ -z "$DELAY" ]; then
-            DELAY="120"
+            DELAY="60"
           fi
           
           echo "template=$TEMPLATE" >> $GITHUB_OUTPUT
