@@ -294,7 +294,7 @@ function ensureNeeds(lines, jobBlock, requiredDependencies) {
         const sequenceEnd = needsLine.lastIndexOf(']');
 
         if (sequenceEnd === -1) {
-            console.error('❌ There is a problem with an inline needs sequence.');
+            console.error(`❌ Inline needs sequence is missing a closing bracket in line: ${needsLine.trim()}`);
             process.exit(1);
         }
 
@@ -390,7 +390,7 @@ const hasTrailingNewline = workflowContent.endsWith('\n');
 const document = YAML.parseDocument(workflowContent);
 
 if (document.errors.length > 0) {
-    console.error(`❌ ${workflowPath} is not valid YAML: ${document.errors[0].message}`);
+    console.error(`❌ ${workflowPath} is not valid YAML (first error): ${document.errors[0].message}`);
     process.exit(1);
 }
 
