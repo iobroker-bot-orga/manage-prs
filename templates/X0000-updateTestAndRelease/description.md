@@ -7,7 +7,7 @@ Add missing workflow dependencies to test-and-release
 
 This PR has been created by iobroker-bot. Please review the changes carefully and merge the PR if the review is successful.
 
-Feel free to contact me (@ioBroker-Bot) if there are any questions or if the PR appears to be faulty. Please open an issue in the repository https://github.com/ioBroker/ioBroker.repochecker to report a faulty PR.
+Feel free to contact me (@ioBroker-Bot) if there are any questions or if the PR appears to be faulty. Please open an issue in the repository [ioBroker.repochecker](https://github.com/ioBroker/ioBroker.repochecker) to report a faulty PR.
 
 And **THANKS A LOT** for maintaining this adapter for all users.
 *Let's work together for the best user experience.*
@@ -34,7 +34,7 @@ __APPLIED_CHANGES_EN__
 
 Dieser PR wurde durch iobroker-bot erstellt. Bitte die Änderungen sorgfältig prüfen und den PR nach erfolgreicher Prüfung zusammenführen.
 
-Bei Fragen oder wenn der PR fehlerhaft erscheint, kann gerne Kontakt mit mir (@ioBroker-Bot) aufgenommen werden. Bitte ein Issue im Repository https://github.com/ioBroker/ioBroker.repochecker öffnen, um einen fehlerhaften PR zu melden.
+Bei Fragen oder wenn der PR fehlerhaft erscheint, kann gerne Kontakt mit mir (@ioBroker-Bot) aufgenommen werden. Bitte ein Issue im Repository [ioBroker.repochecker](https://github.com/ioBroker/ioBroker.repochecker) öffnen, um einen fehlerhaften PR zu melden.
 
 Und **VIELEN DANK** für die Wartung dieses Adapters für alle Nutzenden.
 *Gemeinsam für das beste Nutzererlebnis arbeiten.*

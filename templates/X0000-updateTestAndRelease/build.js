@@ -404,6 +404,7 @@ console.log(`✔️ ${workflowPath} is valid YAML.`);
 
 const lines = workflowContent.split(/\r?\n/);
 if (lines[lines.length - 1] === '') {
+    // Remove the artificial trailing empty line created by split() when the file ends with a newline.
     lines.pop();
 }
 const jobsBlock = findJobsBlock(lines);
