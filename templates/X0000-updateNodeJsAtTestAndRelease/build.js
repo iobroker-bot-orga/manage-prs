@@ -171,7 +171,7 @@ function parseNodeMajorVersion(versionStr) {
 /**
  * Extract the minimum supported Node.js version from an engines range.
  * @param {string} nodeRange
- * @returns {import('semver/classes/semver')|null}
+ * @returns {import('semver').SemVer|null}
  */
 function getMinimumSupportedNodeVersion(nodeRange) {
     if (typeof nodeRange !== 'string') {
@@ -310,6 +310,8 @@ if (adapterTestsJobLine === -1) {
 
                     // Combined, deduplicated, sorted ascending
                     const newVersions = [...new Set([...requiredVersions, ...additionalVersions])];
+                    // If nothing from the maintained defaults or existing matrix matches, keep the
+                    // workflow valid by testing the minimum supported Node.js version explicitly.
                     if (newVersions.length === 0) {
                         newVersions.push(`${effectiveMinVersion}.x`);
                     }
@@ -526,17 +528,22 @@ if (!fs.existsSync(packageJsonPath)) {
                     );
                 }
 
-                // Use string-level replacement to preserve original file formatting
-                const escapedOld = enginesNode.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                const updatedContent = packageJsonContent.replace(
-                    new RegExp(`("node"\\s*:\\s*")${escapedOld}(")`),
-                    `$1${newEnginesNode}$2`,
-                );
+                if (!semver.validRange(newEnginesNode) || !semver.minVersion(newEnginesNode)) {
+                    console.log(`ⓘ Updated engines.node range '${newEnginesNode}' would be invalid, skipping engines update.`);
+                    changeLog.enginesNode = { changed: false, current: enginesNode };
+                } else {
+                    // Use string-level replacement to preserve original file formatting
+                    const escapedOld = enginesNode.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const updatedContent = packageJsonContent.replace(
+                        new RegExp(`("node"\\s*:\\s*")${escapedOld}(")`),
+                        `$1${newEnginesNode}$2`,
+                    );
 
-                fs.writeFileSync(packageJsonPath, updatedContent, 'utf8');
-                console.log(`✔️ Updated engines.node from '${enginesNode}' to '${newEnginesNode}' in ${packageJsonPath}.`);
-                packageJsonModified = true;
-                changeLog.enginesNode = { changed: true, from: enginesNode, to: newEnginesNode };
+                    fs.writeFileSync(packageJsonPath, updatedContent, 'utf8');
+                    console.log(`✔️ Updated engines.node from '${enginesNode}' to '${newEnginesNode}' in ${packageJsonPath}.`);
+                    packageJsonModified = true;
+                    changeLog.enginesNode = { changed: true, from: enginesNode, to: newEnginesNode };
+                }
             } else {
                 console.log(`✔️ engines.node '${enginesNode}' already meets minimum Node.js ${MIN_NODEJS}, no update needed.`);
                 changeLog.enginesNode = { changed: false, current: enginesNode };
