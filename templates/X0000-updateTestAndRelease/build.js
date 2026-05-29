@@ -361,7 +361,7 @@ function ensureNeeds(lines, jobBlock, requiredDependencies) {
         itemIndentSize = getIndent(line);
         const commentIndex = trimmed.indexOf('#');
         const itemValue = commentIndex === -1 ? trimmed.slice(2) : trimmed.slice(2, commentIndex);
-        existingDependencies.push(stripQuotes(itemValue));
+        existingDependencies.push(stripQuotes(itemValue.trim()));
     }
 
     const missingDependencies = requiredDependencies.filter(dependency => !existingDependencies.includes(dependency));
@@ -409,6 +409,7 @@ if (!jobsBlock) {
 
 /**
  * Find a job block in the current workflow content.
+ * Re-scanning is required because line insertions can shift job positions between updates.
  *
  * @param {string} jobName job to find
  * @returns {{ start: number, end: number } | null} job block information
