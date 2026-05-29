@@ -8,6 +8,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const yaml = require('js-yaml');
+const semver = require('semver');
 
 // Constants for Node.js versions
 const DEFAULT_NODEJS = 24;
@@ -167,18 +168,38 @@ function parseNodeMajorVersion(versionStr) {
     return match ? parseInt(match[1], 10) : null;
 }
 
+/**
+ * Extract the minimum supported Node.js version from an engines range.
+ * @param {string} nodeRange
+ * @returns {import('semver/classes/semver')|null}
+ */
+function getMinimumSupportedNodeVersion(nodeRange) {
+    if (typeof nodeRange !== 'string') {
+        return null;
+    }
+
+    return semver.minVersion(nodeRange);
+}
+
+/**
+ * Determine the workflow node major version to use.
+ * @param {number} minimumSupportedMajor
+ * @returns {number}
+ */
+function getWorkflowNodeMajor(minimumSupportedMajor) {
+    return Math.max(DEFAULT_NODEJS, minimumSupportedMajor);
+}
+
 // Pre-calculate the effective minimum Node.js version (what engines.node will be after update)
 let effectiveMinVersion = MIN_NODEJS;
 if (fs.existsSync('./package.json')) {
     try {
         const pkgPreCalc = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
         const enginesPreCalc = pkgPreCalc.engines?.node;
-        if (enginesPreCalc) {
-            const m = enginesPreCalc.match(/(\d+)/);
-            if (m) {
-                // After the update: if current < MIN_NODEJS it becomes MIN_NODEJS, otherwise stays
-                effectiveMinVersion = Math.max(parseInt(m[1], 10), MIN_NODEJS);
-            }
+        const minSupportedNodeVersion = getMinimumSupportedNodeVersion(enginesPreCalc);
+        if (minSupportedNodeVersion) {
+            // After the update: if current < MIN_NODEJS it becomes MIN_NODEJS, otherwise stays
+            effectiveMinVersion = Math.max(minSupportedNodeVersion.major, MIN_NODEJS);
         }
     } catch (_e) {
         // Ignore, use MIN_NODEJS as default
@@ -186,6 +207,8 @@ if (fs.existsSync('./package.json')) {
     }
 }
 console.log(`ⓘ Effective minimum Node.js version (after potential engines update): ${effectiveMinVersion}`);
+const workflowNodeMajor = getWorkflowNodeMajor(effectiveMinVersion);
+console.log(`ⓘ Workflow Node.js version target: ${workflowNodeMajor}.x`);
 
 // Track actual changes made, for use in the PR body
 const changeLog = {
@@ -217,15 +240,15 @@ if (checkActionLine === -1) {
             if (line.trim().startsWith('node-version:')) {
                 const versionMatch = line.match(/node-version:\s*['"]?(\d+)/);
                 const currentVersion = versionMatch ? parseInt(versionMatch[1], 10) : 0;
-                if (currentVersion < DEFAULT_NODEJS) {
+                if (currentVersion < workflowNodeMajor) {
                     const oldVersion = currentVersion ? `${currentVersion}.x` : 'unknown';
                     const indentStr = ' '.repeat(lineIndent);
-                    lines[i] = `${indentStr}node-version: '${DEFAULT_NODEJS}.x'`;
-                    console.log(`✔️ Updated node-version in 'ioBroker/testing-action-check@v1' from '${oldVersion}' to '${DEFAULT_NODEJS}.x'.`);
+                    lines[i] = `${indentStr}node-version: '${workflowNodeMajor}.x'`;
+                    console.log(`✔️ Updated node-version in 'ioBroker/testing-action-check@v1' from '${oldVersion}' to '${workflowNodeMajor}.x'.`);
                     modified = true;
-                    changeLog.checkNodeVersion = { changed: true, from: oldVersion, to: `${DEFAULT_NODEJS}.x` };
+                    changeLog.checkNodeVersion = { changed: true, from: oldVersion, to: `${workflowNodeMajor}.x` };
                 } else {
-                    console.log(`ⓘ node-version in 'ioBroker/testing-action-check@v1' is already '${currentVersion}.x' (>= DEFAULT_NODEJS=${DEFAULT_NODEJS}), skipping.`);
+                    console.log(`ⓘ node-version in 'ioBroker/testing-action-check@v1' is already '${currentVersion}.x' (>= workflow target ${workflowNodeMajor}.x), skipping.`);
                     changeLog.checkNodeVersion = { changed: false, current: `${currentVersion}.x` };
                 }
                 foundNodeVersion = true;
@@ -287,6 +310,9 @@ if (adapterTestsJobLine === -1) {
 
                     // Combined, deduplicated, sorted ascending
                     const newVersions = [...new Set([...requiredVersions, ...additionalVersions])];
+                    if (newVersions.length === 0) {
+                        newVersions.push(`${effectiveMinVersion}.x`);
+                    }
                     newVersions.sort((a, b) => (parseNodeMajorVersion(a) || 0) - (parseNodeMajorVersion(b) || 0));
 
                     // Check whether an update is actually needed
@@ -427,18 +453,18 @@ if (deployActionLineAll === -1) {
                 const versionMatch = stripped.match(/node-version:\s*['"]?(\d+)/);
                 if (versionMatch) {
                     const currentVersion = parseInt(versionMatch[1], 10);
-                    if (currentVersion < DEFAULT_NODEJS) {
+                    if (currentVersion < workflowNodeMajor) {
                         const oldVersion = `${currentVersion}.x`;
                         // Replace version in-line, preserving comment markers and indentation
                         lines[i] = lines[i].replace(
                             /node-version:\s*['"]?[\d.x*]+['"]?/,
-                            `node-version: '${DEFAULT_NODEJS}.x'`,
+                            `node-version: '${workflowNodeMajor}.x'`,
                         );
-                        console.log(`✔️ Updated node-version in 'ioBroker/testing-action-deploy@v1' from '${oldVersion}' to '${DEFAULT_NODEJS}.x'${isDeployActionCommented ? ' (kept commented)' : ''}.`);
+                        console.log(`✔️ Updated node-version in 'ioBroker/testing-action-deploy@v1' from '${oldVersion}' to '${workflowNodeMajor}.x'${isDeployActionCommented ? ' (kept commented)' : ''}.`);
                         modified = true;
-                        changeLog.deployNodeVersion = { changed: true, from: oldVersion, to: `${DEFAULT_NODEJS}.x` };
+                        changeLog.deployNodeVersion = { changed: true, from: oldVersion, to: `${workflowNodeMajor}.x` };
                     } else {
-                        console.log(`ⓘ node-version in 'ioBroker/testing-action-deploy@v1' is already '${currentVersion}.x' (>= DEFAULT_NODEJS=${DEFAULT_NODEJS}), skipping.`);
+                        console.log(`ⓘ node-version in 'ioBroker/testing-action-deploy@v1' is already '${currentVersion}.x' (>= workflow target ${workflowNodeMajor}.x), skipping.`);
                         changeLog.deployNodeVersion = { changed: false, current: `${currentVersion}.x` };
                     }
                     foundDeployNodeVersion = true;
@@ -482,15 +508,23 @@ if (!fs.existsSync(packageJsonPath)) {
     if (!enginesNode) {
         console.log(`ⓘ No 'engines.node' found in ${packageJsonPath}, skipping engines update.`);
     } else {
-        // Extract the first number (major version) from the engines range string
-        const versionMatch = enginesNode.match(/(\d+)/);
-        if (versionMatch) {
-            const currentMinVersion = parseInt(versionMatch[1], 10);
+        const minSupportedNodeVersion = getMinimumSupportedNodeVersion(enginesNode);
+        if (minSupportedNodeVersion) {
+            const currentMinVersion = minSupportedNodeVersion.major;
             if (currentMinVersion < MIN_NODEJS) {
                 console.log(`ⓘ engines.node '${enginesNode}' requires minimum Node.js ${currentMinVersion}, which is below MIN_NODEJS (${MIN_NODEJS}). Updating...`);
 
-                // Replace the first occurrence of the major version number
-                const newEnginesNode = enginesNode.replace(/(\d+)/, MIN_NODEJS.toString());
+                const currentMinVersionString = minSupportedNodeVersion.version;
+                let newEnginesNode = enginesNode;
+
+                if (enginesNode.includes(currentMinVersionString)) {
+                    newEnginesNode = enginesNode.replace(currentMinVersionString, `${MIN_NODEJS}.0.0`);
+                } else {
+                    newEnginesNode = enginesNode.replace(
+                        new RegExp(`\\b${currentMinVersion}\\b`),
+                        MIN_NODEJS.toString(),
+                    );
+                }
 
                 // Use string-level replacement to preserve original file formatting
                 const escapedOld = enginesNode.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
