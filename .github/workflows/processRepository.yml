@@ -33,7 +33,7 @@ jobs:
   process-repository:
     runs-on: ubuntu-latest
     outputs:
-      templates_count: ${{ steps.run_collection.outputs.templates_count || steps.set_count.outputs.templates_count || '1' }}
+      templates_count: ${{ steps.run_collection.outputs.templates_count || steps.set_count.outputs.templates_count || 1 }}
     steps:
       - name: Trim workflow parameters
         id: trim_params
@@ -97,7 +97,7 @@ jobs:
           sleep 15
 
           RUN_ID=""
-          MAX_RETRIES=180
+          MAX_RETRIES=180 # Wait up to 30 minutes (180 retries × 10 seconds) for the workflow run to appear
           RETRY_DELAY=10
           for i in $(seq 1 $MAX_RETRIES); do
             RUN_ID=$(gh run list \
@@ -123,6 +123,7 @@ jobs:
           gh run watch "$RUN_ID" -i 10 --repo "${{ github.repository }}" --exit-status
 
           # Retrieve templates count reported by processCollection
+          # Parses the TEMPLATES_COUNT=N marker emitted by the called workflow
           COUNT=$(gh run view "$RUN_ID" --log --repo "${{ github.repository }}" 2>/dev/null | grep -oP '(?<=TEMPLATES_COUNT=)[0-9]+' | tail -1)
           if [ -z "$COUNT" ]; then
             COUNT=1

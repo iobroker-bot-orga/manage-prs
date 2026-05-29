@@ -35,7 +35,7 @@ jobs:
     permissions:
       contents: read
     outputs:
-      templates_count: ${{ steps.set_count.outputs.templates_count }}
+      templates_count: ${{ steps.process_entries.outputs.templates_count }}
     steps:
       - name: Trim workflow parameters
         id: trim_params
@@ -98,6 +98,7 @@ jobs:
           "
 
       - name: Process collection entries
+        id: process_entries
         env:
           GH_TOKEN: ${{ secrets.IOBBOT_GITHUB_TOKEN_WITH_WF }}
         run: |
@@ -177,6 +178,7 @@ jobs:
             echo "✔️ Workflow run $RUN_ID completed successfully for template: $entry"
 
             # Retrieve templates count reported by this processRepository run
+            # Parses the TEMPLATES_COUNT=N marker emitted by the called workflow
             ENTRY_COUNT=$(gh run view "$RUN_ID" --log --repo "${{ github.repository }}" 2>/dev/null | grep -oP '(?<=TEMPLATES_COUNT=)[0-9]+' | tail -1)
             if [ -z "$ENTRY_COUNT" ]; then
               ENTRY_COUNT=1
@@ -193,14 +195,4 @@ jobs:
           echo "Total templates processed: $TOTAL_COUNT"
           echo "TEMPLATES_COUNT=$TOTAL_COUNT"
           echo "==================================================================="
-          echo "total_count=$TOTAL_COUNT" >> $GITHUB_ENV
-
-      - name: Set templates count output
-        id: set_count
-        run: |
-          COUNT="${{ env.total_count }}"
-          if [ -z "$COUNT" ]; then
-            COUNT=0
-          fi
-          echo "templates_count=$COUNT" >> $GITHUB_OUTPUT
-          echo "    Templates count output set to: $COUNT"
+          echo "templates_count=$TOTAL_COUNT" >> $GITHUB_OUTPUT
