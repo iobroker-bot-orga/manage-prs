@@ -32,6 +32,8 @@ on:
 jobs:
   process-repository:
     runs-on: ubuntu-latest
+    outputs:
+      templates_count: ${{ steps.run_collection.outputs.templates_count || steps.set_count.outputs.templates_count || '1' }}
     steps:
       - name: Trim workflow parameters
         id: trim_params
@@ -58,22 +60,103 @@ jobs:
           echo "PR Mode: ${{ steps.trim_params.outputs.pr_mode }}"
           echo "==================================================================="
 
+      - name: Check for collection.json
+        id: check_collection
+        env:
+          GH_TOKEN: ${{ secrets.IOBBOT_GITHUB_TOKEN_WITH_WF }}
+        run: |
+          TEMPLATE="${{ steps.trim_params.outputs.template }}"
+          if gh api "repos/${{ github.repository }}/contents/templates/$TEMPLATE/collection.json" --silent 2>/dev/null; then
+            echo "collection_found=true" >> $GITHUB_OUTPUT
+            echo "✔️ Found collection.json for template '$TEMPLATE', will delegate to processCollection"
+          else
+            echo "collection_found=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ No collection.json found for template '$TEMPLATE', proceeding with standard repository processing"
+          fi
+
+      - name: Trigger and wait for processCollection
+        id: run_collection
+        if: steps.check_collection.outputs.collection_found == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.IOBBOT_GITHUB_TOKEN_WITH_WF }}
+        run: |
+          REPO_URL="${{ steps.trim_params.outputs.repository_url }}"
+          TEMPLATE="${{ steps.trim_params.outputs.template }}"
+
+          TRIGGER_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+          echo "Triggering processCollection workflow for template: $TEMPLATE (repository: $REPO_URL)"
+          gh workflow run processCollection.yml \
+            --repo "${{ github.repository }}" \
+            --field "repository_url=$REPO_URL" \
+            --field "template=$TEMPLATE" \
+            --field "parameter_data=${{ steps.trim_params.outputs.parameter_data }}" \
+            --field "pr_mode=${{ steps.trim_params.outputs.pr_mode }}"
+
+          echo "    Waiting for workflow run to be registered..."
+          sleep 15
+
+          RUN_ID=""
+          MAX_RETRIES=180
+          RETRY_DELAY=10
+          for i in $(seq 1 $MAX_RETRIES); do
+            RUN_ID=$(gh run list \
+              --workflow=processCollection.yml \
+              --repo "${{ github.repository }}" \
+              --limit=10 \
+              --json databaseId,createdAt \
+              --jq "[.[] | select(.createdAt >= \"$TRIGGER_TIME\")] | .[0].databaseId // empty")
+            if [ -n "$RUN_ID" ]; then
+              break
+            fi
+            echo "    Waiting for run to appear (attempt $i/$MAX_RETRIES)..."
+            sleep $RETRY_DELAY
+          done
+
+          if [ -z "$RUN_ID" ]; then
+            echo "❌ Error: Could not find workflow run for processCollection"
+            exit 1
+          fi
+
+          echo "    Found workflow run: $RUN_ID"
+          echo "    Waiting for workflow run $RUN_ID to complete..."
+          gh run watch "$RUN_ID" -i 10 --repo "${{ github.repository }}" --exit-status
+
+          # Retrieve templates count reported by processCollection
+          COUNT=$(gh run view "$RUN_ID" --log --repo "${{ github.repository }}" 2>/dev/null | grep -oP '(?<=TEMPLATES_COUNT=)[0-9]+' | tail -1)
+          if [ -z "$COUNT" ]; then
+            COUNT=1
+            echo "ℹ️ Could not retrieve templates count from processCollection run $RUN_ID, assuming 1"
+          fi
+          echo "✔️ processCollection completed, templates processed: $COUNT"
+          echo "TEMPLATES_COUNT=$COUNT"
+          echo "templates_count=$COUNT" >> $GITHUB_OUTPUT
+
+          echo "==================================================================="
+          echo "Collection processing completed successfully"
+          echo "==================================================================="
+
       - name: Checkout this repository
+        if: steps.check_collection.outputs.collection_found != 'true'
         uses: actions/checkout@v6
 
       - name: Setup Node.js
+        if: steps.check_collection.outputs.collection_found != 'true'
         uses: actions/setup-node@v6
         with:
           node-version: '22'
-      - run: |
+      - if: steps.check_collection.outputs.collection_found != 'true'
+        run: |
           echo "Node version: $(node --version)"
           echo "NPM version: $(npm --version)"
 
       - name: Install dependencies
+        if: steps.check_collection.outputs.collection_found != 'true'
         run: npm i
 
       - name: Extract repository info
         id: repo_info
+        if: steps.check_collection.outputs.collection_found != 'true'
         run: |
           # Extract owner and repo name from input (handles both URL and owner/repo formats)
           REPO_INPUT="${{ steps.trim_params.outputs.repository_url }}"
@@ -107,6 +190,7 @@ jobs:
           echo "    Full URL: $FULL_URL"
 
       - name: Fork repository
+        if: steps.check_collection.outputs.collection_found != 'true'
         env:
           GH_TOKEN: ${{ secrets.IOBBOT_GITHUB_TOKEN_WITH_WF }}
         run: |
@@ -152,6 +236,7 @@ jobs:
           echo ">>> Completed: Fork repository"
 
       - name: Clone target repository
+        if: steps.check_collection.outputs.collection_found != 'true'
         env:
           GH_TOKEN: ${{ secrets.IOBBOT_GITHUB_TOKEN_WITH_WF }}
         run: |
@@ -181,6 +266,7 @@ jobs:
           echo ">>> Completed: Clone target repository"
 
       - name: Create branch
+        if: steps.check_collection.outputs.collection_found != 'true'
         run: |
           echo ">>> Starting: Create branch"
           cd target-repo
@@ -201,6 +287,7 @@ jobs:
           echo ">>> Completed: Create branch"
 
       - name: Run prGenerator.js script
+        if: steps.check_collection.outputs.collection_found != 'true'
         run: |
           echo ">>> Starting: Run prGenerator.js script"
           cd target-repo
@@ -209,6 +296,7 @@ jobs:
           echo ">>> Completed: Run prGenerator.js script"
 
       - name: Commit and push changes
+        if: steps.check_collection.outputs.collection_found != 'true'
         env:
           GH_TOKEN: ${{ secrets.IOBBOT_GITHUB_TOKEN_WITH_WF }}
         run: |
@@ -234,6 +322,7 @@ jobs:
           echo ">>> Completed: Commit and push changes"
 
       - name: Manage Pull Request(s)
+        if: steps.check_collection.outputs.collection_found != 'true'
         env:
           GH_TOKEN: ${{ secrets.IOBBOT_GITHUB_TOKEN_WITH_WF }}
         run: |
@@ -280,3 +369,10 @@ jobs:
           echo "==================================================================="
           echo "Workflow completed successfully"
           echo "==================================================================="
+
+      - name: Set templates count
+        id: set_count
+        if: steps.check_collection.outputs.collection_found != 'true'
+        run: |
+          echo "TEMPLATES_COUNT=1"
+          echo "templates_count=1" >> $GITHUB_OUTPUT

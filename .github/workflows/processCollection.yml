@@ -34,6 +34,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    outputs:
+      templates_count: ${{ steps.set_count.outputs.templates_count }}
     steps:
       - name: Trim workflow parameters
         id: trim_params
@@ -114,6 +116,8 @@ jobs:
           cat /tmp/collection_entries.txt
           echo "==================================================================="
 
+          TOTAL_COUNT=0
+
           while IFS= read -r entry; do
             [ -z "$entry" ] && continue
 
@@ -133,7 +137,7 @@ jobs:
             # Record time before triggering to identify the run afterwards
             TRIGGER_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-            echo "    Triggering processRepository workflow for template: $entry"
+            echo "    Triggering processRepository workflow for template: $entry (repository: ${{ steps.trim_params.outputs.repository_url }})"
             gh workflow run processRepository.yml \
               --repo "${{ github.repository }}" \
               --field "repository_url=${{ steps.trim_params.outputs.repository_url }}" \
@@ -172,9 +176,31 @@ jobs:
             gh run watch "$RUN_ID" -i 10 --repo "${{ github.repository }}" --exit-status
             echo "✔️ Workflow run $RUN_ID completed successfully for template: $entry"
 
+            # Retrieve templates count reported by this processRepository run
+            ENTRY_COUNT=$(gh run view "$RUN_ID" --log --repo "${{ github.repository }}" 2>/dev/null | grep -oP '(?<=TEMPLATES_COUNT=)[0-9]+' | tail -1)
+            if [ -z "$ENTRY_COUNT" ]; then
+              ENTRY_COUNT=1
+              echo "ℹ️ Could not retrieve templates count from run $RUN_ID, assuming 1"
+            fi
+            echo "ℹ️ Templates processed by run $RUN_ID: $ENTRY_COUNT"
+            TOTAL_COUNT=$((TOTAL_COUNT + ENTRY_COUNT))
+
           done < /tmp/collection_entries.txt
 
           echo ""
           echo "==================================================================="
           echo "Collection processing completed"
+          echo "Total templates processed: $TOTAL_COUNT"
+          echo "TEMPLATES_COUNT=$TOTAL_COUNT"
           echo "==================================================================="
+          echo "total_count=$TOTAL_COUNT" >> $GITHUB_ENV
+
+      - name: Set templates count output
+        id: set_count
+        run: |
+          COUNT="${{ env.total_count }}"
+          if [ -z "$COUNT" ]; then
+            COUNT=0
+          fi
+          echo "templates_count=$COUNT" >> $GITHUB_OUTPUT
+          echo "    Templates count output set to: $COUNT"
