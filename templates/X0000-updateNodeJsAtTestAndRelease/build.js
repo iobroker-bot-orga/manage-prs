@@ -519,6 +519,9 @@ if (!fs.existsSync(packageJsonPath)) {
                 const currentMinVersionString = minSupportedNodeVersion.version;
                 let newEnginesNode = enginesNode;
 
+                // Prefer replacing the full normalized minimum version when it appears in the
+                // range (for example ">=18.20.0"), and fall back to major-only replacement for
+                // shorter forms such as ">=18" or "^18".
                 if (enginesNode.includes(currentMinVersionString)) {
                     newEnginesNode = enginesNode.replace(currentMinVersionString, `${MIN_NODEJS}.0.0`);
                 } else {
@@ -529,6 +532,8 @@ if (!fs.existsSync(packageJsonPath)) {
                 }
 
                 const updatedMinSupportedNodeVersion = getMinimumSupportedNodeVersion(newEnginesNode);
+                // Skip rewrites that still allow a lower minimum or become unsatisfiable after
+                // replacement, for example when another OR branch still allows an older major.
                 if (!updatedMinSupportedNodeVersion || updatedMinSupportedNodeVersion.major < MIN_NODEJS) {
                     console.log(`ⓘ Updated engines.node range '${newEnginesNode}' would not safely enforce Node.js >= ${MIN_NODEJS}, skipping engines update.`);
                     changeLog.enginesNode = { changed: false, current: enginesNode };
