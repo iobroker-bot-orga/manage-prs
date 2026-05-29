@@ -528,8 +528,9 @@ if (!fs.existsSync(packageJsonPath)) {
                     );
                 }
 
-                if (!semver.validRange(newEnginesNode) || !semver.minVersion(newEnginesNode)) {
-                    console.log(`ⓘ Updated engines.node range '${newEnginesNode}' would be invalid, skipping engines update.`);
+                const updatedMinSupportedNodeVersion = getMinimumSupportedNodeVersion(newEnginesNode);
+                if (!updatedMinSupportedNodeVersion || updatedMinSupportedNodeVersion.major < MIN_NODEJS) {
+                    console.log(`ⓘ Updated engines.node range '${newEnginesNode}' would not safely enforce Node.js >= ${MIN_NODEJS}, skipping engines update.`);
                     changeLog.enginesNode = { changed: false, current: enginesNode };
                 } else {
                     // Use string-level replacement to preserve original file formatting
