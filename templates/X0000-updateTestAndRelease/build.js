@@ -23,6 +23,7 @@ const parameterData = args[2] || '';
 
 const workflowPath = '.github/workflows/test-and-release.yml';
 const prBodyPath = path.join(process.cwd(), '.iobroker-pr-body.tmp');
+const YAML_LIST_PREFIX_LENGTH = 2;
 
 /**
  * Get the indentation level of a line.
@@ -363,7 +364,9 @@ function ensureNeeds(lines, jobBlock, requiredDependencies) {
 
         itemIndentSize = getIndent(line);
         const commentIndex = trimmed.indexOf('#');
-        const itemValue = commentIndex === -1 ? trimmed.slice(2) : trimmed.slice(2, commentIndex);
+        const itemValue = commentIndex === -1
+            ? trimmed.slice(YAML_LIST_PREFIX_LENGTH)
+            : trimmed.slice(YAML_LIST_PREFIX_LENGTH, commentIndex);
         existingDependencies.push(stripQuotes(itemValue.trim()));
     }
 
@@ -433,10 +436,14 @@ const englishChanges = [];
 const germanChanges = [];
 
 if (hasAdapterTestsJob && hasCheckAndLintJob) {
-    const addedDependencies = ensureNeeds(lines, getCurrentJobBlock('adapter-tests'), ['check-and-lint']);
-    if (addedDependencies.includes('check-and-lint')) {
-        englishChanges.push('Added `check-and-lint` to `adapter-tests.needs`.');
-        germanChanges.push('`check-and-lint` zu `adapter-tests.needs` hinzugefügt.');
+    const currentAdapterTestsJob = getCurrentJobBlock('adapter-tests');
+
+    if (currentAdapterTestsJob) {
+        const addedDependencies = ensureNeeds(lines, currentAdapterTestsJob, ['check-and-lint']);
+        if (addedDependencies.includes('check-and-lint')) {
+            englishChanges.push('Added `check-and-lint` to `adapter-tests.needs`.');
+            germanChanges.push('`check-and-lint` zu `adapter-tests.needs` hinzugefügt.');
+        }
     }
 }
 
@@ -451,7 +458,8 @@ if (getCurrentJobBlock('deploy')) {
         requiredDependencies.push('adapter-tests');
     }
 
-    const addedDependencies = ensureNeeds(lines, getCurrentJobBlock('deploy'), requiredDependencies);
+    const currentDeployJob = getCurrentJobBlock('deploy');
+    const addedDependencies = currentDeployJob ? ensureNeeds(lines, currentDeployJob, requiredDependencies) : [];
 
     if (addedDependencies.includes('check-and-lint')) {
         englishChanges.push('Added `check-and-lint` to `deploy.needs`.');
