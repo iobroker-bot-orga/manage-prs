@@ -41,7 +41,7 @@ function hasTsFilesInSrc() {
     }
     try {
         const files = fs.readdirSync(srcDir);
-        return files.some(f => f.endsWith('.ts'));
+        return files.some(fileName => fileName.endsWith('.ts'));
     } catch {
         return false;
     }
