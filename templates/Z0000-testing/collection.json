@@ -2,6 +2,6 @@
   "collection": [
     "E40xx-fixSchemaLinkForVsCode",
     "W1084-removeCommonInstalledFrom",
-    "E6005-fixCopyrightYear",
+    "E6005-fixCopyrightYear"
   ]
 }
