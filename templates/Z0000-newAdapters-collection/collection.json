@@ -1,19 +1,32 @@
 {
   "collection": [
     "E40xx-fixSchemaLinkForVsCode",
+    "E1084-removeCommonInstalledFrom",
+    "E6005-fixCopyrightYear",
+    "E8903-addDependabotGithubAction",
     "S5043-useNodePrefix",
+    "S6020-addChangelogOld",
     "S9006-blockCommitInfo",
     "W0040-fixKeywords",
+    "W0086-updateTsconfigNode",
     "W1035-addTier",
+    "W1078-removeCommonMaterialize",
     "W1081-addLicenseInformation",
+    "W1084-removeCommonAdminTabFa-icon",
+    "W1084-removeCommonAllowInit",
     "W1084-removeCommonInstalledFrom",
     "W1084-removeCommonMain",
     "W1084-removeCommonTitle",
     "W8917-addDependabot-ignoreTypesNode",
     "X0000-dropNode20",
+    "X0000-fixChangelogOldLink",
     "X0000-randomDependabot",
+    "X0000-removeCommonNoConfig",
     "X0000-setupAutomergeDependabot",
     "X0000-updateDependabotSettings",
-    "X0000-updateNodeJsAtTestAndRelease"
+    "X0000-updateDependency-Admin",
+    "X0000-updateDependency-jsController",
+    "X0000-updateNodeJsAtTestAndRelease",
+    "X0000-updateTypesNode"
   ]
 }
