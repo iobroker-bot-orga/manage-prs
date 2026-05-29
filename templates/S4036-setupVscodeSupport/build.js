@@ -31,13 +31,27 @@ if (fs.existsSync(vsCodeSettingsPath)) {
 
 /**
  * Detect whether the adapter uses TypeScript or JavaScript.
- * A TypeScript adapter is identified by the presence of tsconfig.json.
+ * A TypeScript adapter is identified by the presence of the /src directory
+ * containing at least one .ts file.
  */
-const isTypeScript = fs.existsSync('tsconfig.json');
+function hasTsFilesInSrc() {
+    const srcDir = 'src';
+    if (!fs.existsSync(srcDir)) {
+        return false;
+    }
+    try {
+        const files = fs.readdirSync(srcDir);
+        return files.some(f => f.endsWith('.ts'));
+    } catch {
+        return false;
+    }
+}
+
+const isTypeScript = hasTsFilesInSrc();
 if (isTypeScript) {
-    console.log('ⓘ TypeScript adapter detected (tsconfig.json found).');
+    console.log('ⓘ TypeScript adapter detected (.ts files found in src/).');
 } else {
-    console.log('ⓘ JavaScript adapter detected (no tsconfig.json found).');
+    console.log('ⓘ JavaScript adapter detected (no .ts files found in src/).');
 }
 
 /**
