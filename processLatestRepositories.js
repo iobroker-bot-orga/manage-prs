@@ -8,6 +8,9 @@ const { getLatestRepo } = require('@iobroker-bot-orga/iobroker-lib');
 // Default configuration
 const DEFAULT_DELAY_SECONDS = 60;
 const MIN_DELAY_SECONDS = 5;
+const INITIAL_RUN_REGISTRATION_DELAY_MS = 15000;
+const MAX_RUN_DISCOVERY_RETRIES = 180;
+const RUN_DISCOVERY_RETRY_DELAY_MS = 10000;
 
 const opts = {
     dry: false,
@@ -178,19 +181,17 @@ async function triggerRepoProcessing(owner, adapter) {
         console.log(`    ✔️ Workflow triggered successfully (pr_mode: ${opts.pr_mode})`);
 
         console.log(`    ⏳ Waiting for workflow run to be registered...`);
-        await sleep(15000);
+        await sleep(INITIAL_RUN_REGISTRATION_DELAY_MS);
 
         let runId = '';
-        const maxRetries = 180; // Up to 30 minutes (180 * 10s) to discover run
-        const retryDelayMs = 10000;
-        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        for (let attempt = 1; attempt <= MAX_RUN_DISCOVERY_RETRIES; attempt++) {
             const runListCmd = `gh run list --workflow=processRepository.yml --repo iobroker-bot-orga/manage-prs --limit=10 --json databaseId,createdAt --jq "[.[] | select(.createdAt >= \\"${triggerTime}\\")] | .[0].databaseId // empty"`;
             runId = executeGhCommand(runListCmd).trim();
             if (runId) {
                 break;
             }
-            console.log(`    ⏳ Waiting for workflow run to appear (attempt ${attempt}/${maxRetries})...`);
-            await sleep(retryDelayMs);
+            console.log(`    ⏳ Waiting for workflow run to appear (attempt ${attempt}/${MAX_RUN_DISCOVERY_RETRIES})...`);
+            await sleep(RUN_DISCOVERY_RETRY_DELAY_MS);
         }
 
         if (!runId) {
@@ -203,7 +204,12 @@ async function triggerRepoProcessing(owner, adapter) {
         executeGhCommand(`gh run watch "${runId}" -i 10 --repo iobroker-bot-orga/manage-prs --exit-status`);
 
         // Parse TEMPLATES_COUNT marker from logs (reported by processRepository workflow)
-        const logOutput = executeGhCommand(`gh run view "${runId}" --log --repo iobroker-bot-orga/manage-prs || true`);
+        let logOutput = '';
+        try {
+            logOutput = executeGhCommand(`gh run view "${runId}" --log --repo iobroker-bot-orga/manage-prs`);
+        } catch (logError) {
+            console.log(`    ⚠️ Could not retrieve logs for run ${runId}, assuming templates processed: 1 (${logError.message})`);
+        }
         const countMatches = [...logOutput.matchAll(/TEMPLATES_COUNT=(\d+)/g)];
         const templatesCount = parseInt(countMatches.at(-1)?.[1] || '1', 10);
         const normalizedCount = Number.isFinite(templatesCount) && templatesCount > 0 ? templatesCount : 1;
@@ -211,7 +217,7 @@ async function triggerRepoProcessing(owner, adapter) {
         console.log(`    ✔️ Retrieved templates processed by processRepository: ${normalizedCount}`);
         return normalizedCount;
     } catch (e) {
-        console.error(`    ❌ Failed to trigger workflow: ${e.message}`);
+        console.error(`    ❌ Failed while triggering or monitoring workflow: ${e.message}`);
         return 1;
     }
 }
@@ -407,7 +413,7 @@ async function main() {
                 console.log(`🧪 Would trigger processing for ${owner}/${repoName} with pr_mode="${opts.pr_mode}"`);
             }
 
-            const counterReduction = Math.max(1, templatesProcessed);
+            const counterReduction = templatesProcessed;
             counter = counter - counterReduction;
             console.log(`ⓘ Retrieved templates processed: ${templatesProcessed} (counter reduced by ${counterReduction})`);
 
