@@ -199,7 +199,8 @@ async function triggerRepoProcessing(owner, adapter) {
             return 1;
         }
 
-        console.log(`    ✔️ Found workflow run: ${runId}`);
+        const runUrl = `https://github.com/iobroker-bot-orga/manage-prs/actions/runs/${runId}`;
+        console.log(`    ✔️ Found workflow run: ${runId} (${runUrl})`);
         console.log(`    ⏳ Waiting for workflow run ${runId} to complete...`);
         executeGhCommand(`gh run watch "${runId}" -i 10 --repo iobroker-bot-orga/manage-prs --exit-status`);
 
