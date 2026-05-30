@@ -81,7 +81,7 @@ for (let index = 0; index < updatesNode.items.length; index++) {
     const directory = update.get('directory');
     const directoriesVal = update.get('directories');
     const hasRootDirectory = directory === '/';
-    const hasWildcardDirectories = Array.isArray(directoriesVal) && directoriesVal.includes('**/*');
+    const hasWildcardDirectories = (Array.isArray(directoriesVal) && directoriesVal.includes('**/*')) || directoriesVal === '**/*';
 
     if (!hasRootDirectory && !hasWildcardDirectories) {
         console.log(`ⓘ npm block ${index + 1}: directory configuration does not match '/' or '**/*' - skipping`);
