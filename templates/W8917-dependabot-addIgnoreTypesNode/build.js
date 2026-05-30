@@ -77,16 +77,17 @@ for (let index = 0; index < updatesNode.items.length; index++) {
         continue;
     }
 
-    // Only process sections with directory: '/' or directories containing '**/*'
-    const directory = update.get('directory');
-    const directoriesVal = update.get('directories');
-    const hasRootDirectory = directory === '/';
-    const hasWildcardDirectories = (Array.isArray(directoriesVal) && directoriesVal.includes('**/*')) || directoriesVal === '**/*';
+    // no real reason for this restriction ...
+    // // Only process sections with directory: '/' or directories containing '**/*'
+    // const directory = update.get('directory');
+    // const directoriesVal = update.get('directories');
+    // const hasRootDirectory = directory === '/';
+    // const hasWildcardDirectories = (Array.isArray(directoriesVal) && directoriesVal.includes('**/*')) || directoriesVal === '**/*';
 
-    if (!hasRootDirectory && !hasWildcardDirectories) {
-        console.log(`ⓘ npm block ${index + 1}: directory configuration does not match '/' or '**/*' - skipping`);
-        continue;
-    }
+    // if (!hasRootDirectory && !hasWildcardDirectories) {
+    //     console.log(`ⓘ npm block ${index + 1}: directory configuration does not match '/' or '**/*' - skipping`);
+    //     continue;
+    // }
 
     console.log(`\nⓘ Processing npm block ${index + 1} (directory: ${directory || JSON.stringify(directoriesVal)})`);
 
