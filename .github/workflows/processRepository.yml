@@ -236,8 +236,24 @@ jobs:
             echo "    Fork created successfully"
           fi
           echo "    Resolving fork repository by parent relationship..."
-          EXPECTED_PARENT_LOWER=$(echo "${{ steps.repo_info.outputs.full_name }}" | tr '[:upper:]' '[:lower:]')
-          FORK_FULL_NAME=$(gh api --paginate "users/$CURRENT_USER/repos?type=owner&per_page=100" --jq '.[] | select(.fork == true and .parent != null) | "\(.full_name)\t\(.parent.full_name)"' | awk -F'\t' -v expected="$EXPECTED_PARENT_LOWER" 'tolower($2) == expected {print $1; exit}')
+          FORK_FULL_NAME=""
+          for PAGE in $(seq 1 50); do
+            FORKS_PAGE=$(gh api "repos/${{ steps.repo_info.outputs.full_name }}/forks?per_page=100&page=$PAGE" --jq '.[] | "\(.full_name)\t\(.owner.login)"')
+            if [ -z "$FORKS_PAGE" ]; then
+              break
+            fi
+
+            PAGE_MATCH=$(echo "$FORKS_PAGE" | awk -F'\t' -v current_user="$CURRENT_USER" 'tolower($2) == tolower(current_user) {print $1; exit}')
+            if [ -n "$PAGE_MATCH" ]; then
+              FORK_FULL_NAME="$PAGE_MATCH"
+              break
+            fi
+
+            PAGE_COUNT=$(echo "$FORKS_PAGE" | wc -l | xargs)
+            if [ "$PAGE_COUNT" -lt 100 ]; then
+              break
+            fi
+          done
           if [ -z "$FORK_FULL_NAME" ]; then
             echo "    ERROR: Could not resolve fork repository for parent ${{ steps.repo_info.outputs.full_name }}"
             exit 1
