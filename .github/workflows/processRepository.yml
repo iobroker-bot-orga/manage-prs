@@ -199,18 +199,19 @@ jobs:
           # Get the authenticated user
           CURRENT_USER=$(gh api user -q .login)
           echo "    Current user: $CURRENT_USER"
+          TARGET_REPO="${{ steps.repo_info.outputs.repo }}"
 
           # Check if fork already exists
-          echo "    Checking if fork exists at $CURRENT_USER/${{ steps.repo_info.outputs.repo }}"
-          if gh repo view "$CURRENT_USER/${{ steps.repo_info.outputs.repo }}" >/dev/null 2>&1; then
+          echo "    Checking if fork exists at $CURRENT_USER/$TARGET_REPO"
+          if gh repo view "$CURRENT_USER/$TARGET_REPO" >/dev/null 2>&1; then
             echo "    Fork already exists"
 
             # Verify that the fork is based on the target repository
             echo "    Verifying fork parent..."
-            FORK_PARENT=$(gh repo view "$CURRENT_USER/${{ steps.repo_info.outputs.repo }}" --json parent -q 'if .parent then "\(.parent.owner.login)/\(.parent.name)" else "" end')
+            FORK_PARENT=$(gh repo view "$CURRENT_USER/$TARGET_REPO" --json parent -q 'if .parent then "\(.parent.owner.login)/\(.parent.name)" else "" end')
             if [ -z "$FORK_PARENT" ]; then
               echo "    ERROR: Repository exists but is not a fork"
-              echo "    Repository: $CURRENT_USER/${{ steps.repo_info.outputs.repo }}"
+              echo "    Repository: $CURRENT_USER/$TARGET_REPO"
               exit 1
             fi
             # Compare case-insensitively since GitHub URLs are case-insensitive
@@ -226,7 +227,7 @@ jobs:
 
             # Sync fork with upstream
             echo "    Syncing fork with upstream repository..."
-            gh repo sync "$CURRENT_USER/${{ steps.repo_info.outputs.repo }}" --source "${{ steps.repo_info.outputs.full_name }}" || echo "    Fork sync completed or already up to date"
+            gh repo sync "$CURRENT_USER/$TARGET_REPO" --source "${{ steps.repo_info.outputs.full_name }}" || echo "    Fork sync completed or already up to date"
             echo "    Fork is up to date with upstream"
           else
             # Fork the repository
@@ -234,6 +235,35 @@ jobs:
             gh repo fork ${{ steps.repo_info.outputs.full_name }} --clone=false || echo "    Fork creation may have encountered an issue"
             echo "    Fork created successfully"
           fi
+          echo "    Resolving fork repository by parent relationship..."
+          FORK_FULL_NAME=""
+          # Max 10 pages × 100 forks/page = 1000 forks scanned; this comfortably covers expected adapter fork counts.
+          MAX_FORK_PAGES=10
+          # GitHub owner names are case-insensitive. Compare in lowercase to avoid false mismatches.
+          CURRENT_USER_LOWER=$(echo "$CURRENT_USER" | tr '[:upper:]' '[:lower:]')
+          # Loop up to MAX_FORK_PAGES pages (100 forks per page).
+          for PAGE in $(seq 1 "$MAX_FORK_PAGES"); do
+            FORKS_PAGE=$(gh api "repos/${{ steps.repo_info.outputs.full_name }}/forks?per_page=100&page=$PAGE" --jq '.') || {
+              echo "    ERROR: Failed to retrieve forks for ${{ steps.repo_info.outputs.full_name }} (page $PAGE)"
+              exit 1
+            }
+            if [ -z "$FORKS_PAGE" ]; then
+              break
+            fi
+
+            PAGE_MATCH=$(echo "$FORKS_PAGE" | jq -r --arg current_user "$CURRENT_USER_LOWER" '.[] | select((.owner.login | ascii_downcase) == $current_user) | .full_name' | head -n 1)
+            if [ -n "$PAGE_MATCH" ]; then
+              FORK_FULL_NAME="$PAGE_MATCH"
+              break
+            fi
+          done
+          if [ -z "$FORK_FULL_NAME" ]; then
+            echo "    ERROR: Could not resolve fork repository for parent ${{ steps.repo_info.outputs.full_name }}"
+            echo "    Please verify the fork exists for $CURRENT_USER and is based on ${{ steps.repo_info.outputs.full_name }}"
+            exit 1
+          fi
+          echo "    Using fork repository: $FORK_FULL_NAME"
+          echo "fork_full_name=$FORK_FULL_NAME" >> $GITHUB_ENV
           echo ">>> Completed: Fork repository"
 
       - name: Clone target repository
@@ -256,8 +286,12 @@ jobs:
 
           # Add fork as a remote with authentication
           echo "    Adding fork remote..."
-          git remote add fork https://x-access-token:${GH_TOKEN}@github.com/${CURRENT_USER}/${{ steps.repo_info.outputs.repo }}.git
-          echo "    Fork remote added: ${CURRENT_USER}/${{ steps.repo_info.outputs.repo }}"
+          if [ -z "${{ env.fork_full_name }}" ]; then
+            echo "    ERROR: fork_full_name was not set"
+            exit 1
+          fi
+          git remote add fork https://x-access-token:${GH_TOKEN}@github.com/${{ env.fork_full_name }}.git
+          echo "    Fork remote added: ${{ env.fork_full_name }}"
 
           echo "    Current directory: $(pwd)"
           echo "    Git remotes:"
