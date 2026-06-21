@@ -199,18 +199,19 @@ jobs:
           # Get the authenticated user
           CURRENT_USER=$(gh api user -q .login)
           echo "    Current user: $CURRENT_USER"
+          TARGET_REPO="${{ steps.repo_info.outputs.repo }}"
 
           # Check if fork already exists
-          echo "    Checking if fork exists at $CURRENT_USER/${{ steps.repo_info.outputs.repo }}"
-          if gh repo view "$CURRENT_USER/${{ steps.repo_info.outputs.repo }}" >/dev/null 2>&1; then
+          echo "    Checking if fork exists at $CURRENT_USER/$TARGET_REPO"
+          if gh repo view "$CURRENT_USER/$TARGET_REPO" >/dev/null 2>&1; then
             echo "    Fork already exists"
 
             # Verify that the fork is based on the target repository
             echo "    Verifying fork parent..."
-            FORK_PARENT=$(gh repo view "$CURRENT_USER/${{ steps.repo_info.outputs.repo }}" --json parent -q 'if .parent then "\(.parent.owner.login)/\(.parent.name)" else "" end')
+            FORK_PARENT=$(gh repo view "$CURRENT_USER/$TARGET_REPO" --json parent -q 'if .parent then "\(.parent.owner.login)/\(.parent.name)" else "" end')
             if [ -z "$FORK_PARENT" ]; then
               echo "    ERROR: Repository exists but is not a fork"
-              echo "    Repository: $CURRENT_USER/${{ steps.repo_info.outputs.repo }}"
+              echo "    Repository: $CURRENT_USER/$TARGET_REPO"
               exit 1
             fi
             # Compare case-insensitively since GitHub URLs are case-insensitive
@@ -226,7 +227,7 @@ jobs:
 
             # Sync fork with upstream
             echo "    Syncing fork with upstream repository..."
-            gh repo sync "$CURRENT_USER/${{ steps.repo_info.outputs.repo }}" --source "${{ steps.repo_info.outputs.full_name }}" || echo "    Fork sync completed or already up to date"
+            gh repo sync "$CURRENT_USER/$TARGET_REPO" --source "${{ steps.repo_info.outputs.full_name }}" || echo "    Fork sync completed or already up to date"
             echo "    Fork is up to date with upstream"
           else
             # Fork the repository
@@ -234,6 +235,15 @@ jobs:
             gh repo fork ${{ steps.repo_info.outputs.full_name }} --clone=false || echo "    Fork creation may have encountered an issue"
             echo "    Fork created successfully"
           fi
+          echo "    Resolving fork repository by parent relationship..."
+          EXPECTED_PARENT_LOWER=$(echo "${{ steps.repo_info.outputs.full_name }}" | tr '[:upper:]' '[:lower:]')
+          FORK_FULL_NAME=$(gh repo list "$CURRENT_USER" --fork --limit 1000 --json nameWithOwner,parent --jq '.[] | select(.parent != null) | "\(.nameWithOwner)\t\(.parent.nameWithOwner)"' | awk -F'\t' -v expected="$EXPECTED_PARENT_LOWER" 'tolower($2) == expected {print $1; exit}')
+          if [ -z "$FORK_FULL_NAME" ]; then
+            echo "    ERROR: Could not resolve fork repository for parent ${{ steps.repo_info.outputs.full_name }}"
+            exit 1
+          fi
+          echo "    Using fork repository: $FORK_FULL_NAME"
+          echo "fork_full_name=$FORK_FULL_NAME" >> $GITHUB_ENV
           echo ">>> Completed: Fork repository"
 
       - name: Clone target repository
@@ -256,8 +266,12 @@ jobs:
 
           # Add fork as a remote with authentication
           echo "    Adding fork remote..."
-          git remote add fork https://x-access-token:${GH_TOKEN}@github.com/${CURRENT_USER}/${{ steps.repo_info.outputs.repo }}.git
-          echo "    Fork remote added: ${CURRENT_USER}/${{ steps.repo_info.outputs.repo }}"
+          if [ -z "${{ env.fork_full_name }}" ]; then
+            echo "    ERROR: fork_full_name was not set"
+            exit 1
+          fi
+          git remote add fork https://x-access-token:${GH_TOKEN}@github.com/${{ env.fork_full_name }}.git
+          echo "    Fork remote added: ${{ env.fork_full_name }}"
 
           echo "    Current directory: $(pwd)"
           echo "    Git remotes:"
