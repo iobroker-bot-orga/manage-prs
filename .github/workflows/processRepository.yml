@@ -237,12 +237,13 @@ jobs:
           fi
           echo "    Resolving fork repository by parent relationship..."
           FORK_FULL_NAME=""
-          # Max 10 pages × 100 forks/page = 1000 forks scanned for owner match.
+          # Max 10 pages × 100 forks/page = 1000 forks scanned; this comfortably covers expected adapter fork counts.
           MAX_FORK_PAGES=10
           # GitHub owner names are case-insensitive. Compare in lowercase to avoid false mismatches.
+          CURRENT_USER_LOWER=$(echo "$CURRENT_USER" | tr '[:upper:]' '[:lower:]')
           # Loop up to MAX_FORK_PAGES pages (100 forks per page).
           for PAGE in $(seq 1 "$MAX_FORK_PAGES"); do
-            FORKS_PAGE=$(gh api "repos/${{ steps.repo_info.outputs.full_name }}/forks?per_page=100&page=$PAGE" --jq '.[] | "\(.full_name)\t\(.owner.login)"') || {
+            FORKS_PAGE=$(gh api "repos/${{ steps.repo_info.outputs.full_name }}/forks?per_page=100&page=$PAGE" --jq '.') || {
               echo "    ERROR: Failed to retrieve forks for ${{ steps.repo_info.outputs.full_name }} (page $PAGE)"
               exit 1
             }
@@ -250,9 +251,7 @@ jobs:
               break
             fi
 
-            # FORKS_PAGE contains lines in the format: "<fork_full_name>\t<fork_owner_login>"
-            # Extract the first fork owned by the authenticated user (case-insensitive owner compare).
-            PAGE_MATCH=$(echo "$FORKS_PAGE" | awk -F'\t' -v current_user="$CURRENT_USER" 'tolower($2) == tolower(current_user) {print $1; exit}')
+            PAGE_MATCH=$(echo "$FORKS_PAGE" | jq -r --arg current_user "$CURRENT_USER_LOWER" '.[] | select((.owner.login | ascii_downcase) == $current_user) | .full_name' | head -n 1)
             if [ -n "$PAGE_MATCH" ]; then
               FORK_FULL_NAME="$PAGE_MATCH"
               break
