@@ -237,9 +237,10 @@ jobs:
           fi
           echo "    Resolving fork repository by parent relationship..."
           FORK_FULL_NAME=""
-          MAX_FORK_PAGES=50
+          # Max 10 pages × 100 forks/page = 1000 forks scanned for owner match.
+          MAX_FORK_PAGES=10
           # GitHub owner names are case-insensitive. Compare in lowercase to avoid false mismatches.
-          # Loop up to MAX_FORK_PAGES pages (100 forks per page => max 5000 forks scanned).
+          # Loop up to MAX_FORK_PAGES pages (100 forks per page).
           for PAGE in $(seq 1 "$MAX_FORK_PAGES"); do
             FORKS_PAGE=$(gh api "repos/${{ steps.repo_info.outputs.full_name }}/forks?per_page=100&page=$PAGE" --jq '.[] | "\(.full_name)\t\(.owner.login)"') || {
               echo "    ERROR: Failed to retrieve forks for ${{ steps.repo_info.outputs.full_name }} (page $PAGE)"
@@ -259,6 +260,7 @@ jobs:
           done
           if [ -z "$FORK_FULL_NAME" ]; then
             echo "    ERROR: Could not resolve fork repository for parent ${{ steps.repo_info.outputs.full_name }}"
+            echo "    Please verify the fork exists for $CURRENT_USER and is based on ${{ steps.repo_info.outputs.full_name }}"
             exit 1
           fi
           echo "    Using fork repository: $FORK_FULL_NAME"
