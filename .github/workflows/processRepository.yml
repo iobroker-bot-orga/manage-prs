@@ -237,7 +237,7 @@ jobs:
           fi
           echo "    Resolving fork repository by parent relationship..."
           EXPECTED_PARENT_LOWER=$(echo "${{ steps.repo_info.outputs.full_name }}" | tr '[:upper:]' '[:lower:]')
-          FORK_FULL_NAME=$(gh repo list "$CURRENT_USER" --fork --limit 1000 --json nameWithOwner,parent --jq '.[] | select(.parent != null) | "\(.nameWithOwner)\t\(.parent.nameWithOwner)"' | awk -F'\t' -v expected="$EXPECTED_PARENT_LOWER" 'tolower($2) == expected {print $1; exit}')
+          FORK_FULL_NAME=$(gh api --paginate "users/$CURRENT_USER/repos?type=owner&per_page=100" --jq '.[] | select(.fork == true and .parent != null) | "\(.full_name)\t\(.parent.full_name)"' | awk -F'\t' -v expected="$EXPECTED_PARENT_LOWER" 'tolower($2) == expected {print $1; exit}')
           if [ -z "$FORK_FULL_NAME" ]; then
             echo "    ERROR: Could not resolve fork repository for parent ${{ steps.repo_info.outputs.full_name }}"
             exit 1
