@@ -237,8 +237,13 @@ jobs:
           fi
           echo "    Resolving fork repository by parent relationship..."
           FORK_FULL_NAME=""
+          # GitHub owner names are case-insensitive. Compare in lowercase to avoid false mismatches.
+          # Loop up to 50 pages (5000 forks at 100/page), which is sufficient for adapter repositories.
           for PAGE in $(seq 1 50); do
-            FORKS_PAGE=$(gh api "repos/${{ steps.repo_info.outputs.full_name }}/forks?per_page=100&page=$PAGE" --jq '.[] | "\(.full_name)\t\(.owner.login)"')
+            FORKS_PAGE=$(gh api "repos/${{ steps.repo_info.outputs.full_name }}/forks?per_page=100&page=$PAGE" --jq '.[] | "\(.full_name)\t\(.owner.login)"') || {
+              echo "    ERROR: Failed to retrieve forks for ${{ steps.repo_info.outputs.full_name }} (page $PAGE)"
+              exit 1
+            }
             if [ -z "$FORKS_PAGE" ]; then
               break
             fi
