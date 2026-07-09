@@ -139,7 +139,7 @@ jobs:
 
       - name: Checkout this repository
         if: steps.check_collection.outputs.collection_found != 'true'
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
         if: steps.check_collection.outputs.collection_found != 'true'
