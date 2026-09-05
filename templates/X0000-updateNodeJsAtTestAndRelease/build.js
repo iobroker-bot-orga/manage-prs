@@ -12,8 +12,8 @@ const semver = require('semver');
 
 // Constants for Node.js versions
 const DEFAULT_NODEJS = 24;
-const MATRIX_NODEJS = ['20.x', '22.x', '24.x'];
-const MIN_NODEJS = 20;
+const MATRIX_NODEJS = ['22.x', '24.x', '26.x'];
+const MIN_NODEJS = 22;
 
 // Standard parameter handling
 const args = process.argv.slice(2);
