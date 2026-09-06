@@ -1,4 +1,4 @@
-Update Node.js versions in test-and-release workflow
+Update Node.js version range at test-and-release workflow to 22, 24 and 26
 
 [German description can be found below](#deutsche-beschreibung)  
 [Deutsche Beschreibung befindet sich weiter unten](#deutsche-beschreibung)
