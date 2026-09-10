@@ -61,19 +61,29 @@ function extractVersion(requirement) {
 }
 
 /**
- * Replace the version placeholder in the prepared PR body with the desired version.
+ * Replace the version placeholder in a prepared PR metadata file with the desired version.
+ * @param {string} fileName - name of the temporary file to update
+ * @param {string} label - human readable label used for logging
  */
-function updatePrBodyPlaceholders() {
-    const prBodyPath = path.join(process.cwd(), '.iobroker-pr-body.tmp');
+function replacePlaceholdersInFile(fileName, label) {
+    const filePath = path.join(process.cwd(), fileName);
 
-    if (!fs.existsSync(prBodyPath)) {
+    if (!fs.existsSync(filePath)) {
         return;
     }
 
-    let prBody = fs.readFileSync(prBodyPath, 'utf8');
-    prBody = prBody.replaceAll(PR_BODY_VERSION_PLACEHOLDER, DESIRED_TESTING_VERSION);
-    fs.writeFileSync(prBodyPath, prBody, 'utf8');
-    console.log(`✔️ Updated PR body with @iobroker/testing version ${DESIRED_TESTING_VERSION}.`);
+    let content = fs.readFileSync(filePath, 'utf8');
+    content = content.replaceAll(PR_BODY_VERSION_PLACEHOLDER, DESIRED_TESTING_VERSION);
+    fs.writeFileSync(filePath, content, 'utf8');
+    console.log(`✔️ Updated PR ${label} with @iobroker/testing version ${DESIRED_TESTING_VERSION}.`);
+}
+
+/**
+ * Replace the version placeholder in the prepared PR title and body with the desired version.
+ */
+function updatePrBodyPlaceholders() {
+    replacePlaceholdersInFile('.iobroker-pr-title.tmp', 'title');
+    replacePlaceholdersInFile('.iobroker-pr-body.tmp', 'body');
 }
 
 const packageJsonPath = './package.json';
