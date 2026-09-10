@@ -14,6 +14,7 @@ This repository provides GitHub Actions workflows and Node.js scripts to automat
 
 ## **WORK IN PROGRESS**
 
+* (@claude) **NEW**: Added template `X0000-UpdateIobrokerTesting` to update an existing `@iobroker/testing` devDependency to version 6.1.2 (keeping the `^` construct, never adding it when absent) and refresh `package-lock.json`.
 * (@copilot) **FIXED**: `processRepository` now resolves the correct fork repository by parent relation before adding the push remote, avoiding failures when the fork name differs from the source repo name.
 * (@copilot) **NEW**: Added template `X0000-fixChangelogOldLink` to add a missing `CHANGELOG_OLD.md` link in README changelog and remove misplaced old-link lines from `CHANGELOG_OLD.md`.
 * (@copilot) **NEW**: Added template `X0000-removeCommonNoConfig` to remove deprecated `common.noConfig`, align `common.adminUI.config`, and adjust js-controller dependency handling.
