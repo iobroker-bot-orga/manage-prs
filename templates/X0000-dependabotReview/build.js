@@ -304,8 +304,8 @@ function updatePrBody(appliedChanges) {
         },
         {
             flag: 'quotes',
-            en: '**Single Quote Normalization**: Normalizes all quoted string values in the configuration to use single quotes for consistent formatting.',
-            de: '**Normalisierung einfacher Anführungszeichen**: Alle in Anführungszeichen gesetzten Zeichenketten in der Konfiguration wurden auf einfache Anführungszeichen normalisiert, um eine einheitliche Formatierung zu gewährleisten.',
+            en: '**Single Quote Normalization**: Normalizes all quoted string values in the configuration to use single quotes instead of double quotes. Double quotes are known to make Dependabot fail in some situations (for example when a value contains characters that YAML interprets inside double-quoted strings), so single quotes are used to keep the configuration robust.',
+            de: '**Normalisierung einfacher Anführungszeichen**: Alle in Anführungszeichen gesetzten Zeichenketten in der Konfiguration werden auf einfache statt doppelte Anführungszeichen umgestellt. Doppelte Anführungszeichen führen in einigen Situationen bekanntermaßen dazu, dass Dependabot fehlschlägt (zum Beispiel wenn ein Wert Zeichen enthält, die YAML innerhalb doppelt gequoteter Zeichenketten interpretiert), daher werden einfache Anführungszeichen verwendet, um die Konfiguration robust zu halten.',
         },
     ];
 
