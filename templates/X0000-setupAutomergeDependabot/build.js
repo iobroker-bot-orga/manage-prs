@@ -5,6 +5,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const yaml = require('js-yaml');
 
 // prepare standard parameters 
 const args = process.argv.slice(2);
@@ -84,6 +85,14 @@ jobs:
           # Optional: Maximum time to wait for checks in seconds (default: 3600)
           # max-wait-time: '3600'
 `;
+
+// Validate workflow content is valid YAML before writing
+try {
+  yaml.load(workflowContent);
+} catch (e) {
+  console.error(`❌ Generated workflow content is not valid YAML: ${e.message}`);
+  process.exit(1);
+}
 
 // Check if workflow already exists and compare content
 if (fs.existsSync(newWorkflowPath)) {
