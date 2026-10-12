@@ -201,7 +201,7 @@ function updatePrBody(existingWorkflow) {
     : `This PR sets up automatic merging for Dependabot pull requests using a new GitHub Actions workflow.`;
 
   const introDE = isUpdate
-    ? `Dieser PR passt die vorhandene Einrichtung zum automatischen Mergen von Dependabot-Pull-Requests an. ` +
+    ? `Dieser PR passt das vorhandene Setup zum automatischen Mergen von Dependabot-Pull-Requests an. ` +
       `Ein bestehender Workflow, der \`iobroker-bot-orga/action-automerge-dependabot\` verwendet, ` +
       `wurde gefunden (\`${existingWorkflow}\`) und wird aktualisiert.`
     : `Dieser PR richtet das automatische Mergen von Dependabot-Pull-Requests mithilfe eines neuen GitHub Actions Workflows ein.`;
@@ -223,14 +223,14 @@ function updatePrBody(existingWorkflow) {
   const workflowPointEN = isUpdate
     ? `**Updates existing workflow**: The existing workflow file \`.github/workflows/${existingWorkflow}\` ` +
       `is updated to use the \`pull_request\` trigger instead of \`pull_request_target\`. ` +
-      `This is required because GitHub will block \`pull_request_target\` for Dependabot by default starting November 2, 2026.`
+      `This is required because GitHub will block \`pull_request_target\` for all fork PRs by default starting November 2, 2026.`
     : `**Creates a new workflow**: A new workflow file \`.github/workflows/automerge-dependabot.yml\` is created. ` +
       `This workflow automatically triggers when Dependabot opens or updates pull requests.`;
 
   const workflowPointDE = isUpdate
     ? `**Aktualisiert vorhandenen Workflow**: Die vorhandene Workflow-Datei \`.github/workflows/${existingWorkflow}\` ` +
       `wird aktualisiert, um den \`pull_request\`-Trigger anstelle von \`pull_request_target\` zu verwenden. ` +
-      `Dies ist erforderlich, da GitHub \`pull_request_target\` für Dependabot ab dem 2. November 2026 standardmäßig blockieren wird.`
+      `Dies ist erforderlich, da GitHub \`pull_request_target\` für alle Fork-PRs ab dem 2. November 2026 standardmäßig blockieren wird.`
     : `**Erstellt einen neuen Workflow**: Eine neue Workflow-Datei \`.github/workflows/automerge-dependabot.yml\` wird erstellt. ` +
       `Dieser Workflow wird automatisch ausgelöst, wenn Dependabot Pull Requests öffnet oder aktualisiert.`;
 
