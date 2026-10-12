@@ -30,6 +30,21 @@ const autoMergeConfigPath = '.github/auto-merge.yml';
 
 let changesMade = false;
 
+// Detect whether an existing workflow using action-automerge-dependabot is already present
+const existingAutomergeWorkflow = (() => {
+  if (!fs.existsSync(workflowsDir)) return null;
+  for (const file of fs.readdirSync(workflowsDir)) {
+    if (!file.endsWith('.yml') && !file.endsWith('.yaml')) continue;
+    try {
+      const content = fs.readFileSync(path.join(workflowsDir, file), 'utf8');
+      if (content.includes('iobroker-bot-orga/action-automerge-dependabot')) {
+        return file;
+      }
+    } catch (_) { /* ignore unreadable files */ }
+  }
+  return null;
+})();
+
 // Ensure .github/workflows directory exists
 if (!fs.existsSync(workflowsDir)) {
   fs.mkdirSync(workflowsDir, { recursive: true });
@@ -163,6 +178,76 @@ if (!changesMade) {
   process.exit(0);
 }
 
+updatePrBody(existingAutomergeWorkflow);
+
 console.log(`✔️ processing completed`);
 
 process.exit(0);
+
+/**
+ * Replace placeholders in .iobroker-pr-body.tmp with dynamic content
+ * depending on whether an existing workflow using action-automerge-dependabot
+ * was detected in the target repository.
+ *
+ * @param {string|null} existingWorkflow - filename of the detected workflow, or null
+ */
+function updatePrBody(existingWorkflow) {
+  const bodyFile = '.iobroker-pr-body.tmp';
+  if (!fs.existsSync(bodyFile)) {
+    console.log(`ⓘ ${bodyFile} not found - skipping PR body customization`);
+    return;
+  }
+
+  const isUpdate = existingWorkflow !== null;
+
+  const introEn = isUpdate
+    ? `This PR adapts the existing automatic merging setup for Dependabot pull requests. ` +
+      `An existing workflow using \`iobroker-bot-orga/action-automerge-dependabot\` was detected ` +
+      `(\`${existingWorkflow}\`) and will be updated.`
+    : `This PR sets up automatic merging for Dependabot pull requests using a new GitHub Actions workflow.`;
+
+  const introDE = isUpdate
+    ? `Diese PR passt die vorhandene Einrichtung zum automatischen Mergen von Dependabot-Pull-Requests an. ` +
+      `Ein bestehender Workflow, der \`iobroker-bot-orga/action-automerge-dependabot\` verwendet, ` +
+      `wurde gefunden (\`${existingWorkflow}\`) und wird aktualisiert.`
+    : `Diese PR richtet das automatische Mergen von Dependabot-Pull-Requests mithilfe eines neuen GitHub Actions Workflows ein.`;
+
+  const backgroundExtraEN =
+    `Additionally, GitHub will **block the \`pull_request_target\` trigger by default starting November 2, 2026** ` +
+    `for workflows triggered by Dependabot. Existing workflows using \`pull_request_target\` need to be migrated ` +
+    `to \`pull_request\` before that date. This PR uses the \`pull_request\` trigger, which is sufficient for ` +
+    `Dependabot PRs because GitHub grants write-access tokens to workflows triggered by Dependabot even with the ` +
+    `standard \`pull_request\` event.`;
+
+  const backgroundExtraDE =
+    `Darüber hinaus wird GitHub den \`pull_request_target\`-Trigger **ab dem 2. November 2026 standardmäßig blockieren**, ` +
+    `wenn er durch Dependabot ausgelöst wird. Bestehende Workflows, die \`pull_request_target\` verwenden, müssen vor ` +
+    `diesem Datum auf \`pull_request\` migriert werden. Diese PR verwendet den \`pull_request\`-Trigger, der für ` +
+    `Dependabot-PRs ausreicht, da GitHub Workflows, die durch Dependabot ausgelöst werden, auch beim Standard-` +
+    `\`pull_request\`-Event Write-Access-Tokens gewährt.`;
+
+  const workflowPointEN = isUpdate
+    ? `**Updates existing workflow**: The existing workflow file \`.github/workflows/${existingWorkflow}\` ` +
+      `is updated to use the \`pull_request\` trigger instead of \`pull_request_target\`. ` +
+      `This is required because GitHub will block \`pull_request_target\` for Dependabot by default starting November 2, 2026.`
+    : `**Creates a new workflow**: A new workflow file \`.github/workflows/automerge-dependabot.yml\` is created. ` +
+      `This workflow automatically triggers when Dependabot opens or updates pull requests.`;
+
+  const workflowPointDE = isUpdate
+    ? `**Aktualisiert vorhandenen Workflow**: Die vorhandene Workflow-Datei \`.github/workflows/${existingWorkflow}\` ` +
+      `wird aktualisiert, um den \`pull_request\`-Trigger anstelle von \`pull_request_target\` zu verwenden. ` +
+      `Dies ist erforderlich, da GitHub \`pull_request_target\` für Dependabot ab dem 2. November 2026 standardmäßig blockieren wird.`
+    : `**Erstellt einen neuen Workflow**: Eine neue Workflow-Datei \`.github/workflows/automerge-dependabot.yml\` wird erstellt. ` +
+      `Dieser Workflow wird automatisch ausgelöst, wenn Dependabot Pull Requests öffnet oder aktualisiert.`;
+
+  let body = fs.readFileSync(bodyFile, 'utf8');
+  body = body.replace('{{INTRO_EN}}', introEn);
+  body = body.replace('{{INTRO_DE}}', introDE);
+  body = body.replace('{{BACKGROUND_EXTRA_EN}}', backgroundExtraEN);
+  body = body.replace('{{BACKGROUND_EXTRA_DE}}', backgroundExtraDE);
+  body = body.replace('{{WORKFLOW_POINT_EN}}', workflowPointEN);
+  body = body.replace('{{WORKFLOW_POINT_DE}}', workflowPointDE);
+
+  fs.writeFileSync(bodyFile, body, 'utf8');
+  console.log(`✔️ Updated PR body with dynamic content (${isUpdate ? 'update' : 'new setup'} mode)`);
+}
