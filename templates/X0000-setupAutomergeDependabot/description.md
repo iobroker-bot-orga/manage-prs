@@ -17,17 +17,19 @@ And **THANKS A LOT** for maintaining this adapter from me and all users.
 
 ## Changes provided by this PR
 
-This PR sets up automatic merging for Dependabot pull requests using a new GitHub Actions workflow.
+{{INTRO_EN}}
 
 ### Background
 
 GitHub has announced that they will discontinue processing Dependabot merge commands on **January 27, 2026**. The old approach of using comment commands like `@dependabot merge` will no longer work after this date.
 
+{{BACKGROUND_EXTRA_EN}}
+
 ### What this PR does
 
 This PR replaces the current setup for auto-merging Dependabot PRs with a new workflow that uses the `iobroker-bot-orga/action-automerge-dependabot` action. Specifically:
 
-1. **Creates a new workflow**: A new workflow file `.github/workflows/automerge-dependabot.yml` is created. This workflow automatically triggers when Dependabot opens or updates pull requests.
+1. {{WORKFLOW_POINT_EN}}
 
 2. **Creates auto-merge configuration**: If not already present, a configuration file `.github/auto-merge.yml` is created. This file defines which types of dependency updates should be automatically merged:
    - **Production dependencies**: Only patch updates (e.g., 1.0.0 → 1.0.1) are automatically merged
@@ -63,17 +65,19 @@ Please refer to the comments in the `.github/auto-merge.yml` file for more confi
 
 ## Deutsche Beschreibung
 
-Diese PR richtet das automatische Mergen von Dependabot-Pull-Requests mithilfe eines neuen GitHub Actions Workflows ein.
+{{INTRO_DE}}
 
 ### Hintergrund
 
 GitHub hat angekündigt, dass die Verarbeitung von Dependabot-Merge-Befehlen am **27. Januar 2026** eingestellt wird. Der alte Ansatz mit Kommentar-Befehlen wie `@dependabot merge` wird nach diesem Datum nicht mehr funktionieren.
 
-### Was diese PR macht
+{{BACKGROUND_EXTRA_DE}}
+
+### Was dieser PR macht
 
 Diese PR ersetzt die aktuelle Einrichtung zum automatischen Mergen von Dependabot-PRs durch einen neuen Workflow, der die Aktion `iobroker-bot-orga/action-automerge-dependabot` verwendet. Konkret:
 
-1. **Erstellt einen neuen Workflow**: Eine neue Workflow-Datei `.github/workflows/automerge-dependabot.yml` wird erstellt. Dieser Workflow wird automatisch ausgelöst, wenn Dependabot Pull Requests öffnet oder aktualisiert.
+1. {{WORKFLOW_POINT_DE}}
 
 2. **Erstellt Auto-Merge-Konfiguration**: Falls noch nicht vorhanden, wird eine Konfigurationsdatei `.github/auto-merge.yml` erstellt. Diese Datei definiert, welche Arten von Abhängigkeits-Updates automatisch gemergt werden sollen:
    - **Produktions-Abhängigkeiten**: Nur Patch-Updates (z.B. 1.0.0 → 1.0.1) werden automatisch gemergt
@@ -83,7 +87,7 @@ Diese PR ersetzt die aktuelle Einrichtung zum automatischen Mergen von Dependabo
 
 ### Wichtige Hinweise
 
-**Diese PR ist nicht verpflichtend.** Es liegt am Entwickler, diese PR zu prüfen und zu entscheiden, ob sie gemergt werden soll. Der bestehende Ansatz wird weiterhin bis zum 27. Januar 2026 funktionieren. Es wird jedoch empfohlen, vor diesem Termin auf den neuen Ansatz zu migrieren.
+**Dieser PR ist nicht verpflichtend.** Es liegt am Entwickler, diesen PR zu prüfen und zu entscheiden, ob er gemergt werden soll. Der bestehende Ansatz wird weiterhin bis zum 27. Januar 2026 funktionieren. Es wird jedoch empfohlen, vor diesem Termin auf den neuen Ansatz zu migrieren.
 
 Der neue Workflow wird:
 - Nur für Dependabot-PRs ausgeführt
