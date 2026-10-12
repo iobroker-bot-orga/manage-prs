@@ -208,14 +208,14 @@ function updatePrBody(existingWorkflow) {
 
   const backgroundExtraEN =
     `Additionally, GitHub will **block the \`pull_request_target\` trigger by default starting November 2, 2026** ` +
-    `for workflows triggered by Dependabot. Existing workflows using \`pull_request_target\` need to be migrated ` +
+    `for all PRs based on a fork. Existing workflows using \`pull_request_target\` need to be migrated ` +
     `to \`pull_request\` before that date. This PR uses the \`pull_request\` trigger, which is sufficient for ` +
     `Dependabot PRs because GitHub grants write-access tokens to workflows triggered by Dependabot even with the ` +
     `standard \`pull_request\` event.`;
 
   const backgroundExtraDE =
     `Darüber hinaus wird GitHub den \`pull_request_target\`-Trigger **ab dem 2. November 2026 standardmäßig blockieren**, ` +
-    `wenn er durch Dependabot ausgelöst wird. Bestehende Workflows, die \`pull_request_target\` verwenden, müssen vor ` +
+    `und zwar für alle PRs, die auf einem Fork basieren. Bestehende Workflows, die \`pull_request_target\` verwenden, müssen vor ` +
     `diesem Datum auf \`pull_request\` migriert werden. Dieser PR verwendet den \`pull_request\`-Trigger, der für ` +
     `Dependabot-PRs ausreicht, da GitHub Workflows, die durch Dependabot ausgelöst werden, auch beim Standard-` +
     `\`pull_request\`-Event Write-Access-Tokens gewährt.`;
