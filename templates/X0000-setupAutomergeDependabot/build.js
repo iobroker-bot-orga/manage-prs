@@ -30,10 +30,14 @@ const autoMergeConfigPath = '.github/auto-merge.yml';
 
 let changesMade = false;
 
-// Detect whether the workflow managed by this template already exists
-const existingAutomergeWorkflow = fs.existsSync(newWorkflowPath)
-  ? path.basename(newWorkflowPath)
-  : null;
+// Detect whether the workflow managed by this template already exists and uses action-automerge-dependabot
+const existingAutomergeWorkflow = (() => {
+  if (!fs.existsSync(newWorkflowPath)) return null;
+  const content = fs.readFileSync(newWorkflowPath, 'utf8');
+  return content.includes('iobroker-bot-orga/action-automerge-dependabot')
+    ? path.basename(newWorkflowPath)
+    : null;
+})();
 
 // Ensure .github/workflows directory exists
 if (!fs.existsSync(workflowsDir)) {
