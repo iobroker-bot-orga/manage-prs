@@ -39,7 +39,7 @@ This PR replaces the current setup for auto-merging Dependabot PRs with a new wo
 
 ### Important notes
 
-**This PR is not mandatory.** It is up to the developer to review and decide whether to merge this PR. The existing approach will continue to work until January 27, 2026. However, it is recommended to migrate to the new approach before this deadline.
+**This PR is not mandatory.** It is up to the developer to review and decide whether to merge this PR.
 
 The new workflow will:
 - Only run for Dependabot PRs
@@ -60,6 +60,7 @@ Please refer to the comments in the `.github/auto-merge.yml` file for more confi
 
 - [GitHub Announcement about Dependabot command deprecation](https://github.blog/changelog/2025-10-06-upcoming-changes-to-github-dependabot-pull-request-comment-commands/)
 - [action-automerge-dependabot repository](https://github.com/iobroker-bot-orga/action-automerge-dependabot)
+- [GitHub: Default policy for pull_request_target](https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target#default-policy-for-pull_request_target)
 
 ---
 
@@ -75,7 +76,7 @@ GitHub hat angekündigt, dass die Verarbeitung von Dependabot-Merge-Befehlen am 
 
 ### Was dieser PR macht
 
-Diese PR ersetzt die aktuelle Einrichtung zum automatischen Mergen von Dependabot-PRs durch einen neuen Workflow, der die Aktion `iobroker-bot-orga/action-automerge-dependabot` verwendet. Konkret:
+Dieser PR ersetzt das aktuelle Setup zum automatischen Mergen von Dependabot-PRs durch einen neuen Workflow, der die Aktion `iobroker-bot-orga/action-automerge-dependabot` verwendet. Konkret:
 
 1. {{WORKFLOW_POINT_DE}}
 
@@ -87,7 +88,7 @@ Diese PR ersetzt die aktuelle Einrichtung zum automatischen Mergen von Dependabo
 
 ### Wichtige Hinweise
 
-**Dieser PR ist nicht verpflichtend.** Es liegt am Entwickler, diesen PR zu prüfen und zu entscheiden, ob er gemergt werden soll. Der bestehende Ansatz wird weiterhin bis zum 27. Januar 2026 funktionieren. Es wird jedoch empfohlen, vor diesem Termin auf den neuen Ansatz zu migrieren.
+**Dieser PR ist nicht verpflichtend.** Es liegt am Entwickler, diesen PR zu prüfen und zu entscheiden, ob er gemergt werden soll.
 
 Der neue Workflow wird:
 - Nur für Dependabot-PRs ausgeführt
@@ -108,3 +109,4 @@ Bitte die Kommentare in der `.github/auto-merge.yml`-Datei für weitere Konfigur
 
 - [GitHub-Ankündigung zur Dependabot-Befehlsabschaffung](https://github.blog/changelog/2025-10-06-upcoming-changes-to-github-dependabot-pull-request-comment-commands/)
 - [action-automerge-dependabot Repository](https://github.com/iobroker-bot-orga/action-automerge-dependabot)
+- [GitHub: Standardrichtlinie für pull_request_target](https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target#default-policy-for-pull_request_target)
