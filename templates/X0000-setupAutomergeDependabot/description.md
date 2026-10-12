@@ -73,7 +73,7 @@ GitHub hat angekündigt, dass die Verarbeitung von Dependabot-Merge-Befehlen am 
 
 {{BACKGROUND_EXTRA_DE}}
 
-### Was diese PR macht
+### Was dieser PR macht
 
 Diese PR ersetzt die aktuelle Einrichtung zum automatischen Mergen von Dependabot-PRs durch einen neuen Workflow, der die Aktion `iobroker-bot-orga/action-automerge-dependabot` verwendet. Konkret:
 
@@ -87,7 +87,7 @@ Diese PR ersetzt die aktuelle Einrichtung zum automatischen Mergen von Dependabo
 
 ### Wichtige Hinweise
 
-**Diese PR ist nicht verpflichtend.** Es liegt am Entwickler, diese PR zu prüfen und zu entscheiden, ob sie gemergt werden soll. Der bestehende Ansatz wird weiterhin bis zum 27. Januar 2026 funktionieren. Es wird jedoch empfohlen, vor diesem Termin auf den neuen Ansatz zu migrieren.
+**Dieser PR ist nicht verpflichtend.** Es liegt am Entwickler, diesen PR zu prüfen und zu entscheiden, ob er gemergt werden soll. Der bestehende Ansatz wird weiterhin bis zum 27. Januar 2026 funktionieren. Es wird jedoch empfohlen, vor diesem Termin auf den neuen Ansatz zu migrieren.
 
 Der neue Workflow wird:
 - Nur für Dependabot-PRs ausgeführt

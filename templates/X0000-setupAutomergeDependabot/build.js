@@ -201,10 +201,10 @@ function updatePrBody(existingWorkflow) {
     : `This PR sets up automatic merging for Dependabot pull requests using a new GitHub Actions workflow.`;
 
   const introDE = isUpdate
-    ? `Diese PR passt die vorhandene Einrichtung zum automatischen Mergen von Dependabot-Pull-Requests an. ` +
+    ? `Dieser PR passt die vorhandene Einrichtung zum automatischen Mergen von Dependabot-Pull-Requests an. ` +
       `Ein bestehender Workflow, der \`iobroker-bot-orga/action-automerge-dependabot\` verwendet, ` +
       `wurde gefunden (\`${existingWorkflow}\`) und wird aktualisiert.`
-    : `Diese PR richtet das automatische Mergen von Dependabot-Pull-Requests mithilfe eines neuen GitHub Actions Workflows ein.`;
+    : `Dieser PR richtet das automatische Mergen von Dependabot-Pull-Requests mithilfe eines neuen GitHub Actions Workflows ein.`;
 
   const backgroundExtraEN =
     `Additionally, GitHub will **block the \`pull_request_target\` trigger by default starting November 2, 2026** ` +
@@ -216,7 +216,7 @@ function updatePrBody(existingWorkflow) {
   const backgroundExtraDE =
     `Darüber hinaus wird GitHub den \`pull_request_target\`-Trigger **ab dem 2. November 2026 standardmäßig blockieren**, ` +
     `wenn er durch Dependabot ausgelöst wird. Bestehende Workflows, die \`pull_request_target\` verwenden, müssen vor ` +
-    `diesem Datum auf \`pull_request\` migriert werden. Diese PR verwendet den \`pull_request\`-Trigger, der für ` +
+    `diesem Datum auf \`pull_request\` migriert werden. Dieser PR verwendet den \`pull_request\`-Trigger, der für ` +
     `Dependabot-PRs ausreicht, da GitHub Workflows, die durch Dependabot ausgelöst werden, auch beim Standard-` +
     `\`pull_request\`-Event Write-Access-Tokens gewährt.`;
 
