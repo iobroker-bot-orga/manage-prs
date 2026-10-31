@@ -14,6 +14,7 @@ This repository provides GitHub Actions workflows and Node.js scripts to automat
 
 ## **WORK IN PROGRESS**
 
+* (@copilot) **FIXED**: Restored the standard bilingual general information and greeting in the `X0000-requireNodeJs_22_19_0` PR description.
 * (@copilot) **FIXED**: PR titles retain the `[iobroker-bot]` prefix when a template build script rewrites them.
 * (@copilot) **NEW**: Added template `X0000-requireNodeJs_22_19_0` to require Node.js 22.19.0 and align `test-and-release.yml`.
 * (@claude) **CHANGED**: Renamed template `X0000-UpdateIobrokerTesting` to `X0000-updateIobrokerTesting` (lowercase `u`) for naming consistency.
