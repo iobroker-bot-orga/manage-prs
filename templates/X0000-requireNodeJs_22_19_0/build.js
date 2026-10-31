@@ -72,6 +72,81 @@ function findObjectProperty(content, objectStart, propertyName) {
     return null;
 }
 
+function createSearchableContent(content) {
+    return content.replace(/<!--[\s\S]*?(?:-->|$)/g, comment => comment.replace(/[^\r\n]/g, ' '));
+}
+
+function getLineEndPosition(content, lineEnd) {
+    const newlinePosition = content.indexOf('\n', lineEnd);
+    return newlinePosition === -1 ? content.length : newlinePosition + 1;
+}
+
+function updateReadmeChangelog(entry) {
+    const readmePath = './README.md';
+    if (!fs.existsSync(readmePath)) {
+        console.log(`ⓘ ${readmePath} does not exist, skipping changelog update.`);
+        return;
+    }
+
+    const readmeContent = fs.readFileSync(readmePath, 'utf8');
+    const searchableContent = createSearchableContent(readmeContent);
+    const changelogMatch = searchableContent.match(/^##\s+Changelog\b[^\r\n]*/im);
+    const workInProgressHeader = '### **WORK IN PROGRESS**';
+
+    if (!changelogMatch) {
+        const lastCommentStart = readmeContent.lastIndexOf('<!--');
+        const lastCommentEnd = readmeContent.lastIndexOf('-->');
+        const insertionPosition =
+            lastCommentStart > lastCommentEnd ? lastCommentStart : readmeContent.length;
+        const beforeComment = readmeContent.slice(0, insertionPosition).trimEnd();
+        const afterComment = readmeContent.slice(insertionPosition);
+        const section =
+            `\n\n## Changelog\n\n${workInProgressHeader}\n${entry}\n`;
+        fs.writeFileSync(readmePath, `${beforeComment}${section}${afterComment}`, 'utf8');
+        return;
+    }
+
+    const changelogStart = changelogMatch.index + changelogMatch[0].length;
+    const afterChangelog = searchableContent.slice(changelogStart);
+    const nextSectionMatch = afterChangelog.match(/^##\s+/m);
+    const changelogEnd = nextSectionMatch
+        ? changelogStart + nextSectionMatch.index
+        : searchableContent.length;
+    const changelogSection = searchableContent.slice(changelogStart, changelogEnd);
+
+    if (changelogSection.includes(entry)) return;
+
+    const workInProgressMatch = changelogSection.match(
+        /^###\s+\*\*WORK IN PROGRESS\*\*[ \t]*$/im,
+    );
+    let updatedContent;
+
+    if (workInProgressMatch) {
+        const headerEnd = changelogStart + workInProgressMatch.index + workInProgressMatch[0].length;
+        const insertionPosition = getLineEndPosition(readmeContent, headerEnd);
+        const separator =
+            insertionPosition === headerEnd && readmeContent[insertionPosition - 1] !== '\n' ? '\n' : '';
+        updatedContent =
+            readmeContent.slice(0, insertionPosition) +
+            separator +
+            `${entry}\n` +
+            readmeContent.slice(insertionPosition);
+    } else {
+        const insertionPosition = getLineEndPosition(readmeContent, changelogStart);
+        const separator =
+            insertionPosition === readmeContent.length && !readmeContent.endsWith('\n')
+                ? '\n\n'
+                : '\n';
+        const section = `${separator}${workInProgressHeader}\n${entry}\n`;
+        updatedContent =
+            readmeContent.slice(0, insertionPosition) +
+            section +
+            readmeContent.slice(insertionPosition);
+    }
+
+    fs.writeFileSync(readmePath, updatedContent, 'utf8');
+}
+
 if (args.length < 2) {
     console.error('❌ Error: Missing required arguments');
     process.exit(1);
@@ -313,6 +388,7 @@ fs.writeFileSync(packageJsonPath, packageJsonContent, 'utf8');
 if (changeLog.workflow === 'updated') {
     fs.writeFileSync(workflowPath, workflowContent, 'utf8');
 }
+updateReadmeChangelog(`- (copilot) Adapter requires node.js >= ${REQUIRED_NODE_VERSION} now`);
 
 const englishLines = [
     `- Updated the \`engines.node\` requirement in \`package.json\` from \`${changeLog.enginesNode.from}\` to \`${changeLog.enginesNode.to}\`.`,
