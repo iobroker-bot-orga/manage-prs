@@ -9,7 +9,7 @@ const test = require('node:test');
 
 const buildScript = path.join(__dirname, '../templates/X0000-requireNodeJs_22_19_0/build.js');
 
-function runTemplate(enginesNode, workflow, packageJson = { engines: { node: enginesNode } }) {
+function runTemplate(enginesNode, workflow, packageJson = { engines: { node: enginesNode } }, readme) {
     const repository = fs.mkdtempSync(path.join(os.tmpdir(), 'require-node-'));
     fs.writeFileSync(path.join(repository, 'package.json'), JSON.stringify(packageJson, null, 2));
     fs.writeFileSync(path.join(repository, '.iobroker-pr-title.tmp'), 'placeholder title');
@@ -23,6 +23,9 @@ function runTemplate(enginesNode, workflow, packageJson = { engines: { node: eng
         const workflowPath = path.join(repository, '.github/workflows/test-and-release.yml');
         fs.mkdirSync(path.dirname(workflowPath), { recursive: true });
         fs.writeFileSync(workflowPath, workflow);
+    }
+    if (readme !== undefined) {
+        fs.writeFileSync(path.join(repository, 'README.md'), readme);
     }
 
     const result = spawnSync(process.execPath, [buildScript, 'template', 'owner/repo'], {
@@ -81,14 +84,83 @@ test('updates engines, job versions, matrices, title, and bilingual summaries', 
     assert.match(body, /22\.19\.0/);
 });
 
+test('adds the Node.js requirement to the existing README work-in-progress changelog', () => {
+    const readme = '# Adapter\n\n## Changelog\n\n### **WORK IN PROGRESS**\n- Existing entry\n';
+    const run = runTemplate('>=20.0.0', null, undefined, readme);
+
+    assert.equal(run.result.status, 0, run.result.stderr);
+    assert.match(
+        run.read('README.md'),
+        /### \*\*WORK IN PROGRESS\*\*\n- \(copilot\) Adapter requires node\.js >= 22\.19\.0 now\n- Existing entry/,
+    );
+});
+
+test('adds a line break before the entry when the README ends at the work-in-progress header', () => {
+    const readme = '# Adapter\n\n## Changelog\n\n### **WORK IN PROGRESS**';
+    const run = runTemplate('>=20.0.0', null, undefined, readme);
+
+    assert.equal(run.result.status, 0, run.result.stderr);
+    assert.match(
+        run.read('README.md'),
+        /### \*\*WORK IN PROGRESS\*\*\n- \(copilot\) Adapter requires node\.js >= 22\.19\.0 now/,
+    );
+});
+
+test('creates the work-in-progress header in an existing Changelog section', () => {
+    const readme = '# Adapter\n\n## Changelog\n\n### 1.0.0\n- Released\n';
+    const run = runTemplate('>=20.0.0', null, undefined, readme);
+
+    assert.equal(run.result.status, 0, run.result.stderr);
+    assert.match(
+        run.read('README.md'),
+        /## Changelog\n\n### \*\*WORK IN PROGRESS\*\*\n- \(copilot\) Adapter requires node\.js >= 22\.19\.0 now\n\n### 1\.0\.0/,
+    );
+});
+
+test('creates a Changelog section and work-in-progress header when absent', () => {
+    const run = runTemplate('>=20.0.0', null, undefined, '# Adapter\n');
+
+    assert.equal(run.result.status, 0, run.result.stderr);
+    assert.match(
+        run.read('README.md'),
+        /## Changelog\n\n### \*\*WORK IN PROGRESS\*\*\n- \(copilot\) Adapter requires node\.js >= 22\.19\.0 now/,
+    );
+});
+
+test('does not place the changelog entry inside an HTML comment', () => {
+    const readme = [
+        '# Adapter',
+        '',
+        '<!--',
+        '## Changelog',
+        '### **WORK IN PROGRESS**',
+        '- hidden comment content',
+        '-->',
+        '',
+        '## Changelog',
+        '',
+        '<!-- Existing comment -->',
+        '### **WORK IN PROGRESS**',
+        '',
+    ].join('\n');
+    const run = runTemplate('>=20.0.0', null, undefined, readme);
+    const updatedReadme = run.read('README.md');
+
+    assert.equal(run.result.status, 0, run.result.stderr);
+    assert.ok(updatedReadme.indexOf('- (copilot)') > updatedReadme.lastIndexOf('-->'));
+    assert.match(updatedReadme, /## Changelog\n\n<!-- Existing comment -->\n### \*\*WORK IN PROGRESS\*\*\n- \(copilot\)/);
+});
+
 test('does not create a PR or alter files when engines already requires a higher version', () => {
     const workflow = 'jobs:\n  test:\n    steps:\n      - run: echo ok\n';
-    const run = runTemplate('>=23.0.0', workflow);
+    const readme = '# Adapter\n\n## Changelog\n';
+    const run = runTemplate('>=23.0.0', workflow, undefined, readme);
 
     assert.equal(run.result.status, 0, run.result.stderr);
     assert.match(run.read('package.json'), /"node": ">=23\.0\.0"/);
     assert.equal(run.read('.github/workflows/test-and-release.yml'), workflow);
     assert.equal(run.read('.iobroker-pr-title.tmp'), 'placeholder title');
+    assert.equal(run.read('README.md'), readme);
     assert.match(run.read('.iobroker-pr-body.tmp'), /__CHANGES_SUMMARY_EN__/);
     assert.match(run.result.stdout, /no PR will be created/);
 });
