@@ -14,10 +14,19 @@ const path = require('node:path');
 const https = require('node:https');
 const { execSync } = require('child_process');
 
+const PR_TITLE_PREFIX = '[iobroker-bot] ';
+
+function ensurePrTitlePrefix(title) {
+  const trimmedTitle = title.trim();
+  return trimmedTitle.startsWith(PR_TITLE_PREFIX)
+    ? trimmedTitle
+    : `${PR_TITLE_PREFIX}${trimmedTitle}`;
+}
+
 // Get command line arguments
 const args = process.argv.slice(2);
 
-if (args.length < 2) {
+if (process.argv[1] === __filename && args.length < 2) {
   console.error('❌ Error: Missing required arguments');
   console.error(
     'Usage: node prGenerator.js <repository-name> <template-name> [parameter-data]',
@@ -215,6 +224,13 @@ async function main() {
     // Execute template script
     console.log('⚙️ Processing ...');
     execTemplateScript(templateName, repositoryName, parameterData);
+    const updatedPrTitle = fs.existsSync(prTitleFile)
+      ? fs.readFileSync(prTitleFile, 'utf-8').trim()
+      : '';
+    fs.writeFileSync(
+      prTitleFile,
+      ensurePrTitlePrefix(updatedPrTitle || templateData.title),
+    );
     console.log('✔️ All changes applied');
 
   } catch (e) {
@@ -224,4 +240,8 @@ async function main() {
 }
 
 // Run the main function
-main();
+if (process.argv[1] === __filename) {
+  main();
+}
+
+module.exports = { ensurePrTitlePrefix };
