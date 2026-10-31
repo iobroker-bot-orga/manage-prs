@@ -2,7 +2,7 @@
 
 const assert = require('node:assert/strict');
 const test = require('node:test');
-const { ensurePrTitlePrefix } = require('../prGenerator');
+const { ensurePrTitlePrefix } = require('../prTitle');
 
 test('adds the bot prefix to a title rewritten by a template', () => {
     assert.equal(

@@ -13,20 +13,12 @@ const fs = require('node:fs');
 const path = require('node:path');
 const https = require('node:https');
 const { execSync } = require('child_process');
-
-const PR_TITLE_PREFIX = '[iobroker-bot] ';
-
-function ensurePrTitlePrefix(title) {
-  const trimmedTitle = title.trim();
-  return trimmedTitle.startsWith(PR_TITLE_PREFIX)
-    ? trimmedTitle
-    : `${PR_TITLE_PREFIX}${trimmedTitle}`;
-}
+const { ensurePrTitlePrefix } = require('./prTitle');
 
 // Get command line arguments
 const args = process.argv.slice(2);
 
-if (process.argv[1] === __filename && args.length < 2) {
+if (args.length < 2) {
   console.error('❌ Error: Missing required arguments');
   console.error(
     'Usage: node prGenerator.js <repository-name> <template-name> [parameter-data]',
@@ -240,8 +232,4 @@ async function main() {
 }
 
 // Run the main function
-if (process.argv[1] === __filename) {
-  main();
-}
-
-module.exports = { ensurePrTitlePrefix };
+main();
