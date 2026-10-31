@@ -8,6 +8,16 @@ const path = require('node:path');
 const test = require('node:test');
 
 const buildScript = path.join(__dirname, '../templates/X0000-requireNodeJs_22_19_0/build.js');
+const descriptionPath = path.join(__dirname, '../templates/X0000-requireNodeJs_22_19_0/description.md');
+
+test('includes the standard bilingual general information in the PR description', () => {
+    const description = fs.readFileSync(descriptionPath, 'utf8');
+
+    assert.match(description, /## General information/);
+    assert.match(description, /And \*\*THANKS A LOT\*\* for maintaining this adapter/);
+    assert.match(description, /## Deutsche Beschreibung\n\n### Allgemeine Informationen/);
+    assert.match(description, /Und \*\*VIELEN DANK\*\* für die Wartung dieses Adapters/);
+});
 
 function runTemplate(enginesNode, workflow, packageJson = { engines: { node: enginesNode } }, readme) {
     const repository = fs.mkdtempSync(path.join(os.tmpdir(), 'require-node-'));
