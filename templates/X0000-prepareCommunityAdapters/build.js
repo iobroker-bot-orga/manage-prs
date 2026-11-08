@@ -7,8 +7,8 @@ const fs = require('node:fs');
 
 // Constants
 const COPYRIGHT_YEAR = '2026';
-const JS_CONTROLLER_VERSION = '6.0.11';
-const ADMIN_VERSION = '7.7.22';
+const JS_CONTROLLER_VERSION = '7.2.5';
+const ADMIN_VERSION = '8.3.5';
 
 const COMMUNITY_ADAPTERS_NAME = 'iobroker-community-adapters';
 const COMMUNITY_ADAPTERS_EMAIL = 'iobroker-community-adapters@gmx.de';
