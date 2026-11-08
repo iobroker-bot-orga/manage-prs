@@ -12,7 +12,7 @@ const ADMIN_VERSION = '8.3.5';
 
 const COMMUNITY_ADAPTERS_NAME = 'iobroker-community-adapters';
 const COMMUNITY_ADAPTERS_EMAIL = 'iobroker-community-adapters@gmx.de';
-const COPYRIGHT_LINE = `Copyright (c) ${COPYRIGHT_YEAR} ${COMMUNITY_ADAPTERS_NAME} <${COMMUNITY_ADAPTERS_EMAIL}>  `;
+const COPYRIGHT_LINE = `Copyright (c) ${COPYRIGHT_YEAR} ${COMMUNITY_ADAPTERS_NAME} <${COMMUNITY_ADAPTERS_EMAIL}>` + '  ';
 
 // Regex patterns for consistent matching
 const COPYRIGHT_REGEX = /^Copyright\s+\(c\)/mi;
@@ -32,8 +32,17 @@ if (args.length < 2) {
 const templateName = args[0];
 const repositoryName = args[1];
 const parameterData = args[2] || '';
+const sanitizeTemplate = templateName === 'X0000-sanitizeCommunityAdapters';
 
 let changesMade = false;
+const prChanges = { english: [], german: [], explanationsEnglish: [], explanationsGerman: [] };
+
+function recordChange(english, german, explanationEnglish, explanationGerman) {
+    prChanges.english.push(`- ${english}`);
+    prChanges.german.push(`- ${german}`);
+    prChanges.explanationsEnglish.push(`- ${explanationEnglish}`);
+    prChanges.explanationsGerman.push(`- ${explanationGerman}`);
+}
 
 /**
  * Add copyright line to README.md if not present
@@ -92,6 +101,12 @@ function updateReadme() {
     
     fs.writeFileSync(readmePath, updatedContent, 'utf8');
     console.log(`✔️ Added copyright line to ${readmePath}.`);
+    recordChange(
+        'Added the iobroker-community-adapters copyright line to README.md.',
+        'Die Copyright-Zeile von iobroker-community-adapters wurde zu README.md hinzugefügt.',
+        'This attributes maintenance of the adapter to iobroker-community-adapters.',
+        'Damit wird die Pflege des Adapters iobroker-community-adapters zugeordnet.',
+    );
     changesMade = true;
 }
 
@@ -135,6 +150,12 @@ function updateLicense() {
     
     fs.writeFileSync(licensePath, updatedContent, 'utf8');
     console.log(`✔️ Added copyright line to ${licensePath}.`);
+    recordChange(
+        'Added the iobroker-community-adapters copyright line to LICENSE.',
+        'Die Copyright-Zeile von iobroker-community-adapters wurde zu LICENSE hinzugefügt.',
+        'This records the organization maintaining the adapter in its license.',
+        'Damit wird die den Adapter pflegende Organisation in der Lizenz festgehalten.',
+    );
     changesMade = true;
 }
 
@@ -248,7 +269,56 @@ function updatePackageJson() {
     // Write back with proper formatting (2 spaces indentation)
     if (packageJsonChanged) {
         fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + '\n', 'utf8');
+        recordChange(
+            'Updated contributor metadata in package.json.',
+            'Die Contributor-Angaben in package.json wurden aktualisiert.',
+            'This keeps package contributor information consistent with the community ownership.',
+            'Damit stimmen die Contributor-Angaben mit der Community-Zuordnung überein.',
+        );
     }
+}
+
+function updateReleaseScript() {
+    const packageJsonPath = './package.json';
+    if (!fs.existsSync(packageJsonPath)) return;
+
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+    if (!packageJson.scripts || typeof packageJson.scripts !== 'object' || Array.isArray(packageJson.scripts)) {
+        packageJson.scripts = {};
+    }
+
+    const currentCommand = typeof packageJson.scripts.release === 'string'
+        ? packageJson.scripts.release
+        : '';
+    const keepYes =
+        /\brelease-script\b/.test(currentCommand) &&
+        /(?:^|\s)-y(?:\s|$)/.test(currentCommand);
+    const releaseCommand = `release-script${keepYes ? ' -y' : ''}`;
+    if (currentCommand === releaseCommand) return;
+
+    packageJson.scripts.release = releaseCommand;
+    fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + '\n', 'utf8');
+    recordChange(
+        `Set the npm \`release\` command to \`${releaseCommand}\`.`,
+        `Der npm-Befehl \`release\` wurde auf \`${releaseCommand}\` gesetzt.`,
+        'This limits the release command to the supported release-script options.',
+        'Damit wird der Release-Befehl auf die unterstützten release-script-Optionen beschränkt.',
+    );
+    changesMade = true;
+}
+
+function removeObsoleteDependabotWorkflow() {
+    const oldWorkflowPath = './.github/workflows/dependabot-auto-merge.yml.OLD';
+    if (!fs.existsSync(oldWorkflowPath)) return;
+
+    fs.unlinkSync(oldWorkflowPath);
+    recordChange(
+        'Removed the obsolete .github/workflows/dependabot-auto-merge.yml.OLD file.',
+        'Die veraltete Datei .github/workflows/dependabot-auto-merge.yml.OLD wurde entfernt.',
+        'The obsolete backup workflow is no longer needed.',
+        'Die veraltete Sicherung des Workflows wird nicht mehr benötigt.',
+    );
+    changesMade = true;
 }
 
 /**
@@ -305,6 +375,7 @@ function updateIoPackageJson() {
     
     // Track if any changes were made to io-package.json
     let ioPackageChanged = false;
+    let authorsChanged = false;
     
     // Check if common.authors exists
     if (!ioPackage.common) {
@@ -325,6 +396,7 @@ function updateIoPackageJson() {
             ioPackage.common.authors[i] = authorString;
             console.log(`✔️ Converted author object to string: ${authorString}`);
             ioPackageChanged = true;
+            authorsChanged = true;
             changesMade = true;
         }
     }
@@ -339,6 +411,7 @@ function updateIoPackageJson() {
         ioPackage.common.authors.push(`${COMMUNITY_ADAPTERS_NAME} <${COMMUNITY_ADAPTERS_EMAIL}>`);
         console.log(`✔️ Added ${COMMUNITY_ADAPTERS_NAME} to authors in ${ioPackagePath}.`);
         ioPackageChanged = true;
+        authorsChanged = true;
         changesMade = true;
     } else {
         console.log(`ⓘ ${COMMUNITY_ADAPTERS_NAME} already exists in authors.`);
@@ -374,6 +447,12 @@ function updateIoPackageJson() {
             jsControllerUpdated = true;
             ioPackageChanged = true;
             changesMade = true;
+            recordChange(
+                `Added the js-controller minimum version \`>=${JS_CONTROLLER_VERSION}\` to io-package.json.`,
+                `Die Mindestversion von js-controller \`>=${JS_CONTROLLER_VERSION}\` wurde zu io-package.json hinzugefügt.`,
+                'This declares the minimum js-controller version required by the adapter.',
+                'Damit wird die vom Adapter benötigte Mindestversion von js-controller angegeben.',
+            );
         } else {
             // Check if version needs updating
             const currentVersion = extractVersion(jsControllerDep['js-controller']);
@@ -383,6 +462,12 @@ function updateIoPackageJson() {
                 jsControllerUpdated = true;
                 ioPackageChanged = true;
                 changesMade = true;
+                recordChange(
+                    `Raised the js-controller minimum version from \`${currentVersion}\` to \`>=${JS_CONTROLLER_VERSION}\`.`,
+                    `Die js-controller-Mindestversion wurde von \`${currentVersion}\` auf \`>=${JS_CONTROLLER_VERSION}\` angehoben.`,
+                    'This declares the minimum js-controller version required by the adapter.',
+                    'Damit wird die vom Adapter benötigte Mindestversion von js-controller angegeben.',
+                );
             } else {
                 console.log(`ⓘ js-controller dependency is already at version ${currentVersion || 'unknown'}, no update needed.`);
             }
@@ -412,6 +497,12 @@ function updateIoPackageJson() {
             adminUpdated = true;
             ioPackageChanged = true;
             changesMade = true;
+            recordChange(
+                `Added the admin minimum version \`>=${ADMIN_VERSION}\` to io-package.json.`,
+                `Die Mindestversion von admin \`>=${ADMIN_VERSION}\` wurde zu io-package.json hinzugefügt.`,
+                'This declares the minimum admin version required by the adapter.',
+                'Damit wird die vom Adapter benötigte Mindestversion von admin angegeben.',
+            );
         } else {
             // Check if version needs updating
             const currentVersion = extractVersion(adminDep['admin']);
@@ -421,6 +512,12 @@ function updateIoPackageJson() {
                 adminUpdated = true;
                 ioPackageChanged = true;
                 changesMade = true;
+                recordChange(
+                    `Raised the admin minimum version from \`${currentVersion}\` to \`>=${ADMIN_VERSION}\`.`,
+                    `Die admin-Mindestversion wurde von \`${currentVersion}\` auf \`>=${ADMIN_VERSION}\` angehoben.`,
+                    'This declares the minimum admin version required by the adapter.',
+                    'Damit wird die vom Adapter benötigte Mindestversion von admin angegeben.',
+                );
             } else {
                 console.log(`ⓘ admin dependency is already at version ${currentVersion || 'unknown'}, no update needed.`);
             }
@@ -430,6 +527,15 @@ function updateIoPackageJson() {
     // Write back with proper formatting (2 spaces indentation)
     if (ioPackageChanged) {
         fs.writeFileSync(ioPackagePath, JSON.stringify(ioPackage, null, 2) + '\n', 'utf8');
+
+        if (authorsChanged) {
+            recordChange(
+                'Updated author metadata in io-package.json.',
+                'Die Autorenangaben in io-package.json wurden aktualisiert.',
+                'This keeps adapter author information consistent with the community ownership.',
+                'Damit stimmen die Autorenangaben mit der Community-Zuordnung überein.',
+            );
+        }
         
         // Update README changelog if dependencies were updated
         if (jsControllerUpdated || adminUpdated) {
@@ -573,15 +679,38 @@ function createChangelogOld() {
     const content = '# Older changes\n';
     fs.writeFileSync(changelogOldPath, content, 'utf8');
     console.log(`✔️ Created ${changelogOldPath}.`);
+    recordChange(
+        'Created CHANGELOG_OLD.md.',
+        'CHANGELOG_OLD.md wurde erstellt.',
+        'This provides a destination for older changelog entries.',
+        'Damit steht ein Ziel für ältere Changelog-Einträge bereit.',
+    );
     changesMade = true;
+}
+
+function updatePrDescription() {
+    const bodyPath = './.iobroker-pr-body.tmp';
+    if (!fs.existsSync(bodyPath)) return;
+
+    let body = fs.readFileSync(bodyPath, 'utf8');
+    body = body.replace('__CHANGES_SUMMARY_EN__', prChanges.english.join('\n'));
+    body = body.replace('__CHANGES_SUMMARY_DE__', prChanges.german.join('\n'));
+    body = body.replace('__CHANGES_EXPLANATION_EN__', prChanges.explanationsEnglish.join('\n'));
+    body = body.replace('__CHANGES_EXPLANATION_DE__', prChanges.explanationsGerman.join('\n'));
+    fs.writeFileSync(bodyPath, body, 'utf8');
 }
 
 // Execute all updates
 updateReadme();
 updateLicense();
 updatePackageJson();
+if (sanitizeTemplate) {
+    updateReleaseScript();
+    removeObsoleteDependabotWorkflow();
+}
 updateIoPackageJson();
 createChangelogOld();
+if (sanitizeTemplate) updatePrDescription();
 
 if (!changesMade) {
     console.log(`ⓘ No changes were made. All entries already exist.`);
@@ -590,4 +719,3 @@ if (!changesMade) {
 console.log(`✔️ processing completed`);
 
 process.exit(0);
-
