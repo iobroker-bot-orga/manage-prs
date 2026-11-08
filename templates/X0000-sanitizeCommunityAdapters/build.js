@@ -409,11 +409,13 @@ function updatePackageJson() {
     }
 
     // Ensure engines.node meets minimum Node.js version requirement
+    let nodejsUpdated = false;
     if (!packageJson.engines || !packageJson.engines.node) {
         if (!packageJson.engines) packageJson.engines = {};
         packageJson.engines.node = `>=${MIN_NODEJS_VERSION}`;
         console.log(`✔️ Added engines.node >= ${MIN_NODEJS_VERSION} to ${packageJsonPath}.`);
         packageJsonChanged = true;
+        nodejsUpdated = true;
         trackChange(
             `**package.json**: Added \`engines.node\` requirement \`>=${MIN_NODEJS_VERSION}\``,
             `**package.json**: \`engines.node\`-Anforderung \`>=${MIN_NODEJS_VERSION}\` hinzugefügt`
@@ -425,6 +427,7 @@ function updatePackageJson() {
             packageJson.engines.node = `>=${MIN_NODEJS_VERSION}`;
             console.log(`✔️ Updated engines.node from "${currentNodeReq}" to ">=${MIN_NODEJS_VERSION}".`);
             packageJsonChanged = true;
+            nodejsUpdated = true;
             trackChange(
                 `**package.json**: Increased \`engines.node\` requirement from \`${currentNodeReq}\` to \`>=${MIN_NODEJS_VERSION}\``,
                 `**package.json**: \`engines.node\`-Anforderung von \`${currentNodeReq}\` auf \`>=${MIN_NODEJS_VERSION}\` erhöht`
@@ -517,6 +520,9 @@ function updatePackageJson() {
 
     if (packageJsonChanged) {
         fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + '\n', 'utf8');
+        if (nodejsUpdated) {
+            updateReadmeChangelog(false, false, true);
+        }
     }
 }
 
@@ -708,7 +714,7 @@ function createSearchableContent(content) {
 /**
  * Update README.md changelog with dependency changes
  */
-function updateReadmeChangelog(jsControllerUpdated, adminUpdated) {
+function updateReadmeChangelog(jsControllerUpdated, adminUpdated, nodejsUpdated = false) {
     const readmePath = './README.md';
 
     if (!fs.existsSync(readmePath)) {
@@ -724,6 +730,9 @@ function updateReadmeChangelog(jsControllerUpdated, adminUpdated) {
     }
     if (adminUpdated) {
         changelogEntries.push(`- (copilot) Adapter requires admin >= ${ADMIN_VERSION} now`);
+    }
+    if (nodejsUpdated) {
+        changelogEntries.push(`- (copilot) Adapter requires Node.js >= ${MIN_NODEJS_VERSION} now`);
     }
 
     if (changelogEntries.length === 0) return;
