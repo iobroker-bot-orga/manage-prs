@@ -39,54 +39,22 @@ try {
     process.exit(1);
 }
 
-// Check if common.licenseInformation already exists
-if (ioPackage.common?.licenseInformation !== undefined) {
-    console.log(`✔️ common.licenseInformation already exists, no need for a PR.`);
+const hasLicenseInformation = ioPackage.common?.licenseInformation !== undefined;
+const hasCommonLicense = !!ioPackage.common?.license;
+
+// Determine what needs to be done
+if (hasLicenseInformation && !hasCommonLicense) {
+    console.log(`✔️ common.licenseInformation already exists and common.license is absent, no need for a PR.`);
     process.exit(0);
 }
 
-console.log(`ⓘ common.licenseInformation does not exist, proceeding with migration.`);
-
-// Try to find license value from common.license first
-let licenseValue = null;
-const hasCommonLicense = !!ioPackage.common?.license;
-
-if (hasCommonLicense) {
-    licenseValue = ioPackage.common.license;
-    console.log(`✔️ Found common.license with value: ${licenseValue}`);
+if (hasLicenseInformation) {
+    console.log(`ⓘ common.licenseInformation already exists but common.license is also present — will remove common.license.`);
 } else {
-    console.log(`ⓘ common.license does not exist in ${ioPackagePath}`);
-
-    // Try to find license in package.json
-    if (fs.existsSync(packageJsonPath)) {
-        console.log(`✔️ ${packageJsonPath} exists.`);
-
-        try {
-            const packageJsonContent = fs.readFileSync(packageJsonPath, 'utf8');
-            const packageJson = JSON.parse(packageJsonContent);
-
-            if (packageJson.license) {
-                licenseValue = packageJson.license;
-                console.log(`✔️ Found license in ${packageJsonPath} with value: ${licenseValue}`);
-            } else {
-                console.log(`ⓘ license attribute does not exist in ${packageJsonPath}`);
-            }
-        } catch (error) {
-            console.error(`❌ Error reading or parsing ${packageJsonPath}: ${error.message}`);
-            process.exit(1);
-        }
-    } else {
-        console.log(`ⓘ ${packageJsonPath} does not exist`);
-    }
+    console.log(`ⓘ common.licenseInformation does not exist, proceeding with migration.`);
 }
 
-// If we still don't have a license value, we cannot proceed
-if (!licenseValue) {
-    console.log(`❌ No license information found in either ${ioPackagePath} or ${packageJsonPath}, cannot create PR.`);
-    process.exit(1);
-}
-
-// Find the common section
+// Find the common section (needed for both add and remove operations)
 const commonMatch = originalContent.match(/"common"\s*:\s*\{/);
 if (!commonMatch) {
     console.log(`❌ Could not find 'common' section in ${ioPackagePath}, cannot create PR.`);
@@ -95,61 +63,199 @@ if (!commonMatch) {
 
 const commonSectionStart = commonMatch.index + commonMatch[0].length;
 
-// Detect indentation used in the file by looking at the first property inside common
-const afterCommonOpen = originalContent.substring(commonSectionStart);
-const firstPropMatch = afterCommonOpen.match(/\r?\n(\s+)"/);
-const indentation = firstPropMatch ? firstPropMatch[1] : '    ';
+let newContent = originalContent;
 
-// Detect the indentation of the common object itself to compute the increment
-const commonLineStart = originalContent.lastIndexOf('\n', commonMatch.index) + 1;
-const commonIndent = originalContent.substring(commonLineStart, commonMatch.index).match(/^\s*/)[0];
-const indentIncrement = indentation.length > commonIndent.length
-    ? indentation.substring(commonIndent.length)
-    : '    ';
+// --- Step 1: Add licenseInformation (skip if it already exists) ---
+if (!hasLicenseInformation) {
+    // Find license value
+    let licenseValue = null;
 
-console.log(`ⓘ Using indentation: ${indentation.length} spaces, increment: ${indentIncrement.length} spaces`);
+    if (hasCommonLicense) {
+        licenseValue = ioPackage.common.license;
+        console.log(`✔️ Found common.license with value: ${licenseValue}`);
+    } else {
+        console.log(`ⓘ common.license does not exist in ${ioPackagePath}`);
 
-// Build the licenseInformation block string
-const licenseInfoLines = [
-    `"licenseInformation": {`,
-    `${indentation}${indentIncrement}"type": "free",`,
-    `${indentation}${indentIncrement}"license": ${JSON.stringify(licenseValue)}`,
-    `${indentation}}`
-];
-const licenseInfoBlock = licenseInfoLines.join('\n');
+        if (fs.existsSync(packageJsonPath)) {
+            console.log(`✔️ ${packageJsonPath} exists.`);
 
-let newContent;
+            try {
+                const packageJsonContent = fs.readFileSync(packageJsonPath, 'utf8');
+                const packageJson = JSON.parse(packageJsonContent);
 
-if (hasCommonLicense) {
-    // Replace common.license with licenseInformation (adds licenseInformation and removes common.license in one step)
-    const commonSectionStr = originalContent.substring(commonSectionStart);
-    const licenseRegex = /"license"\s*:\s*"(?:[^"\\]|\\.)*"/;
-    const licenseMatch = commonSectionStr.match(licenseRegex);
+                if (packageJson.license) {
+                    licenseValue = packageJson.license;
+                    console.log(`✔️ Found license in ${packageJsonPath} with value: ${licenseValue}`);
+                } else {
+                    console.log(`ⓘ license attribute does not exist in ${packageJsonPath}`);
+                }
+            } catch (error) {
+                console.error(`❌ Error reading or parsing ${packageJsonPath}: ${error.message}`);
+                process.exit(1);
+            }
+        } else {
+            console.log(`ⓘ ${packageJsonPath} does not exist`);
+        }
+    }
 
-    if (!licenseMatch) {
-        console.log(`❌ Could not find common.license attribute in ${ioPackagePath}, cannot create PR.`);
+    if (!licenseValue) {
+        console.log(`❌ No license information found in either ${ioPackagePath} or ${packageJsonPath}, cannot create PR.`);
         process.exit(1);
     }
 
-    const licenseAbsIndex = commonSectionStart + licenseMatch.index;
-    console.log(`✔️ Found common.license attribute at position ${licenseAbsIndex}`);
+    // Detect indentation used in the file by looking at the first property inside common
+    const afterCommonOpen = newContent.substring(commonSectionStart);
+    const firstPropMatch = afterCommonOpen.match(/\r?\n(\s+)"/);
+    const indentation = firstPropMatch ? firstPropMatch[1] : '    ';
 
-    const oldLicenseString = originalContent.substring(licenseAbsIndex, licenseAbsIndex + licenseMatch[0].length);
-    newContent = originalContent.slice(0, licenseAbsIndex) + licenseInfoBlock + originalContent.slice(licenseAbsIndex + oldLicenseString.length);
+    // Detect the indentation of the common object itself to compute the increment
+    const commonLineStart = newContent.lastIndexOf('\n', commonMatch.index) + 1;
+    const commonIndent = newContent.substring(commonLineStart, commonMatch.index).match(/^\s*/)[0];
+    const indentIncrement = indentation.length > commonIndent.length
+        ? indentation.substring(commonIndent.length)
+        : '    ';
 
-    console.log(`✔️ Replaced common.license with common.licenseInformation`);
-} else {
-    // Insert licenseInformation at the beginning of the common section (after the opening '{' + newline)
-    // Find the newline right after the opening '{'
-    let insertPos = commonSectionStart;
-    const eol = originalContent.indexOf('\r\n', insertPos) === insertPos ? '\r\n' : '\n';
+    console.log(`ⓘ Using indentation: ${indentation.length} spaces, increment: ${indentIncrement.length} spaces`);
 
-    newContent =
-        originalContent.slice(0, insertPos) +
-        eol + indentation + licenseInfoBlock + ',' +
-        originalContent.slice(insertPos);
+    // Build the licenseInformation block string
+    const licenseInfoLines = [
+        `"licenseInformation": {`,
+        `${indentation}${indentIncrement}"type": "free",`,
+        `${indentation}${indentIncrement}"license": ${JSON.stringify(licenseValue)}`,
+        `${indentation}}`
+    ];
+    const licenseInfoBlock = licenseInfoLines.join('\n');
 
-    console.log(`✔️ Inserted common.licenseInformation at beginning of common section`);
+    if (hasCommonLicense) {
+        // Replace common.license with licenseInformation (adds licenseInformation and removes common.license in one step)
+        const commonSectionStr = newContent.substring(commonSectionStart);
+        const licenseRegex = /"license"\s*:\s*"(?:[^"\\]|\\.)*"/;
+        const licenseMatch = commonSectionStr.match(licenseRegex);
+
+        if (!licenseMatch) {
+            console.log(`❌ Could not find common.license attribute in ${ioPackagePath}, cannot create PR.`);
+            process.exit(1);
+        }
+
+        const licenseAbsIndex = commonSectionStart + licenseMatch.index;
+        console.log(`✔️ Found common.license attribute at position ${licenseAbsIndex}`);
+
+        newContent = newContent.slice(0, licenseAbsIndex) + licenseInfoBlock + newContent.slice(licenseAbsIndex + licenseMatch[0].length);
+
+        console.log(`✔️ Replaced common.license with common.licenseInformation`);
+    } else {
+        // Insert licenseInformation at the beginning of the common section (after the opening '{')
+        const insertPos = commonSectionStart;
+        const eol = newContent.indexOf('\r\n', insertPos) === insertPos ? '\r\n' : '\n';
+
+        newContent =
+            newContent.slice(0, insertPos) +
+            eol + indentation + licenseInfoBlock + ',' +
+            newContent.slice(insertPos);
+
+        console.log(`✔️ Inserted common.licenseInformation at beginning of common section`);
+    }
+}
+
+// --- Step 2: Remove common.license if it still exists ---
+// (When hasCommonLicense was true and !hasLicenseInformation, the replace above already removed it.
+//  This step handles the case where licenseInformation existed but license was also present.)
+if (hasLicenseInformation && hasCommonLicense) {
+    // Find the updated common section boundaries
+    const updatedCommonMatch = newContent.match(/"common"\s*:\s*\{/);
+    if (!updatedCommonMatch) {
+        console.error(`❌ Could not find 'common' section in ${ioPackagePath}`);
+        process.exit(1);
+    }
+
+    const updatedCommonStart = updatedCommonMatch.index + updatedCommonMatch[0].length;
+
+    // Find the end of the common section (matching closing brace)
+    let braceCount = 1;
+    let commonEnd = updatedCommonStart;
+    let inString = false;
+    let escapeNext = false;
+
+    for (let i = updatedCommonStart; i < newContent.length && braceCount > 0; i++) {
+        const char = newContent[i];
+
+        if (escapeNext) { escapeNext = false; continue; }
+        if (char === '\\' && inString) { escapeNext = true; continue; }
+        if (char === '"') { inString = !inString; continue; }
+
+        if (!inString) {
+            if (char === '{') braceCount++;
+            if (char === '}') braceCount--;
+            if (braceCount === 0) { commonEnd = i; break; }
+        }
+    }
+
+    const beforeCommon = newContent.slice(0, updatedCommonStart);
+    const commonContent = newContent.slice(updatedCommonStart, commonEnd);
+    const afterCommon = newContent.slice(commonEnd);
+
+    // Match only a top-level "license" line (direct property of common, not nested inside licenseInformation)
+    // We find the common section's direct children by tracking brace depth within commonContent
+    let targetLineStart = -1;
+    let targetLineEnd = -1;
+    let depth = 0;
+    let inStr = false;
+    let esc = false;
+    let lineStart = 0;
+
+    for (let i = 0; i <= commonContent.length; i++) {
+        const char = commonContent[i];
+
+        if (char === '\n' || i === commonContent.length) {
+            const line = commonContent.slice(lineStart, i + 1);
+            // Only consider top-level properties (depth === 0, not inside any nested object)
+            if (depth === 0) {
+                const propMatch = line.match(/^\s*"license"\s*:\s*"(?:[^"\\]|\\.)*"\s*,?\s*\r?\n?$/);
+                if (propMatch) {
+                    targetLineStart = lineStart;
+                    targetLineEnd = i + 1;
+                    break;
+                }
+            }
+            lineStart = i + 1;
+        }
+
+        if (esc) { esc = false; continue; }
+        if (char === '\\' && inStr) { esc = true; continue; }
+        if (char === '"') { inStr = !inStr; continue; }
+        if (!inStr) {
+            if (char === '{' || char === '[') depth++;
+            if (char === '}' || char === ']') depth--;
+        }
+    }
+
+    if (targetLineStart === -1) {
+        console.error(`❌ Could not find top-level "license" line in common section`);
+        process.exit(1);
+    }
+
+    const fullLine = commonContent.slice(targetLineStart, targetLineEnd);
+    const hasTrailingComma = fullLine.trimEnd().endsWith(',');
+
+    let newCommonContent;
+    if (hasTrailingComma) {
+        newCommonContent = commonContent.slice(0, targetLineStart) + commonContent.slice(targetLineEnd);
+    } else {
+        // Last property — remove trailing comma from the previous non-whitespace character
+        let searchPos = targetLineStart - 1;
+        while (searchPos >= 0 && /\s/.test(commonContent[searchPos])) {
+            searchPos--;
+        }
+
+        if (searchPos >= 0 && commonContent[searchPos] === ',') {
+            newCommonContent = commonContent.slice(0, searchPos) + commonContent.slice(searchPos + 1, targetLineStart) + commonContent.slice(targetLineEnd);
+        } else {
+            newCommonContent = commonContent.slice(0, targetLineStart) + commonContent.slice(targetLineEnd);
+        }
+    }
+
+    newContent = beforeCommon + newCommonContent + afterCommon;
+    console.log(`✔️ Removed common.license from ${ioPackagePath}`);
 }
 
 // Validate that the new content is valid JSON
