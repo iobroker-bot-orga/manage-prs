@@ -14,6 +14,10 @@ This repository provides GitHub Actions workflows and Node.js scripts to automat
 
 ## **WORK IN PROGRESS**
 
+* (@copilot) **NEW**: Added the `X0000-sanitizeIobrokerCommunityAdapters` template to apply upstream Dependabot and ioBroker-Bot auto-merge examples.
+* (@copilot) **FIXED**: `X0000-sanitizeIobrokerCommunityAdapters` now writes the Dependabot auto-merge configuration to `.github/auto-merge.yml` and reports each file check.
+* (@copilot) **FIXED**: Restored the standard bilingual general information and greeting in the `X0000-requireNodeJs_22_19_0` PR description.
+* (@copilot) **FIXED**: PR titles retain the `[iobroker-bot]` prefix when a template build script rewrites them.
 * (@copilot) **NEW**: Added template `X0000-requireNodeJs_22_19_0` to require Node.js 22.19.0 and align `test-and-release.yml`.
 * (@claude) **CHANGED**: Renamed template `X0000-UpdateIobrokerTesting` to `X0000-updateIobrokerTesting` (lowercase `u`) for naming consistency.
 * (@claude) **NEW**: Added template `X0000-updateIobrokerTesting` to update an existing `@iobroker/testing` devDependency to version 6.1.2 (keeping the `^` construct, never adding it when absent) and refresh `package-lock.json`.

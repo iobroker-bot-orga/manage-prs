@@ -13,6 +13,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const https = require('node:https');
 const { execSync } = require('child_process');
+const { ensurePrTitlePrefix } = require('./prTitle');
 
 // Get command line arguments
 const args = process.argv.slice(2);
@@ -215,6 +216,13 @@ async function main() {
     // Execute template script
     console.log('⚙️ Processing ...');
     execTemplateScript(templateName, repositoryName, parameterData);
+    const updatedPrTitle = fs.existsSync(prTitleFile)
+      ? fs.readFileSync(prTitleFile, 'utf-8').trim()
+      : '';
+    fs.writeFileSync(
+      prTitleFile,
+      ensurePrTitlePrefix(updatedPrTitle || templateData.title),
+    );
     console.log('✔️ All changes applied');
 
   } catch (e) {
