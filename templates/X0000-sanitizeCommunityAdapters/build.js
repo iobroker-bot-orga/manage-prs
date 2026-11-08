@@ -81,6 +81,23 @@ function fetchUrl(url) {
 }
 
 /**
+ * Correct the GitHub owner part of a URL to iobroker-community-adapters.
+ * Returns { url, changed, oldOwner }.
+ */
+function correctGitHubOwnerInUrl(url) {
+    if (!url || typeof url !== 'string') return { url, changed: false };
+    const match = url.match(/^(.*github\.com\/)([^\/\s]+)(\/[^\s]*)(.*)$/);
+    if (!match) return { url, changed: false };
+    const owner = match[2];
+    if (owner === COMMUNITY_ADAPTERS_NAME) return { url, changed: false };
+    return {
+        url: match[1] + COMMUNITY_ADAPTERS_NAME + match[3] + match[4],
+        changed: true,
+        oldOwner: owner
+    };
+}
+
+/**
  * Ensure all copyright lines in a block (except the last) end with two spaces.
  * Returns modified content and whether any changes were made.
  */
@@ -326,6 +343,74 @@ function updatePackageJson() {
         }
     }
 
+    // Correct GitHub URLs to use iobroker-community-adapters as owner
+    for (const field of ['homepage']) {
+        if (packageJson[field]) {
+            const result = correctGitHubOwnerInUrl(packageJson[field]);
+            if (result.changed) {
+                console.log(`✔️ Corrected ${field} owner from "${result.oldOwner}" to "${COMMUNITY_ADAPTERS_NAME}".`);
+                packageJson[field] = result.url;
+                packageJsonChanged = true;
+                trackChange(
+                    `**package.json**: Corrected \`${field}\` URL owner to \`${COMMUNITY_ADAPTERS_NAME}\``,
+                    `**package.json**: URL-Owner in \`${field}\` auf \`${COMMUNITY_ADAPTERS_NAME}\` korrigiert`
+                );
+            }
+        }
+    }
+
+    if (packageJson.repository) {
+        if (typeof packageJson.repository === 'string') {
+            const result = correctGitHubOwnerInUrl(packageJson.repository);
+            if (result.changed) {
+                console.log(`✔️ Corrected repository owner from "${result.oldOwner}" to "${COMMUNITY_ADAPTERS_NAME}".`);
+                packageJson.repository = result.url;
+                packageJsonChanged = true;
+                trackChange(
+                    `**package.json**: Corrected \`repository\` URL owner to \`${COMMUNITY_ADAPTERS_NAME}\``,
+                    `**package.json**: URL-Owner in \`repository\` auf \`${COMMUNITY_ADAPTERS_NAME}\` korrigiert`
+                );
+            }
+        } else if (typeof packageJson.repository === 'object' && packageJson.repository.url) {
+            const result = correctGitHubOwnerInUrl(packageJson.repository.url);
+            if (result.changed) {
+                console.log(`✔️ Corrected repository.url owner from "${result.oldOwner}" to "${COMMUNITY_ADAPTERS_NAME}".`);
+                packageJson.repository.url = result.url;
+                packageJsonChanged = true;
+                trackChange(
+                    `**package.json**: Corrected \`repository.url\` owner to \`${COMMUNITY_ADAPTERS_NAME}\``,
+                    `**package.json**: URL-Owner in \`repository.url\` auf \`${COMMUNITY_ADAPTERS_NAME}\` korrigiert`
+                );
+            }
+        }
+    }
+
+    if (packageJson.bugs) {
+        if (typeof packageJson.bugs === 'string') {
+            const result = correctGitHubOwnerInUrl(packageJson.bugs);
+            if (result.changed) {
+                console.log(`✔️ Corrected bugs owner from "${result.oldOwner}" to "${COMMUNITY_ADAPTERS_NAME}".`);
+                packageJson.bugs = result.url;
+                packageJsonChanged = true;
+                trackChange(
+                    `**package.json**: Corrected \`bugs\` URL owner to \`${COMMUNITY_ADAPTERS_NAME}\``,
+                    `**package.json**: URL-Owner in \`bugs\` auf \`${COMMUNITY_ADAPTERS_NAME}\` korrigiert`
+                );
+            }
+        } else if (typeof packageJson.bugs === 'object' && packageJson.bugs.url) {
+            const result = correctGitHubOwnerInUrl(packageJson.bugs.url);
+            if (result.changed) {
+                console.log(`✔️ Corrected bugs.url owner from "${result.oldOwner}" to "${COMMUNITY_ADAPTERS_NAME}".`);
+                packageJson.bugs.url = result.url;
+                packageJsonChanged = true;
+                trackChange(
+                    `**package.json**: Corrected \`bugs.url\` owner to \`${COMMUNITY_ADAPTERS_NAME}\``,
+                    `**package.json**: URL-Owner in \`bugs.url\` auf \`${COMMUNITY_ADAPTERS_NAME}\` korrigiert`
+                );
+            }
+        }
+    }
+
     // Reorder keys to place 'contributors' right after 'author'
     if (packageJsonChanged && packageJson.author) {
         const reordered = {};
@@ -482,6 +567,20 @@ function updateIoPackageJson() {
             } else {
                 console.log(`ⓘ admin dependency is already at version ${currentVersion || 'unknown'}, no update needed.`);
             }
+        }
+    }
+
+    // Correct GitHub URLs to use iobroker-community-adapters as owner
+    if (ioPackage.common.readme) {
+        const result = correctGitHubOwnerInUrl(ioPackage.common.readme);
+        if (result.changed) {
+            console.log(`✔️ Corrected common.readme owner from "${result.oldOwner}" to "${COMMUNITY_ADAPTERS_NAME}".`);
+            ioPackage.common.readme = result.url;
+            ioPackageChanged = true;
+            trackChange(
+                `**io-package.json**: Corrected \`common.readme\` URL owner to \`${COMMUNITY_ADAPTERS_NAME}\``,
+                `**io-package.json**: URL-Owner in \`common.readme\` auf \`${COMMUNITY_ADAPTERS_NAME}\` korrigiert`
+            );
         }
     }
 
@@ -761,6 +860,12 @@ function buildExplanations() {
     if (hasChangelogOld) {
         en.push(`### Changelog Management\n\nCHANGELOG_OLD.md has been created to store older changelog entries, keeping the main README.md changelog clean and focused on recent changes.`);
         de.push(`### Changelog-Verwaltung\n\nCHANGELOG_OLD.md wurde erstellt, um ältere Changelog-Einträge zu speichern und das Haupt-Changelog in README.md übersichtlich zu halten.`);
+    }
+
+    const hasUrlCorrection = appliedChanges.en.some(c => c.includes('URL owner') || c.includes('url owner'));
+    if (hasUrlCorrection) {
+        en.push(`### URL Owner Correction\n\nGitHub URLs in package.json and/or io-package.json have been updated to reference the \`iobroker-community-adapters\` organization. This ensures that links to the repository, homepage, bug tracker, and readme point to the correct location after the repository was transferred to iobroker-community-adapters.`);
+        de.push(`### URL-Owner-Korrektur\n\nGitHub-URLs in package.json und/oder io-package.json wurden aktualisiert, um auf die Organisation \`iobroker-community-adapters\` zu verweisen. Dies stellt sicher, dass Links zum Repository, zur Homepage, zum Bug-Tracker und zur Readme-Datei nach der Übertragung des Repositories zu iobroker-community-adapters auf den korrekten Ort zeigen.`);
     }
 
     return {
