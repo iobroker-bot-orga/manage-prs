@@ -6,7 +6,7 @@ const path = require('node:path');
 const files = [
     {
         source: 'https://raw.githubusercontent.com/iobroker-bot-orga/action-automerge-dependabot/main/.github/auto-merge.example.yml',
-        destination: '.github/automerge-dependabot',
+        destination: '.github/auto-merge.yml',
         createOnly: true,
     },
     {
@@ -19,10 +19,12 @@ const files = [
     },
 ];
 
-async function install({ rootDir = process.cwd(), fetchImpl = fetch } = {}) {
+async function install({ rootDir = process.cwd(), fetchImpl = fetch, log = console.log } = {}) {
     const updates = await Promise.all(files.map(async file => {
         const destination = path.join(rootDir, file.destination);
+        log(`ⓘ Checking ${file.destination} against upstream.`);
         if (file.createOnly && fs.existsSync(destination)) {
+            log(`ⓘ ${file.destination} already exists; no change will be applied.`);
             return null;
         }
 
@@ -38,12 +40,14 @@ async function install({ rootDir = process.cwd(), fetchImpl = fetch } = {}) {
 
         if (fs.existsSync(update.destination) &&
             fs.readFileSync(update.destination, 'utf8') === update.content) {
+            log(`ⓘ ${update.destination} already matches upstream; no change will be applied.`);
             continue;
         }
 
+        log(`ⓘ ${update.destination} differs from upstream; applying change.`);
         fs.mkdirSync(path.dirname(update.destination), { recursive: true });
         fs.writeFileSync(update.destination, update.content, 'utf8');
-        console.log(`✔️ Updated ${update.destination}`);
+        log(`✔️ Updated ${update.destination}`);
     }
 }
 
