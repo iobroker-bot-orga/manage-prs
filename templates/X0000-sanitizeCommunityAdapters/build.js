@@ -101,6 +101,18 @@ function correctGitHubOwnerInUrl(url) {
         };
     }
 
+    // raw.githubusercontent.com: https://raw.githubusercontent.com/owner/repo/branch/path
+    const rawMatch = url.match(/^(https?:\/\/raw\.githubusercontent\.com\/)([^\/\s]+)(\/[^\s]*)(.*)$/);
+    if (rawMatch) {
+        const owner = rawMatch[2];
+        if (owner === COMMUNITY_ADAPTERS_NAME) return { url, changed: false };
+        return {
+            url: rawMatch[1] + COMMUNITY_ADAPTERS_NAME + rawMatch[3] + rawMatch[4],
+            changed: true,
+            oldOwner: owner
+        };
+    }
+
     // HTTPS format: https://github.com/owner/repo or git+https://github.com/owner/repo.git
     const httpsMatch = url.match(/^(.*github\.com\/)([^\/\s]+)(\/[^\s]*)(.*)$/);
     if (httpsMatch) {
@@ -623,16 +635,18 @@ function updateIoPackageJson() {
     }
 
     // Correct GitHub URLs to use iobroker-community-adapters as owner
-    if (ioPackage.common.readme) {
-        const result = correctGitHubOwnerInUrl(ioPackage.common.readme);
-        if (result.changed) {
-            console.log(`✔️ Corrected common.readme owner from "${result.oldOwner}" to "${COMMUNITY_ADAPTERS_NAME}".`);
-            ioPackage.common.readme = result.url;
-            ioPackageChanged = true;
-            trackChange(
-                `**io-package.json**: Corrected \`common.readme\` URL owner to \`${COMMUNITY_ADAPTERS_NAME}\``,
-                `**io-package.json**: URL-Owner in \`common.readme\` auf \`${COMMUNITY_ADAPTERS_NAME}\` korrigiert`
-            );
+    for (const field of ['readme', 'extIcon']) {
+        if (ioPackage.common[field]) {
+            const result = correctGitHubOwnerInUrl(ioPackage.common[field]);
+            if (result.changed) {
+                console.log(`✔️ Corrected common.${field} owner from "${result.oldOwner}" to "${COMMUNITY_ADAPTERS_NAME}".`);
+                ioPackage.common[field] = result.url;
+                ioPackageChanged = true;
+                trackChange(
+                    `**io-package.json**: Corrected \`common.${field}\` URL owner to \`${COMMUNITY_ADAPTERS_NAME}\``,
+                    `**io-package.json**: URL-Owner in \`common.${field}\` auf \`${COMMUNITY_ADAPTERS_NAME}\` korrigiert`
+                );
+            }
         }
     }
 
