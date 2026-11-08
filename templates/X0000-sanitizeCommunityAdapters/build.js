@@ -9,8 +9,8 @@ const https = require('node:https');
 
 // Constants
 const COPYRIGHT_YEAR = '2026';
-const JS_CONTROLLER_VERSION = '6.0.11';
-const ADMIN_VERSION = '7.7.22';
+const JS_CONTROLLER_VERSION = '7.2.5';
+const ADMIN_VERSION = '8.3.5';
 const MIN_NODEJS_VERSION = '22.19.0';
 
 const COMMUNITY_ADAPTERS_NAME = 'iobroker-community-adapters';
