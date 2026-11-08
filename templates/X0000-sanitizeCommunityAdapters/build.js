@@ -11,6 +11,7 @@ const https = require('node:https');
 const COPYRIGHT_YEAR = '2026';
 const JS_CONTROLLER_VERSION = '6.0.11';
 const ADMIN_VERSION = '7.7.22';
+const MIN_NODEJS_VERSION = '22.19.0';
 
 const COMMUNITY_ADAPTERS_NAME = 'iobroker-community-adapters';
 const COMMUNITY_ADAPTERS_EMAIL = 'iobroker-community-adapters@gmx.de';
@@ -404,6 +405,32 @@ function updatePackageJson() {
             }
         } else {
             console.log(`ⓘ npm 'release' script is not based on release-script, skipping fix.`);
+        }
+    }
+
+    // Ensure engines.node meets minimum Node.js version requirement
+    if (!packageJson.engines || !packageJson.engines.node) {
+        if (!packageJson.engines) packageJson.engines = {};
+        packageJson.engines.node = `>=${MIN_NODEJS_VERSION}`;
+        console.log(`✔️ Added engines.node >= ${MIN_NODEJS_VERSION} to ${packageJsonPath}.`);
+        packageJsonChanged = true;
+        trackChange(
+            `**package.json**: Added \`engines.node\` requirement \`>=${MIN_NODEJS_VERSION}\``,
+            `**package.json**: \`engines.node\`-Anforderung \`>=${MIN_NODEJS_VERSION}\` hinzugefügt`
+        );
+    } else {
+        const currentNodeReq = packageJson.engines.node;
+        const currentNodeVersion = extractVersion(currentNodeReq);
+        if (currentNodeVersion && compareVersions(currentNodeVersion, MIN_NODEJS_VERSION) < 0) {
+            packageJson.engines.node = `>=${MIN_NODEJS_VERSION}`;
+            console.log(`✔️ Updated engines.node from "${currentNodeReq}" to ">=${MIN_NODEJS_VERSION}".`);
+            packageJsonChanged = true;
+            trackChange(
+                `**package.json**: Increased \`engines.node\` requirement from \`${currentNodeReq}\` to \`>=${MIN_NODEJS_VERSION}\``,
+                `**package.json**: \`engines.node\`-Anforderung von \`${currentNodeReq}\` auf \`>=${MIN_NODEJS_VERSION}\` erhöht`
+            );
+        } else {
+            console.log(`ⓘ engines.node "${currentNodeReq}" already meets >= ${MIN_NODEJS_VERSION}, no update needed.`);
         }
     }
 
@@ -926,6 +953,12 @@ function buildExplanations() {
     if (hasChangelogOld) {
         en.push(`### Changelog Management\n\nCHANGELOG_OLD.md has been created to store older changelog entries, keeping the main README.md changelog clean and focused on recent changes.`);
         de.push(`### Changelog-Verwaltung\n\nCHANGELOG_OLD.md wurde erstellt, um ältere Changelog-Einträge zu speichern und das Haupt-Changelog in README.md übersichtlich zu halten.`);
+    }
+
+    const hasNodejsVersionChange = appliedChanges.en.some(c => c.includes('engines.node'));
+    if (hasNodejsVersionChange) {
+        en.push(`### Node.js Version Requirement\n\nThe \`engines.node\` field in package.json has been added or updated to require Node.js >= ${MIN_NODEJS_VERSION}. This minimum version is required for compatibility with the current ioBroker ecosystem and ensures the adapter runs on a supported, actively maintained Node.js release.`);
+        de.push(`### Node.js-Versionsanforderung\n\nDas Feld \`engines.node\` in package.json wurde hinzugefügt oder aktualisiert, um Node.js >= ${MIN_NODEJS_VERSION} vorauszusetzen. Diese Mindestversion ist für die Kompatibilität mit dem aktuellen ioBroker-Ökosystem erforderlich und stellt sicher, dass der Adapter auf einer unterstützten, aktiv gewarteten Node.js-Version läuft.`);
     }
 
     const hasUrlCorrection = appliedChanges.en.some(c => c.includes('URL owner') || c.includes('url owner'));
