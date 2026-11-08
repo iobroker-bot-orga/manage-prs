@@ -82,19 +82,38 @@ function fetchUrl(url) {
 
 /**
  * Correct the GitHub owner part of a URL to iobroker-community-adapters.
+ * Handles both HTTPS (https://github.com/owner/repo) and
+ * SSH (git@github.com:owner/repo.git) formats.
  * Returns { url, changed, oldOwner }.
  */
 function correctGitHubOwnerInUrl(url) {
     if (!url || typeof url !== 'string') return { url, changed: false };
-    const match = url.match(/^(.*github\.com\/)([^\/\s]+)(\/[^\s]*)(.*)$/);
-    if (!match) return { url, changed: false };
-    const owner = match[2];
-    if (owner === COMMUNITY_ADAPTERS_NAME) return { url, changed: false };
-    return {
-        url: match[1] + COMMUNITY_ADAPTERS_NAME + match[3] + match[4],
-        changed: true,
-        oldOwner: owner
-    };
+
+    // SSH format: git@github.com:owner/repo.git
+    const sshMatch = url.match(/^(git@github\.com:)([^\/\s]+)(\/[^\s]*)(.*)$/);
+    if (sshMatch) {
+        const owner = sshMatch[2];
+        if (owner === COMMUNITY_ADAPTERS_NAME) return { url, changed: false };
+        return {
+            url: sshMatch[1] + COMMUNITY_ADAPTERS_NAME + sshMatch[3] + sshMatch[4],
+            changed: true,
+            oldOwner: owner
+        };
+    }
+
+    // HTTPS format: https://github.com/owner/repo or git+https://github.com/owner/repo.git
+    const httpsMatch = url.match(/^(.*github\.com\/)([^\/\s]+)(\/[^\s]*)(.*)$/);
+    if (httpsMatch) {
+        const owner = httpsMatch[2];
+        if (owner === COMMUNITY_ADAPTERS_NAME) return { url, changed: false };
+        return {
+            url: httpsMatch[1] + COMMUNITY_ADAPTERS_NAME + httpsMatch[3] + httpsMatch[4],
+            changed: true,
+            oldOwner: owner
+        };
+    }
+
+    return { url, changed: false };
 }
 
 /**
