@@ -117,6 +117,39 @@ function correctGitHubOwnerInUrl(url) {
 }
 
 /**
+ * Normalize a GitHub repository URL to the canonical git+https format and
+ * correct the owner to iobroker-community-adapters.
+ * Accepts SSH (git@github.com:owner/repo[.git]) and any HTTPS variant.
+ * Always returns git+https://github.com/iobroker-community-adapters/repo.git
+ * Returns { url, changed, oldOwner }.
+ */
+function normalizeRepositoryUrl(url) {
+    if (!url || typeof url !== 'string') return { url, changed: false };
+
+    let owner, repo;
+
+    // SSH: git@github.com:owner/repo[.git]
+    const sshMatch = url.match(/^git@github\.com:([^\/\s]+)\/([^\s]+?)(?:\.git)?$/);
+    if (sshMatch) {
+        owner = sshMatch[1];
+        repo = sshMatch[2];
+    } else {
+        // HTTPS variants: (git+)https://github.com/owner/repo[.git]
+        const httpsMatch = url.match(/^(?:git\+)?https?:\/\/github\.com\/([^\/\s]+)\/([^\s\/]+?)(?:\.git)?(?:\/.*)?$/);
+        if (httpsMatch) {
+            owner = httpsMatch[1];
+            repo = httpsMatch[2];
+        } else {
+            return { url, changed: false };
+        }
+    }
+
+    const normalized = `git+https://github.com/${COMMUNITY_ADAPTERS_NAME}/${repo}.git`;
+    if (url === normalized) return { url, changed: false };
+    return { url: normalized, changed: true, oldOwner: owner };
+}
+
+/**
  * Ensure all copyright lines in a block (except the last) end with two spaces.
  * Returns modified content and whether any changes were made.
  */
@@ -380,25 +413,25 @@ function updatePackageJson() {
 
     if (packageJson.repository) {
         if (typeof packageJson.repository === 'string') {
-            const result = correctGitHubOwnerInUrl(packageJson.repository);
+            const result = normalizeRepositoryUrl(packageJson.repository);
             if (result.changed) {
-                console.log(`✔️ Corrected repository owner from "${result.oldOwner}" to "${COMMUNITY_ADAPTERS_NAME}".`);
+                console.log(`✔️ Normalized repository URL from "${packageJson.repository}" to "${result.url}".`);
                 packageJson.repository = result.url;
                 packageJsonChanged = true;
                 trackChange(
-                    `**package.json**: Corrected \`repository\` URL owner to \`${COMMUNITY_ADAPTERS_NAME}\``,
-                    `**package.json**: URL-Owner in \`repository\` auf \`${COMMUNITY_ADAPTERS_NAME}\` korrigiert`
+                    `**package.json**: Normalized \`repository\` URL to \`git+https\` format with owner \`${COMMUNITY_ADAPTERS_NAME}\``,
+                    `**package.json**: \`repository\`-URL auf \`git+https\`-Format mit Owner \`${COMMUNITY_ADAPTERS_NAME}\` normalisiert`
                 );
             }
         } else if (typeof packageJson.repository === 'object' && packageJson.repository.url) {
-            const result = correctGitHubOwnerInUrl(packageJson.repository.url);
+            const result = normalizeRepositoryUrl(packageJson.repository.url);
             if (result.changed) {
-                console.log(`✔️ Corrected repository.url owner from "${result.oldOwner}" to "${COMMUNITY_ADAPTERS_NAME}".`);
+                console.log(`✔️ Normalized repository.url from "${packageJson.repository.url}" to "${result.url}".`);
                 packageJson.repository.url = result.url;
                 packageJsonChanged = true;
                 trackChange(
-                    `**package.json**: Corrected \`repository.url\` owner to \`${COMMUNITY_ADAPTERS_NAME}\``,
-                    `**package.json**: URL-Owner in \`repository.url\` auf \`${COMMUNITY_ADAPTERS_NAME}\` korrigiert`
+                    `**package.json**: Normalized \`repository.url\` to \`git+https\` format with owner \`${COMMUNITY_ADAPTERS_NAME}\``,
+                    `**package.json**: \`repository.url\` auf \`git+https\`-Format mit Owner \`${COMMUNITY_ADAPTERS_NAME}\` normalisiert`
                 );
             }
         }
